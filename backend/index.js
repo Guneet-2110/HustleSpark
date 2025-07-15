@@ -1,7 +1,6 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
-// import Stripe from "stripe";
 import fetch from "node-fetch";
 
 dotenv.config();
@@ -9,7 +8,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+// No Stripe used in this version
 
 app.post("/api/generate", async (req, res) => {
   const { interests } = req.body;
@@ -35,3 +34,4 @@ app.post("/api/generate", async (req, res) => {
 });
 
 app.listen(5000, () => console.log("Server running on http://localhost:5000"));
+
