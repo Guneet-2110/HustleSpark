@@ -27,7 +27,7 @@ function App() {
       <Header />
       <HustleForm onSubmit={handleSubmit} loading={loading} />
       {hustleIdeas && <Result ideas={hustleIdeas} />}
-      <DownloadButton fileName="myapp.zip" />
+      <DownloadButton fileName="studio/myapp.zip" />
     </div>
   );
 }

@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { ref, getDownloadURL } from "firebase/storage";
 import { storage } from "../firebase";
 
-export const DownloadButton = ({ fileName = "myapp.zip" }) => {
+export const DownloadButton = ({ fileName = "studio/myapp.zip" }) => {
   const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState(null);
 
