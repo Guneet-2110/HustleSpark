@@ -1,0 +1,40 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions for security checks
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    match /users/{userId} {
+      allow get, list: if isOwner(userId);
+      allow create, update: if isOwner(userId);
+      allow delete: if false;
+
+      match /saved_hustles/{savedHustleId} {
+        allow read, write: if isOwner(userId);
+      }
+    }
+
+    match /marketplace_listings/{marketplaceListingId} {
+      // Publicly readable for marketplace browsing
+      allow get, list: if true;
+      // Must be signed in to create a listing
+      // We explicitly allow authenticated creation
+      allow create: if isSignedIn();
+      // Only the original creator can modify or remove their listing
+      // Note: Data must contain a userId field matching the creator's UID
+      allow update, delete: if isSignedIn() && (resource.data.userId == request.auth.uid);
+    }
+
+    match /hustle_ideas/{hustleIdeaId} {
+      allow get, list: if true;
+      allow create, update, delete: if false;
+    }
+  }
+}

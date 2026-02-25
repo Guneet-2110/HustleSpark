@@ -1,0 +1,4 @@
+hosting:
+  ignore:
+    - "firebase-hosting-merge.yml"
+    - "src/ai/dev.ts"

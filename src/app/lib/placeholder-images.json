@@ -1,0 +1,29 @@
+
+{
+  "listings": {
+    "sourdough": {
+      "url": "https://picsum.photos/seed/sourdough/600/400",
+      "width": 600,
+      "height": 400,
+      "hint": "sourdough bread"
+    },
+    "tech": {
+      "url": "https://picsum.photos/seed/tech/600/400",
+      "width": 600,
+      "height": 400,
+      "hint": "vintage electronics"
+    },
+    "pets": {
+      "url": "https://picsum.photos/seed/pets/600/400",
+      "width": 600,
+      "height": 400,
+      "hint": "pets custom"
+    },
+    "default": {
+      "url": "https://picsum.photos/seed/hustle/600/400",
+      "width": 600,
+      "height": 400,
+      "hint": "business growth"
+    }
+  }
+}

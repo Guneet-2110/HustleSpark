@@ -1,0 +1,129 @@
+
+{
+  "entities": {
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user of the HustleSpark application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the User entity."
+        },
+        "email": {
+          "type": "string",
+          "description": "Email address of the user.",
+          "format": "email"
+        },
+        "subscriptionStatus": {
+          "type": "string",
+          "description": "The subscription status of the user (e.g., 'active', 'inactive', 'trial')."
+        },
+        "savedHustleIds": {
+          "type": "array",
+          "description": "References to Saved Hustles. (Relationship: User 1:N SavedHustle)",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "email",
+        "subscriptionStatus"
+      ]
+    },
+    "MarketplaceListing": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "MarketplaceListing",
+      "type": "object",
+      "description": "Represents a hustle listed for sale on the marketplace.",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "hustleName": {
+          "type": "string"
+        },
+        "userId": {
+          "type": "string"
+        },
+        "price": {
+          "type": "number"
+        },
+        "category": {
+          "type": "string"
+        },
+        "country": {
+          "type": "string"
+        },
+        "state": {
+          "type": "string"
+        },
+        "flyerUrl": {
+          "type": "string",
+          "format": "uri"
+        },
+        "logoUrl": {
+          "type": "string",
+          "format": "uri"
+        },
+        "pitch": {
+          "type": "string",
+          "description": "Detailed business pitch."
+        },
+        "experience": {
+          "type": "string",
+          "description": "User experience in this field."
+        },
+        "whoIHelp": {
+          "type": "string",
+          "description": "Target audience description."
+        },
+        "workFrom": {
+          "type": "string",
+          "description": "Location flexibility (Remote/Local)."
+        },
+        "paypalEmail": {
+          "type": "string",
+          "format": "email"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "hustleName",
+        "userId",
+        "price",
+        "pitch",
+        "paypalEmail",
+        "category",
+        "country",
+        "state"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": {
+        "$ref": "#/backend/entities/User"
+      },
+      "description": "Stores user profiles."
+    },
+    "/marketplace_listings/{marketplaceListingId}": {
+      "schema": {
+        "$ref": "#/backend/entities/MarketplaceListing"
+      },
+      "description": "Publicly accessible marketplace listings."
+    }
+  }
+}
