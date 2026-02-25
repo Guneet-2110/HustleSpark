@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Header } from "./components/Header";
 import { HustleForm } from "./components/HustleForm";
 import { Result } from "./components/Result";
+import { DownloadButton } from "./components/DownloadButton";
 import "./App.css";
 
 function App() {
@@ -26,6 +27,7 @@ function App() {
       <Header />
       <HustleForm onSubmit={handleSubmit} loading={loading} />
       {hustleIdeas && <Result ideas={hustleIdeas} />}
+      <DownloadButton fileName="myapp.zip" />
     </div>
   );
 }
