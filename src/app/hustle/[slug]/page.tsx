@@ -573,4 +573,4 @@ export default function HustleDetailPage() {
             <HustleDetailContent />
         </Suspense>
     )
-}
+}export const runtime = 'edge';

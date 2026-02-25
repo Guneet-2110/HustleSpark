@@ -128,4 +128,4 @@ export default function MarketplaceListingDetailPage() {
             </div>
         </div>
     );
-}
+}export const runtime = 'edge';
