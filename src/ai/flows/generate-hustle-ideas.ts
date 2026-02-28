@@ -3,8 +3,8 @@
  * @fileOverview Generates personalized side hustle ideas using Gemini 2.5 Flash.
  */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'zod';
+import { ai } from '@/ai/genkit';
+import { z } from 'zod';
 
 const HustleTrackerDataSchema = z.object({
   status: z.enum(['Not Started', 'In Progress', 'Launched']).optional().default('Not Started'),
@@ -16,21 +16,21 @@ const HustleTrackerDataSchema = z.object({
 });
 
 const HustleIdeaSchema = z.object({
-  name: z.string(),
-  description: z.string(),
-  pricingTip: z.string().optional(),
-  marketingIdea: z.string().optional(),
-  flyerText: z.string().optional(),
-  logoUrl: z.string().optional(),
-  flyerUrl: z.string().optional(),
-  marketingPrompts: z.array(z.string()).optional(),
-  trackerData: HustleTrackerDataSchema.optional(),
-  schedule: z.any().optional(),
-  coachHistory: z.any().optional(),
+  name: z.string().describe('Name of the side hustle.'),
+  description: z.string().describe('A brief, compelling description.'),
 });
 
-export type HustleIdea = z.infer<typeof HustleIdeaSchema>;
-export type HustleTrackerData = z.infer<typeof HustleTrackerDataSchema>;
+export type HustleIdea = z.infer<typeof HustleIdeaSchema> & {
+  pricingTip?: string;
+  marketingIdea?: string;
+  flyerText?: string;
+  logoUrl?: string;
+  flyerUrl?: string;
+  marketingPrompts?: string[];
+  trackerData?: z.infer<typeof HustleTrackerDataSchema>;
+  schedule?: any;
+  coachHistory?: any;
+};
 
 const GenerateHustleIdeasInputSchema = z.object({
   skillsAndInterests: z.string(),
@@ -45,21 +45,25 @@ const GenerateHustleIdeasOutputSchema = z.object({
 });
 export type GenerateHustleIdeasOutput = z.infer<typeof GenerateHustleIdeasOutputSchema>;
 
-export async function generateHustleIdeas(input: GenerateHustleIdeasInput): Promise<GenerateHustleIdeasOutput> {
-  const response = await ai.generate({
-    model: 'googleai/gemini-2.5-flash',
-    prompt: `Generate exactly 3 creative and profitable side hustle ideas for a user.
-    User Profile: Skills & Interests: ${input.skillsAndInterests}, Age: ${input.age}, Time Commitment: ${input.timeCommitment}.
+const ideasPrompt = ai.definePrompt({
+  name: 'ideasPrompt',
+  input: { schema: GenerateHustleIdeasInputSchema },
+  output: { schema: GenerateHustleIdeasOutputSchema },
+  prompt: `Generate exactly 3 creative and profitable side hustle ideas for a user.
+    User Profile: Skills & Interests: {{{skillsAndInterests}}}, Age: {{{age}}}, Time Commitment: {{{timeCommitment}}}.`,
+});
 
-    IMPORTANT: You must respond ONLY with a raw JSON object. No markdown, no backticks, no explanations.
-    The JSON structure must be: { "hustleIdeas": [{ "name": "...", "description": "..." }] }`,
-  });
+const ideasFlow = ai.defineFlow(
+  {
+    name: 'ideasFlow',
+    inputSchema: GenerateHustleIdeasInputSchema,
+    outputSchema: GenerateHustleIdeasOutputSchema,
+  },
+  async (input) => {
+    const { output } = await ideasPrompt(input);
+    if (!output) throw new Error('Failed to generate hustle ideas. Please try again.');
 
-  try {
-    const text = response.text.replace(/```json|```/g, '').trim();
-    const parsed = JSON.parse(text);
-    
-    const hustlesWithTracker = (parsed.hustleIdeas || []).map((hustle: any) => ({
+    const hustlesWithTracker = output.hustleIdeas.map((hustle: any) => ({
       ...hustle,
       trackerData: {
         status: 'Not Started',
@@ -67,18 +71,19 @@ export async function generateHustleIdeas(input: GenerateHustleIdeasInput): Prom
         launchDate: null,
         progress: 0,
         earnings: [
-            { month: 'Week 1', earnings: 0 },
-            { month: 'Week 2', earnings: 0 },
-            { month: 'Week 3', earnings: 0 },
-            { month: 'Week 4', earnings: 0 },
+          { month: 'Week 1', earnings: 0 },
+          { month: 'Week 2', earnings: 0 },
+          { month: 'Week 3', earnings: 0 },
+          { month: 'Week 4', earnings: 0 },
         ],
         checkedTasks: [],
       },
     }));
 
-    return GenerateHustleIdeasOutputSchema.parse({ hustleIdeas: hustlesWithTracker });
-  } catch (error) {
-    console.error("AI Generation Error:", response.text);
-    throw new Error('Failed to generate hustle ideas. Please try again.');
+    return { hustleIdeas: hustlesWithTracker };
   }
+);
+
+export async function generateHustleIdeas(input: GenerateHustleIdeasInput): Promise<GenerateHustleIdeasOutput> {
+  return ideasFlow(input);
 }

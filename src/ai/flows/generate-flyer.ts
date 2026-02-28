@@ -1,8 +1,7 @@
-
 'use server';
 
 /**
- * @fileOverview Generates a high-impact promotional flyer.
+ * @fileOverview Generates a high-impact promotional flyer using Nano-Banana Pro (Gemini 2.5 Flash Image).
  */
 
 import { ai } from '@/ai/genkit';

@@ -13,41 +13,41 @@ const GenerateHustleScheduleInputSchema = z.object({
 export type GenerateHustleScheduleInput = z.infer<typeof GenerateHustleScheduleInputSchema>;
 
 const GenerateHustleScheduleOutputSchema = z.object({
-  week1: z.array(z.string()).length(7),
-  week2: z.array(z.string()).length(7),
-  week3: z.array(z.string()).length(7),
-  week4: z.array(z.string()).length(7),
+  week1: z.array(z.string()).length(7).describe('7 specific daily tasks for Setup & Foundations.'),
+  week2: z.array(z.string()).length(7).describe('7 specific daily tasks for Product & Pricing Development.'),
+  week3: z.array(z.string()).length(7).describe('7 specific daily tasks for Aggressive Marketing & Outreach.'),
+  week4: z.array(z.string()).length(7).describe('7 specific daily tasks for Launch & Scaling.'),
 });
 export type GenerateHustleScheduleOutput = z.infer<typeof GenerateHustleScheduleOutputSchema>;
 
-export async function generateHustleSchedule(input: GenerateHustleScheduleInput): Promise<GenerateHustleScheduleOutput> {
-  const response = await ai.generate({
-    model: 'googleai/gemini-2.5-flash',
-    prompt: `Create a professional 4-week daily action plan to launch the side hustle "${input.hustleName}" (${input.hustleDescription}).
+const schedulePrompt = ai.definePrompt({
+  name: 'schedulePrompt',
+  input: { schema: GenerateHustleScheduleInputSchema },
+  output: { schema: GenerateHustleScheduleOutputSchema },
+  prompt: `Create a professional 4-week daily action plan to launch the side hustle "{{{hustleName}}}" ({{{hustleDescription}}}).
   
-    Each week must focus on a specific phase:
+    Focus on these phases:
     Week 1: Setup & Foundations
     Week 2: Product & Pricing Development
     Week 3: Aggressive Marketing & Outreach
     Week 4: Launch & Scaling
 
-    Provide exactly 7 specific, actionable daily tasks for each of the 4 weeks.
+    Provide exactly 7 specific, actionable daily tasks for each of the 4 weeks.`,
+});
 
-    IMPORTANT: Respond ONLY with a raw JSON object. No markdown, no explanations.
-    {
-      "week1": ["Day 1 task", "Day 2 task", ...],
-      "week2": ["Day 1 task", ...],
-      "week3": ["Day 1 task", ...],
-      "week4": ["Day 1 task", ...]
-    }`,
-  });
-
-  try {
-    const text = response.text.replace(/```json|```/g, '').trim();
-    const parsed = JSON.parse(text);
-    return GenerateHustleScheduleOutputSchema.parse(parsed);
-  } catch (error) {
-    console.error("AI Schedule Error:", response.text);
-    throw new Error("Could not generate your launch plan. Please try again.");
+const scheduleFlow = ai.defineFlow(
+  {
+    name: 'scheduleFlow',
+    inputSchema: GenerateHustleScheduleInputSchema,
+    outputSchema: GenerateHustleScheduleOutputSchema,
+  },
+  async (input) => {
+    const { output } = await schedulePrompt(input);
+    if (!output) throw new Error("Could not generate your launch plan. Please try again.");
+    return output;
   }
+);
+
+export async function generateHustleSchedule(input: GenerateHustleScheduleInput): Promise<GenerateHustleScheduleOutput> {
+  return scheduleFlow(input);
 }
