@@ -29,17 +29,19 @@ export async function generateFlyer(input: GenerateFlyerInput): Promise<Generate
     
     const { media } = await ai.generate({
       model: 'googleai/gemini-2.5-flash-image',
-      prompt: `Design a high-impact, professional promotional flyer for the business "${input.hustleName}". 
-      Main Hook: "${input.flyerText}". 
-      ${contactInfo ? `Contact: ${contactInfo}` : ''}
-      
-      REQUIREMENTS:
-      - Visual-heavy design with MINIMAL text (maximum 10 words total).
-      - Professional, commercial advertising aesthetic.
-      - High-end photography style related to the service.
-      - Bold typography for the headline.
-      - Solid, elite color grading and studio lighting.
-      - Background should be clean and uncluttered.`,
+      prompt: [
+        { text: `Design a high-impact, professional promotional flyer for the business "${input.hustleName}". 
+        Main Hook: "${input.flyerText}". 
+        ${contactInfo ? `Contact: ${contactInfo}` : ''}
+        
+        REQUIREMENTS:
+        - Visual-heavy design with MINIMAL text (maximum 10 words total).
+        - Professional, commercial advertising aesthetic.
+        - High-end photography style related to the service.
+        - Bold typography for the headline.
+        - Solid, elite color grading and studio lighting.
+        - Background should be clean and uncluttered.` }
+      ],
       config: {
         responseModalities: ['TEXT', 'IMAGE'],
       },

@@ -1,13 +1,13 @@
 "use client";
 
 import { useAuth } from '@/hooks/use-auth';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useEffect, useState, Suspense, useTransition, useCallback, useRef } from 'react';
 import React from 'react';
-import { Sparkles, Bookmark, Check, Palette, FileText, Paintbrush, Loader, Image as ImageIcon, Rocket, Printer, Calendar as CalendarIcon, Target, TrendingUp, CircleDollarSign, Edit2, Bot, Send, User, ShoppingBag, AlertCircle } from 'lucide-react';
+import { Sparkles, Bookmark, Check, Palette, FileText, Paintbrush, Loader, Image as ImageIcon, Rocket, Printer, Calendar as CalendarIcon, Target, TrendingUp, CircleDollarSign, Bot, Send, ShoppingBag, AlertCircle } from 'lucide-react';
 import Image from 'next/image';
-import type { HustleIdea, HustleTrackerData } from '@/ai/flows/generate-hustle-ideas';
+import type { HustleIdea } from '@/ai/flows/generate-hustle-ideas';
 import type { GenerateHustleScheduleOutput } from '@/ai/flows/generate-hustle-schedule';
 import { generateFlyerAction, generateLogoAction, generateHustleBlueprintAction, generateHustleScheduleAction, generateCoachResponseAction } from '@/lib/actions';
 import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogHeader, DialogFooter } from '@/components/ui/dialog';
@@ -33,20 +33,6 @@ const STATES: Record<string, string[]> = {
     "United Kingdom": ["England", "Scotland", "Wales", "Northern Ireland"],
     "Australia": ["NSW", "VIC", "QLD", "WA", "SA", "TAS", "ACT", "NT"],
     "Other": ["International / Remote"]
-};
-
-const defaultTrackerData: HustleTrackerData = {
-    status: 'Not Started',
-    earningsGoal: 1000,
-    launchDate: null,
-    progress: 0,
-    earnings: [
-        { month: 'Week 1', earnings: 0 },
-        { month: 'Week 2', earnings: 0 },
-        { month: 'Week 3', earnings: 0 },
-        { month: 'Week 4', earnings: 0 },
-    ],
-    checkedTasks: [],
 };
 
 type Message = {
@@ -104,18 +90,8 @@ function HustleDetailContent() {
                     const parsedHustle: HustleIdeaWithExtras = JSON.parse(hustleDataStr);
                     const savedVersion = getHustleByName(parsedHustle.name);
                     const initialData = savedVersion || parsedHustle;
-
-                    const mergedTrackerData = {
-                        ...defaultTrackerData,
-                        ...initialData.trackerData,
-                    };
-
-                    setHustle({ 
-                        ...initialData, 
-                        trackerData: mergedTrackerData,
-                        coachHistory: initialData.coachHistory || [],
-                    });
-                    setNewGoal(String(mergedTrackerData.earningsGoal));
+                    setHustle({ ...initialData });
+                    setNewGoal(String(initialData.trackerData?.earningsGoal || 1000));
                     initialLoadDone.current = true;
                 } catch (error) {
                     console.error("Failed to parse hustle data", error);
@@ -131,57 +107,15 @@ function HustleDetailContent() {
         }
     }, [localUser]);
 
-    const updateAndSaveHustle = useCallback((updates: Partial<HustleIdeaWithExtras>) => {
-        setHustle(prev => {
-            if (!prev) return null;
-            return { ...prev, ...updates };
-        });
-    }, []);
-
-    const lastSaveRef = useRef<string>("");
-    useEffect(() => {
-        if (hustle && isSaved) {
-            const hustleString = JSON.stringify(hustle);
-            if (hustleString === lastSaveRef.current) return;
-            
-            const timeoutId = setTimeout(() => {
-                saveHustle(hustle);
-                lastSaveRef.current = hustleString;
-            }, 5000); 
-            return () => clearTimeout(timeoutId);
-        }
-    }, [hustle, isSaved, saveHustle]);
-
     const handleSaveToggle = () => {
         if (!hustle) return;
         if(isSaved) {
             unsaveHustle(hustle.name);
-            toast({ title: "Removed", description: "This idea has been removed from your dashboard." });
+            toast({ title: "Removed", description: "Hustle removed from your dashboard." });
         } else {
             saveHustle(hustle);
             toast({ title: "Hustle Saved", description: "This idea is now in your dashboard." });
         }
-    }
-
-    const handleUpdateGoal = () => {
-        const goalValue = parseInt(newGoal);
-        if (isNaN(goalValue)) return;
-        updateAndSaveHustle({ trackerData: { ...hustle!.trackerData!, earningsGoal: goalValue } });
-        setShowGoalModal(false);
-        toast({ title: "Goal Updated", description: `Your monthly target is now $${goalValue}.` });
-    }
-
-    const handleToggleTask = (task: string) => {
-        if (!hustle || !hustle.trackerData) return;
-        const currentTasks = hustle.trackerData.checkedTasks || [];
-        const newTasks = currentTasks.includes(task) 
-            ? currentTasks.filter(t => t !== task)
-            : [...currentTasks, task];
-        
-        const totalPossibleTasks = 28; 
-        const progress = Math.min(100, Math.round((newTasks.length / totalPossibleTasks) * 100));
-
-        updateAndSaveHustle({ trackerData: { ...hustle.trackerData, checkedTasks: newTasks, progress } });
     }
 
     const handleCoachSubmit = () => {
@@ -190,19 +124,18 @@ function HustleDetailContent() {
         const historySoFar = [...(hustle.coachHistory || []), newUserMessage];
         
         setHustle(prev => prev ? { ...prev, coachHistory: historySoFar } : null);
-        
-        const inputToProcess = coachInput;
+        const currentInput = coachInput;
         setCoachInput('');
 
         startCoachReply(async () => {
             const result = await generateCoachResponseAction({
                 hustle: { name: hustle.name, description: hustle.description },
-                userInput: inputToProcess,
+                userInput: currentInput,
                 history: historySoFar,
             });
             if (result.message === 'success' && result.data) {
                 const finalHistory = [...historySoFar, { role: 'model', content: result.data.coachResponse } as Message];
-                updateAndSaveHustle({ coachHistory: finalHistory });
+                setHustle(prev => prev ? { ...prev, coachHistory: finalHistory } : null);
             } else {
                 toast({ variant: 'destructive', title: 'Coach Offline', description: 'Sparky is busy right now.' });
             }
@@ -214,8 +147,8 @@ function HustleDetailContent() {
         startBlueprintGeneration(async () => {
             const result = await generateHustleBlueprintAction({ hustleName: hustle.name, hustleDescription: hustle.description });
             if (result.message === 'success' && result.data) {
-                updateAndSaveHustle({ ...result.data });
-                toast({ title: "Blueprint Generated", description: "Your custom business strategy is ready." });
+                setHustle(prev => prev ? { ...prev, ...result.data } : null);
+                toast({ title: "Blueprint Generated" });
             }
         });
     }
@@ -225,8 +158,8 @@ function HustleDetailContent() {
         startScheduleGeneration(async () => {
             const result = await generateHustleScheduleAction({ hustleName: hustle.name, hustleDescription: hustle.description });
             if (result.message === 'success' && result.data) {
-                updateAndSaveHustle({ schedule: result.data });
-                toast({ title: "Schedule Ready", description: "Your daily action plan has been created." });
+                setHustle(prev => prev ? { ...prev, schedule: result.data } : null);
+                toast({ title: "Schedule Ready" });
             }
         });
     }
@@ -236,7 +169,7 @@ function HustleDetailContent() {
         startLogoGeneration(async () => {
             const result = await generateLogoAction({ hustleName: hustle.name, hustleDescription: hustle.description });
             if (result.message === 'success' && result.data) {
-                updateAndSaveHustle({ logoUrl: result.data.logoUrl });
+                setHustle(prev => prev ? { ...prev, logoUrl: result.data.logoUrl } : null);
                 toast({ title: "Logo Ready" });
             }
         });
@@ -252,7 +185,7 @@ function HustleDetailContent() {
                  phone: flyerPhone
              });
              if (result.message === 'success' && result.data) {
-                 updateAndSaveHustle({ flyerUrl: result.data.flyerUrl });
+                 setHustle(prev => prev ? { ...prev, flyerUrl: result.data.flyerUrl } : null);
                  setShowFlyerContactModal(false);
                  toast({ title: "Flyer Ready" });
              }
@@ -261,15 +194,7 @@ function HustleDetailContent() {
 
     const handleSellHustle = () => {
         const currentUser = auth.currentUser;
-        if (!hustle || !currentUser || !firestore) {
-            toast({ variant: 'destructive', title: "Listing Error", description: "You must be signed in to list a venture." });
-            return;
-        }
-
-        if (missingAssets) {
-            toast({ variant: 'destructive', title: "Assets Missing", description: "Please generate a Logo and Flyer first." });
-            return;
-        }
+        if (!hustle || !currentUser || !firestore) return;
 
         const listingData = {
             hustleName: hustle.name,
@@ -292,9 +217,9 @@ function HustleDetailContent() {
 
         startListingHustle(async () => {
             const listingsRef = collection(firestore, 'marketplace_listings');
-            await addDocumentNonBlocking(listingsRef, listingData);
+            addDocumentNonBlocking(listingsRef, listingData);
             setShowSellModal(false);
-            toast({ title: "Venture Initiated!", description: "Your business is now live on the global marketplace." });
+            toast({ title: "Venture Initiated!", description: "Your business is now live on the marketplace." });
         });
     }
 
@@ -312,15 +237,14 @@ function HustleDetailContent() {
                     <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                         <Button variant="default" onClick={handleSaveToggle} className="shadow-md">
                             {isSaved ? <Check className="mr-2 h-4 w-4"/> : <Bookmark className="mr-2 h-4 w-4" />}
-                            {isSaved ? 'Saved to Dashboard' : 'Save Hustle'}
+                            {isSaved ? 'Saved' : 'Save Hustle'}
                         </Button>
                         <Button 
                             variant="outline" 
-                            onClick={() => missingAssets ? toast({ variant: 'destructive', title: "Assets Required", description: "Generate a professional Logo and Flyer first." }) : setShowSellModal(true)} 
-                            className={missingAssets ? 'opacity-50' : 'shadow-sm'}
+                            onClick={() => missingAssets ? toast({ variant: 'destructive', title: "Assets Missing", description: "Generate Logo and Flyer first." }) : setShowSellModal(true)} 
                         >
                             <ShoppingBag className="mr-2 h-4 w-4" />
-                            Sell Your Hustle
+                            Sell Hustle
                         </Button>
                     </div>
                 </div>
@@ -329,92 +253,82 @@ function HustleDetailContent() {
                     <Alert className="bg-primary/5 border-primary/20">
                         <AlertCircle className="h-4 w-4 text-primary" />
                         <AlertTitle className="font-bold">Marketplace Locked</AlertTitle>
-                        <AlertDescription>Generate your <strong>Logo</strong> and <strong>Flyer</strong> below to unlock the global marketplace.</AlertDescription>
+                        <AlertDescription>Generate your <strong>Logo</strong> and <strong>Flyer</strong> to unlock the marketplace.</AlertDescription>
                     </Alert>
                 )}
 
-                <Card className="shadow-md">
-                    <CardHeader className="flex flex-row items-center justify-between">
-                        <div><CardTitle>Strategy Blueprint</CardTitle></div>
-                        {isPremium && (
-                            <Button variant="ghost" size="sm" onClick={handleGenerateBlueprint} disabled={isGeneratingBlueprint}>
-                                {isGeneratingBlueprint ? <Loader className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
-                                {hustle.pricingTip ? 'Regenerate' : 'Generate'}
-                            </Button>
-                        )}
-                    </CardHeader>
-                    <CardContent>
-                        {!isPremium ? (
-                            <div className="text-center p-8 border-2 border-dashed rounded-xl">
-                                <h3 className="text-lg font-bold">Premium Strategy Required</h3>
-                                <Button className="mt-4" onClick={() => setPaymentModalOpen(true)}>Upgrade to Unlock Blueprint</Button>
-                            </div>
-                        ) : hustle.pricingTip ? (
-                             <div className="grid md:grid-cols-2 gap-6 text-sm">
-                                <div className="space-y-2">
-                                    <h4 className="font-bold flex items-center gap-2 text-primary"><CircleDollarSign className="h-4 w-4"/> Elite Pricing</h4>
-                                    <p className="text-muted-foreground leading-relaxed">{hustle.pricingTip}</p>
+                <div className="grid gap-6 md:grid-cols-2">
+                    <Card className="shadow-md">
+                        <CardHeader className="flex flex-row items-center justify-between">
+                            <CardTitle>Strategy</CardTitle>
+                            {isPremium && (
+                                <Button variant="ghost" size="sm" onClick={handleGenerateBlueprint} disabled={isGeneratingBlueprint}>
+                                    {isGeneratingBlueprint ? <Loader className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
+                                    {hustle.pricingTip ? 'Regenerate' : 'Generate'}
+                                </Button>
+                            )}
+                        </CardHeader>
+                        <CardContent>
+                            {!isPremium ? (
+                                <div className="text-center p-4 border-2 border-dashed rounded-xl">
+                                    <Button size="sm" onClick={() => setPaymentModalOpen(true)}>Upgrade to Unlock</Button>
                                 </div>
-                                <div className="space-y-2">
-                                    <h4 className="font-bold flex items-center gap-2 text-accent"><Target className="h-4 w-4"/> Growth Strategy</h4>
-                                    <p className="text-muted-foreground leading-relaxed">{hustle.marketingIdea}</p>
+                            ) : hustle.pricingTip ? (
+                                <div className="space-y-4 text-sm">
+                                    <div className="space-y-1">
+                                        <h4 className="font-bold text-primary flex items-center gap-2"><CircleDollarSign className="h-4 w-4"/> Pricing</h4>
+                                        <p className="text-muted-foreground">{hustle.pricingTip}</p>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <h4 className="font-bold text-accent flex items-center gap-2"><Target className="h-4 w-4"/> Marketing</h4>
+                                        <p className="text-muted-foreground">{hustle.marketingIdea}</p>
+                                    </div>
                                 </div>
-                             </div>
-                        ) : (
-                            <Button className="w-full h-12" onClick={handleGenerateBlueprint} disabled={isGeneratingBlueprint}>
-                                Generate Full Strategic Blueprint
-                            </Button>
-                        )}
-                    </CardContent>
-                </Card>
+                            ) : (
+                                <Button className="w-full" onClick={handleGenerateBlueprint} disabled={isGeneratingBlueprint}>Generate Blueprint</Button>
+                            )}
+                        </CardContent>
+                    </Card>
 
-                <Card className="border-primary/20 bg-primary/5 shadow-md">
-                    <CardHeader className="flex flex-row items-center justify-between">
-                        <CardTitle className="flex items-center gap-2"><CalendarIcon className="h-5 w-5"/> Daily Action Plan</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        {!isPremium ? (
-                            <div className="text-center py-8">
-                                <p className="text-sm text-muted-foreground mb-4">Unlock a step-by-step 4-week launch schedule with Premium.</p>
-                                <Button size="sm" onClick={() => setPaymentModalOpen(true)}>Upgrade for Plan</Button>
-                            </div>
-                        ) : hustle.schedule ? (
-                            <Accordion type="single" collapsible className="w-full space-y-2">
-                                {[1, 2, 3, 4].map((weekNum) => {
-                                    const weekKey = `week${weekNum}` as keyof GenerateHustleScheduleOutput;
-                                    const tasks = hustle.schedule![weekKey];
-                                    return (
-                                        <AccordionItem key={weekKey} value={weekKey} className="border rounded-lg bg-background px-4">
-                                            <AccordionTrigger>Week {weekNum}</AccordionTrigger>
-                                            <AccordionContent>
-                                                <div className="space-y-2 pt-2">
-                                                    {tasks.map((task, idx) => (
-                                                        <div key={idx} className="flex items-center space-x-3 bg-muted/30 p-3 rounded-lg">
-                                                            <Checkbox id={`${weekKey}-${idx}`} checked={hustle.trackerData?.checkedTasks?.includes(task)} onCheckedChange={() => handleToggleTask(task)}/>
-                                                            <label htmlFor={`${weekKey}-${idx}`} className="text-sm flex-1">{task}</label>
+                    <Card className="border-primary/20 bg-primary/5 shadow-md">
+                        <CardHeader><CardTitle className="flex items-center gap-2"><CalendarIcon className="h-5 w-5"/> Launch Plan</CardTitle></CardHeader>
+                        <CardContent>
+                            {!isPremium ? (
+                                <div className="text-center py-4">
+                                    <Button size="sm" variant="secondary" onClick={() => setPaymentModalOpen(true)}>Upgrade for Schedule</Button>
+                                </div>
+                            ) : hustle.schedule ? (
+                                <Accordion type="single" collapsible className="w-full">
+                                    {[1, 2, 3, 4].map((num) => {
+                                        const key = `week${num}` as keyof GenerateHustleScheduleOutput;
+                                        return (
+                                            <AccordionItem key={key} value={key} className="bg-background px-3 border rounded-lg mb-1">
+                                                <AccordionTrigger>Week {num}</AccordionTrigger>
+                                                <AccordionContent className="space-y-1">
+                                                    {hustle.schedule![key].map((task, i) => (
+                                                        <div key={i} className="flex items-center gap-2 text-xs p-2 bg-muted/30 rounded">
+                                                            <Checkbox id={`${key}-${i}`} />
+                                                            <label htmlFor={`${key}-${i}`}>{task}</label>
                                                         </div>
                                                     ))}
-                                                </div>
-                                            </AccordionContent>
-                                        </AccordionItem>
-                                    );
-                                })}
-                            </Accordion>
-                        ) : (
-                            <Button className="w-full h-12" onClick={handleGenerateSchedule} disabled={isGeneratingSchedule}>
-                                Generate 4-Week Launch Schedule
-                            </Button>
-                        )}
-                    </CardContent>
-                </Card>
+                                                </AccordionContent>
+                                            </AccordionItem>
+                                        );
+                                    })}
+                                </Accordion>
+                            ) : (
+                                <Button className="w-full" onClick={handleGenerateSchedule} disabled={isGeneratingSchedule}>Generate 4-Week Plan</Button>
+                            )}
+                        </CardContent>
+                    </Card>
+                </div>
 
                 <Card className="shadow-md">
-                    <CardHeader><CardTitle>Brand Assets</CardTitle></CardHeader>
-                    <CardContent className="space-y-6">
+                    <CardHeader><CardTitle>Branding Assets</CardTitle></CardHeader>
+                    <CardContent>
                         {!isPremium ? (
-                            <div className="text-center py-8 bg-muted/20 border-2 border-dashed rounded-xl">
-                                <p className="text-sm text-muted-foreground mb-4">Upgrade to generate professional agency-grade logos and flyers.</p>
-                                <Button size="sm" onClick={() => setPaymentModalOpen(true)}>Unlock Brand Assets</Button>
+                            <div className="text-center py-8 border-2 border-dashed rounded-xl">
+                                <Button size="sm" onClick={() => setPaymentModalOpen(true)}>Unlock Brand Kits</Button>
                             </div>
                         ) : (
                             <div className="grid sm:grid-cols-2 gap-6">
@@ -423,8 +337,8 @@ function HustleDetailContent() {
                                         {hustle.logoUrl ? <Image src={hustle.logoUrl} alt="Logo" fill className="object-cover" /> : <ImageIcon className="h-12 w-12 text-muted-foreground opacity-30" />}
                                         {isGeneratingLogo && <div className="absolute inset-0 bg-background/50 flex items-center justify-center"><Loader className="animate-spin text-primary" /></div>}
                                     </div>
-                                    <Button variant="outline" className="w-full h-11" onClick={handleGenerateLogo} disabled={isGeneratingLogo}>
-                                        {hustle.logoUrl ? 'Redesign Brand' : 'Generate Logo'}
+                                    <Button variant="outline" className="w-full" onClick={handleGenerateLogo} disabled={isGeneratingLogo}>
+                                        {hustle.logoUrl ? 'Redesign Logo' : 'Generate Logo'}
                                     </Button>
                                 </div>
                                 <div className="space-y-4">
@@ -432,8 +346,8 @@ function HustleDetailContent() {
                                         {hustle.flyerUrl ? <Image src={hustle.flyerUrl} alt="Flyer" fill className="object-cover" /> : <Printer className="h-12 w-12 text-muted-foreground opacity-30" />}
                                         {isGeneratingFlyer && <div className="absolute inset-0 bg-background/50 flex items-center justify-center"><Loader className="animate-spin text-primary" /></div>}
                                     </div>
-                                    <Button variant="outline" className="w-full h-11" onClick={() => setShowFlyerContactModal(true)} disabled={isGeneratingFlyer}>
-                                        {hustle.flyerUrl ? 'Update Promotion' : 'Generate Flyer'}
+                                    <Button variant="outline" className="w-full" onClick={() => setShowFlyerContactModal(true)} disabled={isGeneratingFlyer}>
+                                        {hustle.flyerUrl ? 'Update Flyer' : 'Generate Flyer'}
                                     </Button>
                                 </div>
                             </div>
@@ -441,67 +355,24 @@ function HustleDetailContent() {
                     </CardContent>
                 </Card>
 
-                <Card className="border-accent/20 shadow-md">
-                    <CardHeader className="flex flex-row items-center justify-between">
-                        <CardTitle className="flex items-center gap-2"><TrendingUp className="h-5 w-5"/> Hustle Tracker</CardTitle>
-                        {isPremium && <Button variant="ghost" size="sm" onClick={() => setShowGoalModal(true)}>Set Goal</Button>}
-                    </CardHeader>
-                    <CardContent>
-                        {!isPremium ? (
-                             <div className="bg-accent/5 rounded-lg p-10 text-center border-2 border-accent/20 border-dashed">
-                                <h3 className="text-xl font-bold">Track Your Growth</h3>
-                                <Button className="mt-6 h-12" onClick={() => setPaymentModalOpen(true)}>Upgrade to Unlock Tracker</Button>
-                            </div>
-                        ) : (
-                            <div className="grid md:grid-cols-2 gap-8">
-                                <div className="space-y-6">
-                                    <div className="space-y-2">
-                                        <div className="flex justify-between items-end">
-                                            <Label className="text-sm font-bold">Launch Readiness</Label>
-                                            <span className="text-sm font-bold text-accent">{hustle.trackerData?.progress}%</span>
-                                        </div>
-                                        <Progress value={hustle.trackerData?.progress} className="h-3" />
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="p-4 bg-muted rounded-xl border">
-                                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Monthly Goal</p>
-                                            <p className="text-2xl font-bold">${hustle.trackerData?.earningsGoal}</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="h-[200px] bg-muted/10 rounded-xl border p-4">
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <BarChart data={hustle.trackerData?.earnings}>
-                                            <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                                            <XAxis dataKey="month" hide />
-                                            <YAxis hide />
-                                            <ChartTooltip />
-                                            <Bar dataKey="earnings" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                                        </BarChart>
-                                    </ResponsiveContainer>
-                                </div>
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
-
                 <Card className="border-primary/20 bg-primary/5">
-                    <CardHeader><CardTitle className="flex items-center gap-2"><Bot className="h-5 w-5"/> AI Coaching Hub</CardTitle></CardHeader>
+                    <CardHeader><CardTitle className="flex items-center gap-2"><Bot className="h-5 w-5"/> Sparky: AI Coach</CardTitle></CardHeader>
                     <CardContent className="space-y-4">
-                        <ScrollArea className="h-[300px] border rounded-xl bg-background/50 p-4">
+                        <ScrollArea className="h-[250px] border rounded-xl bg-background/50 p-4">
                             <div className="space-y-4">
                                 {hustle.coachHistory?.map((msg, i) => (
-                                    <div key={i} className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
-                                        <div className={`p-4 rounded-2xl text-sm shadow-sm ${msg.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
+                                    <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                        <div className={`p-3 rounded-2xl text-sm max-w-[80%] ${msg.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
                                             {msg.content}
                                         </div>
                                     </div>
                                 ))}
+                                {isCoachReplying && <div className="text-xs text-muted-foreground animate-pulse">Sparky is typing...</div>}
                             </div>
                         </ScrollArea>
                         <div className="flex gap-2">
-                            <Input placeholder="Ask Sparky for advice..." value={coachInput} onChange={(e) => setCoachInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleCoachSubmit()} className="h-12 bg-background" />
-                            <Button onClick={handleCoachSubmit} disabled={isCoachReplying || !coachInput.trim()} className="h-12 w-12 rounded-xl shadow-md"><Send className="h-5 w-5" /></Button>
+                            <Input placeholder="Ask Sparky anything..." value={coachInput} onChange={(e) => setCoachInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleCoachSubmit()} />
+                            <Button onClick={handleCoachSubmit} disabled={isCoachReplying || !coachInput.trim()} size="icon"><Send className="h-4 w-4" /></Button>
                         </div>
                     </CardContent>
                 </Card>
@@ -510,52 +381,24 @@ function HustleDetailContent() {
             <Dialog open={showSellModal} onOpenChange={setShowSellModal}>
                 <DialogContent className="sm:max-w-lg">
                     <DialogHeader>
-                        <DialogTitle>Venture Launchpad</DialogTitle>
-                        <DialogDescription>List your side hustle for sale on our global marketplace.</DialogDescription>
+                        <DialogTitle>Marketplace Listing</DialogTitle>
+                        <DialogDescription>List your side hustle for sale.</DialogDescription>
                     </DialogHeader>
-                    <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto pr-2">
+                    <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto">
                         <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2"><Label>Listing Price ($)</Label><Input type="number" value={sellPrice} onChange={(e) => setSellPrice(e.target.value)} /></div>
-                            <div className="space-y-2"><Label>Work Format</Label>
+                            <div className="space-y-2"><Label>Price ($)</Label><Input type="number" value={sellPrice} onChange={(e) => setSellPrice(e.target.value)} /></div>
+                            <div className="space-y-2"><Label>Work</Label>
                                 <Select value={sellWorkFrom} onValueChange={setSellWorkFrom}>
                                     <SelectTrigger><SelectValue /></SelectTrigger>
-                                    <SelectContent><SelectItem value="Remote">Remote</SelectItem><SelectItem value="Local">Local Only</SelectItem></SelectContent>
+                                    <SelectContent><SelectItem value="Remote">Remote</SelectItem><SelectItem value="Local">Local</SelectItem></SelectContent>
                                 </Select>
                             </div>
                         </div>
-                        <div className="space-y-2"><Label>Category</Label>
-                            <Select value={sellCategory} onValueChange={setSellCategory}>
-                                <SelectTrigger><SelectValue /></SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="Creative Services">Creative Services</SelectItem>
-                                    <SelectItem value="Food & Beverage">Food & Beverage</SelectItem>
-                                    <SelectItem value="Education">Education</SelectItem>
-                                    <SelectItem value="Home Services">Home Services</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2"><Label>Country</Label>
-                                <Select value={sellCountry} onValueChange={(val) => setSellCountry(val)}>
-                                    <SelectTrigger><SelectValue /></SelectTrigger>
-                                    <SelectContent>{COUNTRIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
-                                </Select>
-                            </div>
-                            <div className="space-y-2"><Label>State / Region</Label>
-                                <Select value={sellState} onValueChange={setSellState}>
-                                    <SelectTrigger><SelectValue /></SelectTrigger>
-                                    <SelectContent>
-                                        {(STATES[sellCountry] || STATES["Other"]).map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        </div>
-                        <div className="space-y-2"><Label>Professional Pitch</Label><Textarea value={sellPitch} onChange={(e) => setSellPitch(e.target.value)} placeholder="Describe the value you bring to customers..." rows={4} /></div>
-                        <div className="space-y-2"><Label>Expertise & Experience</Label><Textarea value={sellExperience} onChange={(e) => setSellExperience(e.target.value)} placeholder="Why are you the right person for this?" /></div>
-                        <div className="space-y-2"><Label>Target Audience</Label><Textarea value={sellWhoIHelp} onChange={(e) => setSellWhoIHelp(e.target.value)} placeholder="Who exactly does this help?" /></div>
+                        <div className="space-y-2"><Label>Pitch</Label><Textarea value={sellPitch} onChange={(e) => setSellPitch(e.target.value)} rows={3} /></div>
+                        <div className="space-y-2"><Label>Experience</Label><Textarea value={sellExperience} onChange={(e) => setSellExperience(e.target.value)} /></div>
                     </div>
                     <DialogFooter>
-                        <Button className="w-full h-14 text-lg font-bold shadow-xl" onClick={handleSellHustle} disabled={isListingHustle}>{isListingHustle ? 'Launching...' : 'Launch to Marketplace'}</Button>
+                        <Button className="w-full" onClick={handleSellHustle} disabled={isListingHustle}>{isListingHustle ? 'Listing...' : 'Launch to Marketplace'}</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
@@ -566,7 +409,7 @@ function HustleDetailContent() {
 
 export default function HustleDetailPage() {
     return (
-        <Suspense fallback={<div className="container py-20 text-center"><Loader className="animate-spin h-12 w-12 mx-auto" /></div>}>
+        <Suspense fallback={<div className="container py-20 text-center"><Loader className="animate-spin h-10 w-10 mx-auto" /></div>}>
             <HustleDetailContent />
         </Suspense>
     )
