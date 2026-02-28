@@ -138,7 +138,6 @@ function HustleDetailContent() {
         });
     }, []);
 
-    // Stabilized auto-save logic to prevent infinite loops
     const lastSaveRef = useRef<string>("");
     useEffect(() => {
         if (hustle && isSaved) {
@@ -261,7 +260,6 @@ function HustleDetailContent() {
     }
 
     const handleSellHustle = () => {
-        // Critical: Ensure valid authentication before write
         const currentUser = auth.currentUser;
         if (!hustle || !currentUser || !firestore) {
             toast({ variant: 'destructive', title: "Listing Error", description: "You must be signed in to list a venture." });
@@ -294,7 +292,6 @@ function HustleDetailContent() {
 
         startListingHustle(async () => {
             const listingsRef = collection(firestore, 'marketplace_listings');
-            // Use project's standard non-blocking mutation
             await addDocumentNonBlocking(listingsRef, listingData);
             setShowSellModal(false);
             toast({ title: "Venture Initiated!", description: "Your business is now live on the global marketplace." });
@@ -574,5 +571,3 @@ export default function HustleDetailPage() {
         </Suspense>
     )
 }
-
-export const runtime = 'edge';
