@@ -1,6 +1,6 @@
 'use server';
 /**
- * @fileOverview Generates creative marketing prompts using structured AI output.
+ * @fileOverview Generates creative marketing prompts using Gemini 1.5 Flash.
  */
 
 import { ai } from '@/ai/genkit';
@@ -19,6 +19,7 @@ export type GenerateMarketingPromptsOutput = z.infer<typeof GenerateMarketingPro
 
 const marketingPromptsPrompt = ai.definePrompt({
   name: 'marketingPromptsPrompt',
+  model: 'googleai/gemini-1.5-flash',
   input: { schema: GenerateMarketingPromptsInputSchema },
   output: { schema: GenerateMarketingPromptsOutputSchema },
   prompt: `Generate exactly 3 high-conversion, creative marketing prompts for the side hustle "{{{hustleName}}}". 

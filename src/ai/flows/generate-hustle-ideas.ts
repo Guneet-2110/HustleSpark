@@ -1,6 +1,6 @@
 'use server';
 /**
- * @fileOverview Generates personalized side hustle ideas using Gemini 2.5 Flash.
+ * @fileOverview Generates personalized side hustle ideas using Gemini 1.5 Flash.
  */
 
 import { ai } from '@/ai/genkit';
@@ -47,6 +47,7 @@ export type GenerateHustleIdeasOutput = z.infer<typeof GenerateHustleIdeasOutput
 
 const ideasPrompt = ai.definePrompt({
   name: 'ideasPrompt',
+  model: 'googleai/gemini-1.5-flash',
   input: { schema: GenerateHustleIdeasInputSchema },
   output: { schema: GenerateHustleIdeasOutputSchema },
   prompt: `Generate exactly 3 creative and profitable side hustle ideas for a user.

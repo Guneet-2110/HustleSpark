@@ -1,6 +1,6 @@
 'use server';
 /**
- * @fileOverview Generates a 4-week daily action plan using Gemini 2.5 Flash.
+ * @fileOverview Generates a 4-week daily action plan using Gemini 1.5 Flash.
  */
 
 import { ai } from '@/ai/genkit';
@@ -22,6 +22,7 @@ export type GenerateHustleScheduleOutput = z.infer<typeof GenerateHustleSchedule
 
 const schedulePrompt = ai.definePrompt({
   name: 'schedulePrompt',
+  model: 'googleai/gemini-1.5-flash',
   input: { schema: GenerateHustleScheduleInputSchema },
   output: { schema: GenerateHustleScheduleOutputSchema },
   prompt: `Create a professional 4-week daily action plan to launch the side hustle "{{{hustleName}}}" ({{{hustleDescription}}}).
