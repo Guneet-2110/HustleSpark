@@ -18,22 +18,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Progress } from '@/components/ui/progress';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as ChartTooltip, ResponsiveContainer } from 'recharts';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { useFirestore, useAuth as useFirebaseInstance, addDocumentNonBlocking } from '@/firebase';
 import { collection, serverTimestamp } from 'firebase/firestore';
-
-const COUNTRIES = ["United States", "Canada", "United Kingdom", "Australia", "Other"];
-const STATES: Record<string, string[]> = {
-    "United States": ["AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA", "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD", "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ", "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY"],
-    "Canada": ["AB", "BC", "MB", "NB", "NL", "NS", "NT", "NU", "ON", "PE", "QC", "SK", "YT"],
-    "United Kingdom": ["England", "Scotland", "Wales", "Northern Ireland"],
-    "Australia": ["NSW", "VIC", "QLD", "WA", "SA", "TAS", "ACT", "NT"],
-    "Other": ["International / Remote"]
-};
 
 type Message = {
     role: 'user' | 'model';
@@ -61,10 +51,8 @@ function HustleDetailContent() {
     const [isListingHustle, startListingHustle] = useTransition();
 
     const [showFlyerContactModal, setShowFlyerContactModal] = useState(false);
-    const [showGoalModal, setShowGoalModal] = useState(false);
     const [showSellModal, setShowSellModal] = useState(false);
     
-    const [newGoal, setNewGoal] = useState('1000');
     const [flyerEmail, setFlyerEmail] = useState('');
     const [flyerPhone, setFlyerPhone] = useState('');
     const [coachInput, setCoachInput] = useState('');
@@ -91,7 +79,6 @@ function HustleDetailContent() {
                     const savedVersion = getHustleByName(parsedHustle.name);
                     const initialData = savedVersion || parsedHustle;
                     setHustle({ ...initialData });
-                    setNewGoal(String(initialData.trackerData?.earningsGoal || 1000));
                     initialLoadDone.current = true;
                 } catch (error) {
                     console.error("Failed to parse hustle data", error);
@@ -135,7 +122,9 @@ function HustleDetailContent() {
             });
             if (result.message === 'success' && result.data) {
                 const finalHistory = [...historySoFar, { role: 'model', content: result.data.coachResponse } as Message];
-                setHustle(prev => prev ? { ...prev, coachHistory: finalHistory } : null);
+                const updatedHustle = { ...hustle, coachHistory: finalHistory };
+                setHustle(updatedHustle);
+                if (isSaved) saveHustle(updatedHustle);
             } else {
                 toast({ variant: 'destructive', title: 'Coach Offline', description: 'Sparky is busy right now.' });
             }
@@ -147,7 +136,9 @@ function HustleDetailContent() {
         startBlueprintGeneration(async () => {
             const result = await generateHustleBlueprintAction({ hustleName: hustle.name, hustleDescription: hustle.description });
             if (result.message === 'success' && result.data) {
-                setHustle(prev => prev ? { ...prev, ...result.data } : null);
+                const updatedHustle = { ...hustle, ...result.data };
+                setHustle(updatedHustle);
+                if (isSaved) saveHustle(updatedHustle);
                 toast({ title: "Blueprint Generated" });
             }
         });
@@ -158,7 +149,9 @@ function HustleDetailContent() {
         startScheduleGeneration(async () => {
             const result = await generateHustleScheduleAction({ hustleName: hustle.name, hustleDescription: hustle.description });
             if (result.message === 'success' && result.data) {
-                setHustle(prev => prev ? { ...prev, schedule: result.data } : null);
+                const updatedHustle = { ...hustle, schedule: result.data };
+                setHustle(updatedHustle);
+                if (isSaved) saveHustle(updatedHustle);
                 toast({ title: "Schedule Ready" });
             }
         });
@@ -169,7 +162,9 @@ function HustleDetailContent() {
         startLogoGeneration(async () => {
             const result = await generateLogoAction({ hustleName: hustle.name, hustleDescription: hustle.description });
             if (result.message === 'success' && result.data) {
-                setHustle(prev => prev ? { ...prev, logoUrl: result.data.logoUrl } : null);
+                const updatedHustle = { ...hustle, logoUrl: result.data.logoUrl };
+                setHustle(updatedHustle);
+                if (isSaved) saveHustle(updatedHustle);
                 toast({ title: "Logo Ready" });
             }
         });
@@ -185,7 +180,9 @@ function HustleDetailContent() {
                  phone: flyerPhone
              });
              if (result.message === 'success' && result.data) {
-                 setHustle(prev => prev ? { ...prev, flyerUrl: result.data.flyerUrl } : null);
+                 const updatedHustle = { ...hustle, flyerUrl: result.data.flyerUrl };
+                 setHustle(updatedHustle);
+                 if (isSaved) saveHustle(updatedHustle);
                  setShowFlyerContactModal(false);
                  toast({ title: "Flyer Ready" });
              }
@@ -378,6 +375,30 @@ function HustleDetailContent() {
                 </Card>
             </div>
 
+            <Dialog open={showFlyerContactModal} onOpenChange={setShowFlyerContactModal}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Flyer Contact Details</DialogTitle>
+                        <DialogDescription>Add your contact info to the generated flyer.</DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                            <Label>Email</Label>
+                            <Input value={flyerEmail} onChange={(e) => setFlyerEmail(e.target.value)} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Phone (Optional)</Label>
+                            <Input value={flyerPhone} onChange={(e) => setFlyerPhone(e.target.value)} />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button className="w-full" onClick={handleGenerateFlyer} disabled={isGeneratingFlyer}>
+                            {isGeneratingFlyer ? 'Designing...' : 'Design Flyer'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
             <Dialog open={showSellModal} onOpenChange={setShowSellModal}>
                 <DialogContent className="sm:max-w-lg">
                     <DialogHeader>
@@ -396,6 +417,7 @@ function HustleDetailContent() {
                         </div>
                         <div className="space-y-2"><Label>Pitch</Label><Textarea value={sellPitch} onChange={(e) => setSellPitch(e.target.value)} rows={3} /></div>
                         <div className="space-y-2"><Label>Experience</Label><Textarea value={sellExperience} onChange={(e) => setSellExperience(e.target.value)} /></div>
+                        <div className="space-y-2"><Label>Who I Help</Label><Textarea value={sellWhoIHelp} onChange={(e) => setSellWhoIHelp(e.target.value)} /></div>
                     </div>
                     <DialogFooter>
                         <Button className="w-full" onClick={handleSellHustle} disabled={isListingHustle}>{isListingHustle ? 'Listing...' : 'Launch to Marketplace'}</Button>

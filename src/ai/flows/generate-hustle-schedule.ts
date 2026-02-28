@@ -35,19 +35,8 @@ const schedulePrompt = ai.definePrompt({
     Provide exactly 7 specific, actionable daily tasks for each of the 4 weeks.`,
 });
 
-const scheduleFlow = ai.defineFlow(
-  {
-    name: 'scheduleFlow',
-    inputSchema: GenerateHustleScheduleInputSchema,
-    outputSchema: GenerateHustleScheduleOutputSchema,
-  },
-  async (input) => {
-    const { output } = await schedulePrompt(input);
-    if (!output) throw new Error("Could not generate your launch plan. Please try again.");
-    return output;
-  }
-);
-
 export async function generateHustleSchedule(input: GenerateHustleScheduleInput): Promise<GenerateHustleScheduleOutput> {
-  return scheduleFlow(input);
+  const { output } = await schedulePrompt(input);
+  if (!output) throw new Error("Could not generate your launch plan. Please try again.");
+  return output;
 }

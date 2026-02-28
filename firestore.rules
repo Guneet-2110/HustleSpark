@@ -25,10 +25,8 @@ service cloud.firestore {
       // Publicly readable for marketplace browsing
       allow get, list: if true;
       // Must be signed in to create a listing
-      // We explicitly allow authenticated creation
       allow create: if isSignedIn();
       // Only the original creator can modify or remove their listing
-      // Note: Data must contain a userId field matching the creator's UID
       allow update, delete: if isSignedIn() && (resource.data.userId == request.auth.uid);
     }
 

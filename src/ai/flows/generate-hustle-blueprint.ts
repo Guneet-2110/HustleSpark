@@ -31,19 +31,8 @@ const blueprintPrompt = ai.definePrompt({
     3. A punchy, minimal-text headline and sub-headline for a promotional flyer.`,
 });
 
-const blueprintFlow = ai.defineFlow(
-  {
-    name: 'blueprintFlow',
-    inputSchema: GenerateHustleBlueprintInputSchema,
-    outputSchema: GenerateHustleBlueprintOutputSchema,
-  },
-  async (input) => {
-    const { output } = await blueprintPrompt(input);
-    if (!output) throw new Error("The AI strategist is busy. Please try again in a moment.");
-    return output;
-  }
-);
-
 export async function generateHustleBlueprint(input: GenerateHustleBlueprintInput): Promise<GenerateHustleBlueprintOutput> {
-  return blueprintFlow(input);
+  const { output } = await blueprintPrompt(input);
+  if (!output) throw new Error("The AI strategist is busy. Please try again in a moment.");
+  return output;
 }

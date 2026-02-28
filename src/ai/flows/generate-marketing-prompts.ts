@@ -1,10 +1,10 @@
 'use server';
 /**
- * @fileOverview Generates marketing prompts.
+ * @fileOverview Generates creative marketing prompts using structured AI output.
  */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'zod';
+import { ai } from '@/ai/genkit';
+import { z } from 'zod';
 
 const GenerateMarketingPromptsInputSchema = z.object({
   hustleName: z.string(),
@@ -17,21 +17,18 @@ const GenerateMarketingPromptsOutputSchema = z.object({
 });
 export type GenerateMarketingPromptsOutput = z.infer<typeof GenerateMarketingPromptsOutputSchema>;
 
+const marketingPromptsPrompt = ai.definePrompt({
+  name: 'marketingPromptsPrompt',
+  input: { schema: GenerateMarketingPromptsInputSchema },
+  output: { schema: GenerateMarketingPromptsOutputSchema },
+  prompt: `Generate exactly 3 high-conversion, creative marketing prompts for the side hustle "{{{hustleName}}}". 
+  Context: {{{hustleDescription}}}
+  
+  These prompts should be designed for social media (Instagram/TikTok/X) to attract initial customers.`,
+});
+
 export async function generateMarketingPrompts(input: GenerateMarketingPromptsInput): Promise<GenerateMarketingPromptsOutput> {
-  const prompt = `Generate exactly 3 creative marketing prompts for the side hustle "${input.hustleName}". 
-  These prompts should be usable on social media to attract customers.
-
-  IMPORTANT: Respond ONLY with a raw JSON object. No markdown.
-  { "marketingPrompts": ["Prompt 1", "Prompt 2", "Prompt 3"] }`;
-
-  const response = await ai.generate({ prompt });
-
-  try {
-    const text = response.text.replace(/```json|```/g, '').trim();
-    const parsed = JSON.parse(text);
-    return GenerateMarketingPromptsOutputSchema.parse(parsed);
-  } catch (error) {
-    console.error("AI Prompts Error:", response.text);
-    throw new Error("Failed to generate marketing prompts.");
-  }
+  const { output } = await marketingPromptsPrompt(input);
+  if (!output) throw new Error("Failed to generate marketing prompts. Please try again.");
+  return output;
 }
