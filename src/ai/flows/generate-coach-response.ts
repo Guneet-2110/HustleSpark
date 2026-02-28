@@ -1,6 +1,6 @@
 'use server';
 /**
- * @fileOverview A side hustle AI coach powered by Gemini 1.5 Flash.
+ * @fileOverview A side hustle AI coach powered by Gemini 1.5 Pro.
  */
 
 import { ai } from '@/ai/genkit';
@@ -28,7 +28,7 @@ export type GenerateCoachResponseOutput = z.infer<typeof GenerateCoachResponseOu
 
 const coachPrompt = ai.definePrompt({
   name: 'coachPrompt',
-  model: 'googleai/gemini-1.5-flash',
+  model: 'googleai/gemini-1.5-pro',
   input: { schema: GenerateCoachResponseInputSchema },
   output: { schema: GenerateCoachResponseOutputSchema },
   prompt: `You are Sparky, a supportive and expert AI side hustle coach. 

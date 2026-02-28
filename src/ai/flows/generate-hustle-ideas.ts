@@ -1,6 +1,6 @@
 'use server';
 /**
- * @fileOverview Generates personalized side hustle ideas using Gemini 1.5 Flash.
+ * @fileOverview Generates personalized side hustle ideas using Gemini 1.5 Pro.
  */
 
 import { ai } from '@/ai/genkit';
@@ -9,7 +9,7 @@ import { z } from 'zod';
 const HustleTrackerDataSchema = z.object({
   status: z.enum(['Not Started', 'In Progress', 'Launched']).optional().default('Not Started'),
   earningsGoal: z.number().optional().default(1000),
-  launchDate: z.date().nullable().optional().default(null),
+  launchDate: z.string().nullable().optional().default(null),
   progress: z.number().optional().default(0),
   earnings: z.array(z.object({ month: z.string(), earnings: z.number() })).optional().default([]),
   checkedTasks: z.array(z.string()).optional().default([]),
@@ -47,7 +47,7 @@ export type GenerateHustleIdeasOutput = z.infer<typeof GenerateHustleIdeasOutput
 
 const ideasPrompt = ai.definePrompt({
   name: 'ideasPrompt',
-  model: 'googleai/gemini-1.5-flash',
+  model: 'googleai/gemini-1.5-pro',
   input: { schema: GenerateHustleIdeasInputSchema },
   output: { schema: GenerateHustleIdeasOutputSchema },
   prompt: `Generate exactly 3 creative and profitable side hustle ideas for a user.
