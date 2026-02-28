@@ -1,6 +1,6 @@
 'use server';
 /**
- * @fileOverview Generates a comprehensive business blueprint using Gemini 1.5 Pro.
+ * @fileOverview Generates a comprehensive business blueprint using Gemini 1.5 Flash.
  */
 
 import { ai } from '@/ai/genkit';
@@ -21,7 +21,7 @@ export type GenerateHustleBlueprintOutput = z.infer<typeof GenerateHustleBluepri
 
 const blueprintPrompt = ai.definePrompt({
   name: 'blueprintPrompt',
-  model: 'googleai/gemini-1.5-pro',
+  model: 'googleai/gemini-1.5-flash',
   input: { schema: GenerateHustleBlueprintInputSchema },
   output: { schema: GenerateHustleBlueprintOutputSchema },
   prompt: `You are an elite business consultant. For the side hustle "{{{hustleName}}}" ({{{hustleDescription}}}), generate a strategic blueprint.
