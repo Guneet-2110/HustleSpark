@@ -1,4 +1,6 @@
 node_modules/
 .next/
 myapp.zip
-.firebase/
+.env
+.env.local
+.env*.local
