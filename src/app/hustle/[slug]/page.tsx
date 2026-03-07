@@ -27,9 +27,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { useFirestore, useAuth as useFirebaseInstance, addDocumentNonBlocking } from '@/firebase';
+import { useFirestore, useAuth as useFirebaseInstance, uploadBase64Image } from '@/firebase';
 import { collection, serverTimestamp, addDoc } from 'firebase/firestore';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type Message = {
     role: 'user' | 'model';
@@ -271,29 +270,45 @@ function HustleDetailContent() {
             return;
         }
 
-        const listingData = {
-            hustleName: hustle.name,
-            description: hustle.description,
-            pitch: sellPitch,
-            experience: sellExperience,
-            whoIHelp: sellWhoIHelp,
-            workFrom: sellWorkFrom,
-            price: parseFloat(sellPrice),
-            category: sellCategory,
-            country: sellCountry,
-            state: sellState,
-            location: `${sellState}, ${sellCountry}`,
-            paypalEmail: sellPaypal,
-            flyerUrl: hustle.flyerUrl || '', 
-            logoUrl: hustle.logoUrl || '',   
-            userId: currentUser.uid,        
-            createdAt: serverTimestamp(), 
-        };
-
         startListingHustle(async () => {
             try {
+                let flyerUrl = hustle.flyerUrl || '';
+                let logoUrl = hustle.logoUrl || '';
+
+                if (flyerUrl.startsWith('data:')) {
+                    flyerUrl = await uploadBase64Image(
+                        flyerUrl,
+                        `listings/${currentUser.uid}/flyer_${Date.now()}.png`
+                    );
+                }
+
+                if (logoUrl.startsWith('data:')) {
+                    logoUrl = await uploadBase64Image(
+                        logoUrl,
+                        `listings/${currentUser.uid}/logo_${Date.now()}.png`
+                    );
+                }
+
+                const listingData = {
+                    hustleName: hustle.name,
+                    description: hustle.description,
+                    pitch: sellPitch,
+                    experience: sellExperience,
+                    whoIHelp: sellWhoIHelp,
+                    workFrom: sellWorkFrom,
+                    price: parseFloat(sellPrice),
+                    category: sellCategory,
+                    country: sellCountry,
+                    state: sellState,
+                    location: `${sellState}, ${sellCountry}`,
+                    paypalEmail: sellPaypal,
+                    flyerUrl: flyerUrl,
+                    logoUrl: logoUrl,
+                    userId: currentUser.uid,
+                    createdAt: serverTimestamp(),
+                };
+
                 const listingsRef = collection(firestore, 'marketplace_listings');
-                // Use the core non-blocking addDoc function
                 await addDoc(listingsRef, listingData);
                 setShowSellModal(false);
                 toast({ title: "Venture Live!", description: "Your hustle is now on the marketplace." });
