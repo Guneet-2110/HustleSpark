@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo } from 'react';
@@ -8,19 +9,22 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
-import { ShoppingCart, Search, Filter, MapPin, DollarSign, Sparkles, Loader } from 'lucide-react';
+import { ShoppingCart, Search, Filter, MapPin, DollarSign, Sparkles, Loader, Trash2, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 import { MarketplaceListingCard } from '@/components/marketplace-listing-card';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { collection, getDocs, writeBatch } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
 
 export default function MarketplacePage() {
     const { isLoggedIn } = useAuth();
+    const { toast } = useToast();
     const firestore = useFirestore();
     const [searchQuery, setSearchQuery] = useState('');
     const [priceRange, setPriceRange] = useState([0, 5000]);
     const [category, setCategory] = useState('all');
     const [location, setLocation] = useState('');
+    const [isResetting, setIsResetting] = useState(false);
 
     const listingsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
@@ -47,6 +51,26 @@ export default function MarketplacePage() {
         });
     }, [rawListings, searchQuery, priceRange, category, location]);
 
+    const handleResetMarketplace = async () => {
+        if (!firestore) return;
+        if (!confirm("Are you sure? This will delete ALL listings for all users. This is a developer-only destructive action.")) return;
+        
+        setIsResetting(true);
+        try {
+            const querySnapshot = await getDocs(collection(firestore, 'marketplace_listings'));
+            const batch = writeBatch(firestore);
+            querySnapshot.forEach((doc) => {
+                batch.delete(doc.ref);
+            });
+            await batch.commit();
+            toast({ title: "Marketplace Restarted", description: "All listings have been removed." });
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: "Reset Failed", description: error.message });
+        } finally {
+            setIsResetting(false);
+        }
+    };
+
     return (
         <div className="container py-12">
             <div className="flex flex-col md:flex-row justify-between items-center gap-6 mb-12">
@@ -54,11 +78,17 @@ export default function MarketplacePage() {
                     <h1 className="text-4xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent">Venture Marketplace</h1>
                     <p className="text-muted-foreground mt-2 text-lg">Acquire ready-to-launch side hustles from our global creator community.</p>
                 </div>
-                {!isLoggedIn && (
-                    <Button asChild size="lg" className="shadow-lg active:scale-95 transition-transform">
-                        <Link href="/login?tab=signup">Post a Listing</Link>
+                <div className="flex gap-3">
+                    <Button variant="outline" size="lg" className="border-destructive/20 text-destructive hover:bg-destructive/10" onClick={handleResetMarketplace} disabled={isResetting}>
+                        {isResetting ? <Loader className="animate-spin mr-2 h-4 w-4" /> : <Trash2 className="mr-2 h-4 w-4" />}
+                        Reset Marketplace
                     </Button>
-                )}
+                    {!isLoggedIn && (
+                        <Button asChild size="lg" className="shadow-lg active:scale-95 transition-transform">
+                            <Link href="/login?tab=signup">Post a Listing</Link>
+                        </Button>
+                    )}
+                </div>
             </div>
 
             <div className="grid lg:grid-cols-4 gap-8">
@@ -139,10 +169,10 @@ export default function MarketplacePage() {
                 </Card>
 
                 <div className="lg:col-span-3">
-                    {isLoading ? (
+                    {isLoading || isResetting ? (
                         <div className="flex flex-col items-center justify-center py-32">
                             <Loader className="h-12 w-12 animate-spin text-primary mb-4" />
-                            <p className="text-muted-foreground animate-pulse font-medium">Curating the finest ventures...</p>
+                            <p className="text-muted-foreground animate-pulse font-medium">{isResetting ? 'Restarting marketplace...' : 'Curating the finest ventures...'}</p>
                         </div>
                     ) : filteredListings.length > 0 ? (
                         <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
@@ -154,7 +184,7 @@ export default function MarketplacePage() {
                         <div className="text-center py-32 border-2 border-dashed rounded-3xl bg-muted/20 border-primary/10">
                             <Sparkles className="h-16 w-16 text-primary/30 mx-auto mb-6" />
                             <h3 className="text-2xl font-bold">No ventures found</h3>
-                            <p className="text-muted-foreground mt-2 max-w-xs mx-auto">Try adjusting your search filters to discover more opportunities.</p>
+                            <p className="text-muted-foreground mt-2 max-w-xs mx-auto">Try adjusting your search filters or generate your own hustle to list it here!</p>
                         </div>
                     )}
                 </div>
