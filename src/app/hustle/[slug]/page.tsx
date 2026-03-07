@@ -266,6 +266,12 @@ function HustleDetailContent() {
 
     const handleSellHustle = () => {
         const currentUser = auth.currentUser;
+
+        console.log("Current user:", currentUser);
+        console.log("User UID:", currentUser?.uid);
+        console.log("Firestore:", firestore);
+
+
         if (!hustle || !currentUser || !firestore) return;
 
         const listingData = {

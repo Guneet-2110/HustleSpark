@@ -11,25 +11,32 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
+    // User profiles and their private subcollections
     match /users/{userId} {
       allow get, list: if isOwner(userId);
       allow create, update: if isOwner(userId);
       allow delete: if false;
 
+      // Saved hustles are private to the user
       match /saved_hustles/{savedHustleId} {
         allow read, write: if isOwner(userId);
       }
     }
 
+    // Marketplace listings: Public for browsing, protected for listing/editing
     match /marketplace_listings/{marketplaceListingId} {
       // Publicly readable for marketplace browsing
       allow get, list: if true;
+      
       // Must be signed in to create a listing
       allow create: if isSignedIn();
+      
       // Only the original creator can modify or remove their listing
+      // Note: We check request.auth.uid against the userId stored in the document
       allow update, delete: if isSignedIn() && (resource.data.userId == request.auth.uid);
     }
 
+    // Read-only collection for system-generated hustle ideas
     match /hustle_ideas/{hustleIdeaId} {
       allow get, list: if true;
       allow create, update, delete: if false;
