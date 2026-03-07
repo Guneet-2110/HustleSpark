@@ -14,6 +14,8 @@ import { z } from "zod";
 
 /**
  * Creates a marketplace listing record.
+ * This is a placeholder for real Firestore write logic which is usually 
+ * handled client-side with non-blocking updates in this prototype.
  */
 export async function createMarketplaceListingAction(input: {
     hustleName: string,
@@ -42,6 +44,9 @@ const generateHustleIdeasSchema = z.object({
   isPremium: z.string().transform(value => value === 'true'),
 });
 
+/**
+ * Action to generate personalized side hustle ideas.
+ */
 export async function generateHustleIdeasAction(prevState: any, formData: FormData) {
   try {
     const validatedFields = generateHustleIdeasSchema.safeParse({
@@ -73,6 +78,9 @@ export async function generateHustleIdeasAction(prevState: any, formData: FormDa
   }
 }
 
+/**
+ * Action to generate a professional logo.
+ */
 export async function generateLogoAction(input: {hustleName: string, hustleDescription: string}) {
     try {
         const output = await generateLogo(input);
@@ -85,6 +93,9 @@ export async function generateLogoAction(input: {hustleName: string, hustleDescr
     }
 }
 
+/**
+ * Action to generate social media marketing prompts.
+ */
 export async function generateMarketingPromptsAction(input: {hustleName: string, hustleDescription: string}) {
     try {
         const output = await generateMarketingPrompts(input);
@@ -94,6 +105,9 @@ export async function generateMarketingPromptsAction(input: {hustleName: string,
     }
 }
 
+/**
+ * Action to generate a promotional flyer.
+ */
 export async function generateFlyerAction(input: {hustleName: string, flyerText: string, email?: string, phone?:string}) {
     try {
         const output = await generateFlyer(input);
@@ -106,6 +120,9 @@ export async function generateFlyerAction(input: {hustleName: string, flyerText:
     }
 }
 
+/**
+ * Action to generate the strategic business blueprint.
+ */
 export async function generateHustleBlueprintAction(input: {hustleName: string, hustleDescription: string}) {
     try {
         const output = await generateHustleBlueprint(input);
@@ -115,6 +132,9 @@ export async function generateHustleBlueprintAction(input: {hustleName: string, 
     }
 }
 
+/**
+ * Action to generate the 4-week launch schedule.
+ */
 export async function generateHustleScheduleAction(input: {hustleName: string, hustleDescription: string}) {
     try {
         const output = await generateHustleSchedule(input);
@@ -124,6 +144,9 @@ export async function generateHustleScheduleAction(input: {hustleName: string, h
     }
 }
 
+/**
+ * Action to communicate with Sparky, the AI Hustle Coach.
+ */
 export async function generateCoachResponseAction(input: {hustle: any, userInput: string, history: any[]}) {
     try {
         const output = await generateCoachResponse(input);
