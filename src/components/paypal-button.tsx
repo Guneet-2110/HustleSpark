@@ -1,4 +1,3 @@
-
 "use client";
 
 import { PayPalButtons } from "@paypal/react-paypal-js";
@@ -8,9 +7,13 @@ import { Lock, ShieldCheck } from "lucide-react";
 interface PaypalButtonProps {
     amount: number;
     onSuccess: () => void;
+    payeeEmail?: string; // The seller's PayPal email for direct payment
 }
 
-export function PaypalButton({ amount, onSuccess }: PaypalButtonProps) {
+/**
+ * Enhanced PayPal button that supports direct routing to a seller's email.
+ */
+export function PaypalButton({ amount, onSuccess, payeeEmail }: PaypalButtonProps) {
     const { toast } = useToast();
 
     return (
@@ -26,6 +29,10 @@ export function PaypalButton({ amount, onSuccess }: PaypalButtonProps) {
                                     currency_code: "USD",
                                     value: amount.toFixed(2),
                                 },
+                                // Direct routing to the seller's PayPal account
+                                payee: payeeEmail ? {
+                                    email_address: payeeEmail
+                                } : undefined,
                             },
                         ],
                     });

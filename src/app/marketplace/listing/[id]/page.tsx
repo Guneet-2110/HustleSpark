@@ -114,12 +114,21 @@ export default function MarketplaceListingDetailPage() {
                                     <Button className="w-full h-16 text-lg font-bold">Acquire Now</Button>
                                 </DialogTrigger>
                                 <DialogContent>
-                                    <DialogHeader><DialogTitle>Secure Checkout</DialogTitle></DialogHeader>
-                                    <PaypalButton amount={total} onSuccess={() => {
-                                        setIsCheckoutOpen(false);
-                                        toast({ title: "Success!" });
-                                        router.push('/profile');
-                                    }} />
+                                    <DialogHeader>
+                                        <DialogTitle>Secure Checkout</DialogTitle>
+                                        <DialogDescription>
+                                            You are acquiring "{listing.hustleName}". Funds will be sent directly to the creator's PayPal account.
+                                        </DialogDescription>
+                                    </DialogHeader>
+                                    <PaypalButton 
+                                        amount={total} 
+                                        payeeEmail={listing.paypalEmail}
+                                        onSuccess={() => {
+                                            setIsCheckoutOpen(false);
+                                            toast({ title: "Venture Acquired!", description: "Check your profile for the full blueprint." });
+                                            router.push('/profile');
+                                        }} 
+                                    />
                                 </DialogContent>
                             </Dialog>
                         </CardContent>
