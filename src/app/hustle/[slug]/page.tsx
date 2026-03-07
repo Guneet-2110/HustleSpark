@@ -265,7 +265,7 @@ function HustleDetailContent() {
     }
 
     /**
-     * TARGET FUNCTION: handleSellHustle
+     * handleSellHustle
      * This function constructs the listing object and initiates the write to Firestore.
      */
     const handleSellHustle = () => {
