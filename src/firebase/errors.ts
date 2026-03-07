@@ -70,7 +70,7 @@ export class FirestorePermissionError extends Error {
     const requestObject: SecurityRuleRequest = {
       auth: authObject,
       method: context.operation,
-      path: `/databases/(default)/documents/${context.path}`,
+      path: `/databases/(default)/documents${context.path.startsWith('/') ? '' : '/'}${context.path}`,
       resource: context.requestResourceData ? { data: context.requestResourceData } : undefined,
     };
 
