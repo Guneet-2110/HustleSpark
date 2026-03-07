@@ -32,9 +32,12 @@ service cloud.firestore {
       // Must be signed in to create a listing
       allow create: if isSignedIn();
       
-      // Only the original creator can modify or remove their listing
-      // Note: We check request.auth.uid against the userId stored in the document
-      allow update, delete: if isSignedIn() && (resource.data.userId == request.auth.uid);
+      // Only the original creator can modify their listing
+      allow update: if isSignedIn() && (resource.data.userId == request.auth.uid);
+
+      // In this prototype, we allow signed-in users to delete listings 
+      // to support the developer-requested "Reset Marketplace" feature.
+      allow delete: if isSignedIn();
     }
 
     // Read-only collection for system-generated hustle ideas

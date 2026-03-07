@@ -40,13 +40,13 @@ export default function MarketplacePage() {
             const desc = l.description || '';
             const matchesSearch = name.toLowerCase().includes(searchQuery.toLowerCase()) || 
                                 desc.toLowerCase().includes(searchQuery.toLowerCase());
-            const matchesPrice = l.price >= priceRange[0] && l.price <= priceRange[1];
+            const matchesPrice = (l.price || 0) >= priceRange[0] && (l.price || 0) <= priceRange[1];
             const matchesCategory = category === 'all' || l.category === category;
             const matchesLocation = !location || (l.location || '').toLowerCase().includes(location.toLowerCase());
             return matchesSearch && matchesPrice && matchesCategory && matchesLocation;
         }).sort((a, b) => {
-            const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-            const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+            const dateA = a.createdAt?.seconds ? a.createdAt.seconds : 0;
+            const dateB = b.createdAt?.seconds ? b.createdAt.seconds : 0;
             return dateB - dateA;
         });
     }, [rawListings, searchQuery, priceRange, category, location]);
@@ -58,14 +58,27 @@ export default function MarketplacePage() {
         setIsResetting(true);
         try {
             const querySnapshot = await getDocs(collection(firestore, 'marketplace_listings'));
+            if (querySnapshot.empty) {
+                toast({ title: "No Listings", description: "The marketplace is already empty." });
+                setIsResetting(false);
+                return;
+            }
+
             const batch = writeBatch(firestore);
             querySnapshot.forEach((doc) => {
                 batch.delete(doc.ref);
             });
             await batch.commit();
-            toast({ title: "Marketplace Restarted", description: "All listings have been removed." });
+            toast({ title: "Marketplace Restarted", description: "All listings have been removed successfully." });
         } catch (error: any) {
-            toast({ variant: 'destructive', title: "Reset Failed", description: error.message });
+            console.error("Reset Error:", error);
+            toast({ 
+                variant: 'destructive', 
+                title: "Reset Failed", 
+                description: error.code === 'permission-denied' 
+                    ? "Permission denied. Ensure you are signed in and rules allow global deletion."
+                    : error.message || "Something went wrong." 
+            });
         } finally {
             setIsResetting(false);
         }
