@@ -70,8 +70,6 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     return () => unsubscribe();
   }, [auth]);
 
-  // Stable service references to prevent infinite loops in Firestore listeners
-  // We use the direct props to ensure they are the ones provided at the top level
   const contextValue = useMemo((): FirebaseContextState => {
     return {
       firebaseApp,
@@ -100,7 +98,7 @@ export const useFirebase = (): FirebaseServicesAndUser => {
   }
 
   if (!context.areServicesAvailable || !context.firebaseApp || !context.firestore || !context.auth) {
-    throw new Error('Firebase core services not available. Check FirebaseProvider props.');
+    throw new Error('Firebase core services not available.');
   }
 
   return {
