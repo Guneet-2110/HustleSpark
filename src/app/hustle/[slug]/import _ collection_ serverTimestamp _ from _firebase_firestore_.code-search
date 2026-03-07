@@ -1,0 +1,9 @@
+# Query: import { collection, serverTimestamp } from 'firebase/firestore';
+# ContextLines: 1
+
+1 result - 1 file
+
+src/app/hustle/[slug]/page.tsx:
+  31  import { useFirestore, useAuth as useFirebaseInstance, addDocumentNonBlocking } from '@/firebase';
+  32: import { collection, serverTimestamp, addDoc } from 'firebase/firestore';
+  33  import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";

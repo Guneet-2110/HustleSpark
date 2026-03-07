@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useAuth } from '@/hooks/use-auth';
@@ -29,7 +28,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { useFirestore, useAuth as useFirebaseInstance, addDocumentNonBlocking } from '@/firebase';
-import { collection, serverTimestamp } from 'firebase/firestore';
+import { collection, serverTimestamp, addDoc } from 'firebase/firestore';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type Message = {
@@ -264,10 +263,6 @@ function HustleDetailContent() {
         });
     }
 
-    /**
-     * handleSellHustle
-     * This function constructs the listing object and initiates the write to Firestore.
-     */
     const handleSellHustle = () => {
         const currentUser = auth.currentUser;
 
@@ -296,11 +291,22 @@ function HustleDetailContent() {
         };
 
         startListingHustle(async () => {
-            const listingsRef = collection(firestore, 'marketplace_listings');
-            // Using non-blocking update to handle permission errors gracefully via global listener
-            addDocumentNonBlocking(listingsRef, listingData);
-            setShowSellModal(false);
-            toast({ title: "Venture Initiated!", description: "Your business is now live on the marketplace." });
+            try {
+                const listingsRef = collection(firestore, 'marketplace_listings');
+                // Use the core non-blocking addDoc function
+                await addDoc(listingsRef, listingData);
+                setShowSellModal(false);
+                toast({ title: "Venture Live!", description: "Your hustle is now on the marketplace." });
+            } catch (error: any) {
+                console.error("Firestore write failed:", error);
+                toast({
+                    variant: 'destructive',
+                    title: 'Publish Failed',
+                    description: error.code === 'permission-denied'
+                        ? 'Permission denied. Make sure you are logged in.'
+                        : error.message || 'Something went wrong.',
+                });
+            }
         });
     }
 
