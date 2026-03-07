@@ -4,5 +4,6 @@ export const firebaseConfig = {
   "apiKey": "AIzaSyC_J37nrdYU4JMFpGaruh-B1o6tkfC7JYc",
   "authDomain": "hustlespark-177in.firebaseapp.com",
   "measurementId": "",
-  "messagingSenderId": "312941688319"
+  "messagingSenderId": "312941688319",
+  "storageBucket": "hustlespark-177in.firebasestorage.app"
 };
