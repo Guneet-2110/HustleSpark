@@ -3,17 +3,17 @@
 import { PayPalButtons } from "@paypal/react-paypal-js";
 import { useToast } from "@/hooks/use-toast";
 import { Lock, ShieldCheck } from "lucide-react";
+import { getFunctions, httpsCallable } from "firebase/functions";
 
 interface PaypalButtonProps {
     amount: number;
     onSuccess: () => void;
-    payeeEmail?: string; // Routes payment directly to the seller
+    payeeEmail?: string;
+    listingId?: string;
+    buyerId?: string;
 }
 
-/**
- * Enhanced PayPal button supporting direct peer-to-peer routing.
- */
-export function PaypalButton({ amount, onSuccess, payeeEmail }: PaypalButtonProps) {
+export function PaypalButton({ amount, onSuccess, payeeEmail, listingId, buyerId }: PaypalButtonProps) {
     const { toast } = useToast();
 
     return (
@@ -29,18 +29,34 @@ export function PaypalButton({ amount, onSuccess, payeeEmail }: PaypalButtonProp
                                     currency_code: "USD",
                                     value: amount.toFixed(2),
                                 },
-                                // Direct routing to the creator's PayPal account
-                                payee: payeeEmail ? {
-                                    email_address: payeeEmail
-                                } : undefined,
                             },
                         ],
                     });
                 }}
                 onApprove={(data, actions) => {
                     if (actions.order) {
-                        return actions.order.capture().then((details) => {
-                            onSuccess();
+                        return actions.order.capture().then(async (details) => {
+                            try {
+                                // Call Cloud Function to split payment
+                                const functions = getFunctions();
+                                const processPayment = httpsCallable(functions, "processMarketplacePayout");
+                                await processPayment({
+                                    sellerEmail: payeeEmail,
+                                    totalAmount: amount,
+                                    listingId: listingId,
+                                    buyerId: buyerId,
+                                });
+                                onSuccess();
+                            } catch (error: any) {
+                                console.error("Payout error:", error);
+                                toast({
+                                    variant: "destructive",
+                                    title: "Payout Error",
+                                    description: "Payment received but payout failed. Support has been notified.",
+                                });
+                                // Still call onSuccess since buyer already paid
+                                onSuccess();
+                            }
                         });
                     }
                     return Promise.reject("Order capture failed.");
