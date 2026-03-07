@@ -264,15 +264,17 @@ function HustleDetailContent() {
         });
     }
 
+    /**
+     * TARGET FUNCTION: handleSellHustle
+     * This function constructs the listing object and initiates the write to Firestore.
+     */
     const handleSellHustle = () => {
         const currentUser = auth.currentUser;
 
-        console.log("Current user:", currentUser);
-        console.log("User UID:", currentUser?.uid);
-        console.log("Firestore:", firestore);
-
-
-        if (!hustle || !currentUser || !firestore) return;
+        if (!hustle || !currentUser || !firestore) {
+            toast({ variant: 'destructive', title: 'Action Denied', description: 'You must be logged in to publish a venture.' });
+            return;
+        }
 
         const listingData = {
             hustleName: hustle.name,
@@ -295,6 +297,7 @@ function HustleDetailContent() {
 
         startListingHustle(async () => {
             const listingsRef = collection(firestore, 'marketplace_listings');
+            // Using non-blocking update to handle permission errors gracefully via global listener
             addDocumentNonBlocking(listingsRef, listingData);
             setShowSellModal(false);
             toast({ title: "Venture Initiated!", description: "Your business is now live on the marketplace." });
