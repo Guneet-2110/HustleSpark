@@ -7,11 +7,11 @@ import { Lock, ShieldCheck } from "lucide-react";
 interface PaypalButtonProps {
     amount: number;
     onSuccess: () => void;
-    payeeEmail?: string; // The seller's PayPal email for direct payment
+    payeeEmail?: string; // Routes payment directly to the seller
 }
 
 /**
- * Enhanced PayPal button that supports direct routing to a seller's email.
+ * Enhanced PayPal button supporting direct peer-to-peer routing.
  */
 export function PaypalButton({ amount, onSuccess, payeeEmail }: PaypalButtonProps) {
     const { toast } = useToast();
@@ -29,7 +29,7 @@ export function PaypalButton({ amount, onSuccess, payeeEmail }: PaypalButtonProp
                                     currency_code: "USD",
                                     value: amount.toFixed(2),
                                 },
-                                // Direct routing to the seller's PayPal account
+                                // Direct routing to the creator's PayPal account
                                 payee: payeeEmail ? {
                                     email_address: payeeEmail
                                 } : undefined,
@@ -43,14 +43,14 @@ export function PaypalButton({ amount, onSuccess, payeeEmail }: PaypalButtonProp
                             onSuccess();
                         });
                     }
-                    return Promise.reject("Actions.order is undefined");
+                    return Promise.reject("Order capture failed.");
                 }}
                 onError={(err) => {
                     console.error("PayPal Error:", err);
                     toast({
                         variant: "destructive",
-                        title: "Payment Error",
-                        description: "Could not process your PayPal payment. Please try again.",
+                        title: "Transaction Failed",
+                        description: "Payment could not be processed. Please verify your PayPal account.",
                     });
                 }}
             />
@@ -58,7 +58,7 @@ export function PaypalButton({ amount, onSuccess, payeeEmail }: PaypalButtonProp
             <div className="flex items-center justify-center gap-1.5 text-muted-foreground mt-4">
                 <Lock className="h-3 w-3" />
                 <p className="text-[10px] uppercase tracking-widest font-semibold">
-                    Secure 256-bit SSL Encryption
+                    Secure SSL Encryption
                 </p>
                 <ShieldCheck className="h-3 w-3 ml-2" />
                 <p className="text-[10px] uppercase tracking-widest font-semibold">

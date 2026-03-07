@@ -5,7 +5,7 @@ import { ReactNode } from "react";
 
 /**
  * Client-side wrapper for the PayPal Script Provider.
- * This prevents "createContext is not a function" errors in Server Components like layout.tsx.
+ * This ensures the client-id is loaded from environment variables.
  */
 const paypalInitialOptions = {
   "client-id": process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || "test",

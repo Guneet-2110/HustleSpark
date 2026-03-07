@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview Generates personalized side hustle ideas using Gemini 2.5 Flash.

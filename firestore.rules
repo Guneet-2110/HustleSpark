@@ -1,9 +1,7 @@
-
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper functions for security checks
     function isSignedIn() {
       return request.auth != null;
     }
@@ -12,35 +10,24 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    // User profiles and their private subcollections
     match /users/{userId} {
       allow get, list: if isOwner(userId);
       allow create, update: if isOwner(userId);
       allow delete: if false;
 
-      // Saved hustles are private to the user
       match /saved_hustles/{savedHustleId} {
         allow read, write: if isOwner(userId);
       }
     }
 
-    // Marketplace listings: Public for browsing, protected for listing/editing
     match /marketplace_listings/{marketplaceListingId} {
-      // Publicly readable for marketplace browsing
       allow get, list: if true;
-      
-      // Must be signed in to create a listing
       allow create: if isSignedIn();
-      
-      // Only the original creator can modify their listing
       allow update: if isSignedIn() && (resource.data.userId == request.auth.uid);
-
-      // In this prototype, we allow signed-in users to delete listings 
-      // to support the developer-requested "Reset Marketplace" feature.
+      // Developer reset capability
       allow delete: if isSignedIn();
     }
 
-    // Read-only collection for system-generated hustle ideas
     match /hustle_ideas/{hustleIdeaId} {
       allow get, list: if true;
       allow create, update, delete: if false;
