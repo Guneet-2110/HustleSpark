@@ -3,7 +3,8 @@
 import { firebaseConfig } from '@/firebase/config';
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore'
+import { getFirestore } from 'firebase/firestore';
+import { getFunctions } from 'firebase/functions';
 
 /**
  * Initializes Firebase App and core services.
@@ -13,10 +14,10 @@ export function initializeFirebase() {
   if (!getApps().length) {
     let firebaseApp;
     try {
-      firebaseApp = initializeApp();
-    } catch (e) {
-      // Fallback to config if automatic initialization fails
       firebaseApp = initializeApp(firebaseConfig);
+    } catch (e) {
+      // Fallback to automatic initialization if config is managed by environment
+      firebaseApp = initializeApp();
     }
 
     return getSdks(firebaseApp);
@@ -32,7 +33,8 @@ export function getSdks(firebaseApp: FirebaseApp) {
   return {
     firebaseApp,
     auth: getAuth(firebaseApp),
-    firestore: getFirestore(firebaseApp)
+    firestore: getFirestore(firebaseApp),
+    functions: getFunctions(firebaseApp)
   };
 }
 

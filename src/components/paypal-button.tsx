@@ -3,7 +3,8 @@
 import { PayPalButtons } from "@paypal/react-paypal-js";
 import { useToast } from "@/hooks/use-toast";
 import { Lock, ShieldCheck } from "lucide-react";
-import { getFunctions, httpsCallable } from "firebase/functions";
+import { httpsCallable } from "firebase/functions";
+import { useFirebase } from "@/firebase";
 
 interface PaypalButtonProps {
     amount: number;
@@ -15,6 +16,7 @@ interface PaypalButtonProps {
 
 export function PaypalButton({ amount, onSuccess, payeeEmail, listingId, buyerId }: PaypalButtonProps) {
     const { toast } = useToast();
+    const { functions } = useFirebase();
 
     return (
         <div className="w-full space-y-3">
@@ -29,6 +31,8 @@ export function PaypalButton({ amount, onSuccess, payeeEmail, listingId, buyerId
                                     currency_code: "USD",
                                     value: amount.toFixed(2),
                                 },
+                                // In a real PayPal production app, you might use 'payee' here
+                                // but for this prototype, splitting is handled by our Cloud Function
                             },
                         ],
                     });
@@ -37,8 +41,7 @@ export function PaypalButton({ amount, onSuccess, payeeEmail, listingId, buyerId
                     if (actions.order) {
                         return actions.order.capture().then(async (details) => {
                             try {
-                                // Call Cloud Function to split payment
-                                const functions = getFunctions();
+                                // Call Cloud Function to split payment and record transaction
                                 const processPayment = httpsCallable(functions, "processMarketplacePayout");
                                 await processPayment({
                                     sellerEmail: payeeEmail,
@@ -52,9 +55,9 @@ export function PaypalButton({ amount, onSuccess, payeeEmail, listingId, buyerId
                                 toast({
                                     variant: "destructive",
                                     title: "Payout Error",
-                                    description: "Payment received but payout failed. Support has been notified.",
+                                    description: "Payment received but payout processing failed. Support notified.",
                                 });
-                                // Still call onSuccess since buyer already paid
+                                // Still call onSuccess since buyer's primary transaction completed
                                 onSuccess();
                             }
                         });

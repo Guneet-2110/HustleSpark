@@ -121,9 +121,11 @@ export default function MarketplaceListingDetailPage() {
                                         </DialogDescription>
                                     </DialogHeader>
                                     <PaypalButton 
-                                        amount={total} 
-                                        payeeEmail={listing.paypalEmail}
-                                        onSuccess={() => {
+                                     amount={total} 
+                                      payeeEmail={listing.paypalEmail}
+                                       listingId={listingId}
+                                     buyerId={listing.userId}
+                                     onSuccess={() => {
                                             setIsCheckoutOpen(false);
                                             toast({ title: "Venture Acquired!", description: "Check your profile for the full blueprint." });
                                             router.push('/profile');
