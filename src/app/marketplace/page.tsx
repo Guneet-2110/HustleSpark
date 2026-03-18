@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useTransition } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,15 +9,19 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
-import { Search, Filter, MapPin, DollarSign, Sparkles, Loader, ShoppingCart } from 'lucide-react';
+import { Search, Filter, MapPin, DollarSign, Sparkles, Loader, ShoppingCart, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { MarketplaceListingCard } from '@/components/marketplace-listing-card';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, orderBy, query } from 'firebase/firestore';
+import { collection, orderBy, query, getDocs, deleteDoc, doc } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
 
 export default function MarketplacePage() {
     const { isLoggedIn } = useAuth();
     const firestore = useFirestore();
+    const { toast } = useToast();
+    const [isResetting, startReset] = useTransition();
+    
     const [searchQuery, setSearchQuery] = useState('');
     const [priceRange, setPriceRange] = useState([0, 5000]);
     const [category, setCategory] = useState('all');
@@ -47,6 +51,34 @@ export default function MarketplacePage() {
         });
     }, [rawListings, searchQuery, priceRange, category, location]);
 
+    const handleResetMarketplace = () => {
+        if (!firestore || !isLoggedIn) return;
+        
+        startReset(async () => {
+            try {
+                const listingsRef = collection(firestore, 'marketplace_listings');
+                const snapshot = await getDocs(listingsRef);
+                
+                const deletePromises = snapshot.docs.map(listingDoc => 
+                    deleteDoc(doc(firestore, 'marketplace_listings', listingDoc.id))
+                );
+                
+                await Promise.all(deletePromises);
+                
+                toast({
+                    title: "Marketplace Purged",
+                    description: "All ventures have been successfully removed."
+                });
+            } catch (error: any) {
+                toast({
+                    variant: "destructive",
+                    title: "Reset Failed",
+                    description: error.message || "Could not delete listings."
+                });
+            }
+        });
+    };
+
     return (
         <div className="container py-12">
             <div className="flex flex-col md:flex-row justify-between items-center gap-6 mb-12">
@@ -55,6 +87,17 @@ export default function MarketplacePage() {
                     <p className="text-muted-foreground mt-2 text-lg">Acquire ready-to-launch side hustles from our global creator community.</p>
                 </div>
                 <div className="flex gap-3">
+                    {isLoggedIn && (
+                        <Button 
+                            variant="destructive" 
+                            onClick={handleResetMarketplace} 
+                            disabled={isResetting}
+                            className="shadow-lg active:scale-95 transition-transform"
+                        >
+                            {isResetting ? <Loader className="animate-spin mr-2 h-4 w-4" /> : <Trash2 className="mr-2 h-4 w-4" />}
+                            Reset Marketplace
+                        </Button>
+                    )}
                     {!isLoggedIn && (
                         <Button asChild size="lg" className="shadow-lg active:scale-95 transition-transform">
                             <Link href="/login?tab=signup">Post a Listing</Link>
@@ -110,7 +153,7 @@ export default function MarketplacePage() {
                                 max={5000} 
                                 step={50} 
                                 value={priceRange}
-                                onValueChange={setPriceRange}
+                                onValueChange={priceRange}
                                 className="py-4"
                             />
                         </div>
