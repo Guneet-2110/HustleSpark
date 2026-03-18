@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,7 +13,7 @@ import { ShoppingCart, Search, Filter, MapPin, DollarSign, Sparkles, Loader } fr
 import Link from 'next/link';
 import { MarketplaceListingCard } from '@/components/marketplace-listing-card';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
 
 export default function MarketplacePage() {
     const { isLoggedIn } = useAuth();
@@ -29,6 +29,19 @@ export default function MarketplacePage() {
     }, [firestore]);
 
     const { data: rawListings, isLoading } = useCollection(listingsQuery);
+
+    // One-time cleanup effect to purge all listings as requested
+    useEffect(() => {
+        const purgeListings = async () => {
+            if (!firestore) return;
+            const querySnapshot = await getDocs(collection(firestore, 'marketplace_listings'));
+            querySnapshot.forEach(async (document) => {
+                await deleteDoc(doc(firestore, 'marketplace_listings', document.id));
+            });
+        };
+        // This will run once when the page loads to ensure a fresh start
+        purgeListings();
+    }, [firestore]);
 
     const filteredListings = useMemo(() => {
         if (!rawListings) return [];

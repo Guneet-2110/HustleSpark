@@ -45,7 +45,7 @@ export const AuthContext = createContext<AuthContextType | null>(null);
 
 const USERS_STORAGE_KEY = 'hustleSparkUsers';
 
-// Helper to interact with local user cache (cleared for refresh)
+// Helper to interact with local user cache
 const getUsersFromStorage = (): Record<string, UserRecord> => {
     try {
         if (typeof window === 'undefined') return {};
@@ -65,7 +65,7 @@ const saveUsersToStorage = (users: Record<string, UserRecord>) => {
 
 /**
  * AuthProvider - Manages user state and synchronization.
- * Note: localStorage is cleared on initial mount to ensure a fresh start as requested.
+ * Forced cache purge implemented for a completely fresh start.
  */
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -82,13 +82,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const userRef = useRef<User | null>(null);
   userRef.current = user;
 
-  // Clear local storage on first mount for a proper refresh
+  // Complete purge of all local storage and session data on initialization
   useEffect(() => {
     if (typeof window !== 'undefined') {
-        // Only clear if we haven't initialized yet in this session
-        if (!sessionStorage.getItem('hustleSpark_refreshed')) {
-            localStorage.removeItem(USERS_STORAGE_KEY);
-            sessionStorage.setItem('hustleSpark_refreshed', 'true');
+        if (!sessionStorage.getItem('hustleSpark_hard_refresh')) {
+            localStorage.clear();
+            sessionStorage.clear();
+            sessionStorage.setItem('hustleSpark_hard_refresh', 'true');
+            // Force a reload to ensure all states are cleared
+            window.location.reload();
         }
     }
   }, []);
