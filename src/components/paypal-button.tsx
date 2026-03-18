@@ -26,16 +26,23 @@ export function PaypalButton({ amount, onSuccess, payeeEmail, listingId, sellerI
             <PayPalButtons
                 style={{ layout: "vertical", shape: "rect", label: "pay" }}
                 createOrder={(data, actions) => {
+                    const purchaseUnit: any = {
+                        amount: {
+                            currency_code: "USD",
+                            value: amount.toFixed(2),
+                        }
+                    };
+
+                    // If a specific payee is provided, direct the payment to them
+                    if (payeeEmail) {
+                        purchaseUnit.payee = {
+                            email_address: payeeEmail
+                        };
+                    }
+
                     return actions.order.create({
                         intent: "CAPTURE",
-                        purchase_units: [
-                            {
-                                amount: {
-                                    currency_code: "USD",
-                                    value: amount.toFixed(2),
-                                },
-                            },
-                        ],
+                        purchase_units: [purchaseUnit],
                     });
                 }}
                 onApprove={(data, actions) => {
@@ -50,7 +57,7 @@ export function PaypalButton({ amount, onSuccess, payeeEmail, listingId, sellerI
                                 // Create Escrow Transaction Record
                                 await addDoc(collection(firestore, "transactions"), {
                                     buyerId: user.uid,
-                                    buyerEmail: user.email,
+                                    buyerEmail: user.email || "",
                                     sellerId: sellerId || "",
                                     sellerEmail: payeeEmail || "",
                                     listingId: listingId || "",

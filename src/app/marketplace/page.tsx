@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,11 +9,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
-import { ShoppingCart, Search, Filter, MapPin, DollarSign, Sparkles, Loader } from 'lucide-react';
+import { Search, Filter, MapPin, DollarSign, Sparkles, Loader } from 'lucide-react';
 import Link from 'next/link';
 import { MarketplaceListingCard } from '@/components/marketplace-listing-card';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
+import { collection, orderBy, query } from 'firebase/firestore';
 
 export default function MarketplacePage() {
     const { isLoggedIn } = useAuth();
@@ -25,23 +25,13 @@ export default function MarketplacePage() {
 
     const listingsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
-        return collection(firestore, 'marketplace_listings');
+        return query(
+            collection(firestore, 'marketplace_listings'),
+            orderBy('createdAt', 'desc')
+        );
     }, [firestore]);
 
     const { data: rawListings, isLoading } = useCollection(listingsQuery);
-
-    // One-time cleanup effect to purge all listings as requested
-    useEffect(() => {
-        const purgeListings = async () => {
-            if (!firestore) return;
-            const querySnapshot = await getDocs(collection(firestore, 'marketplace_listings'));
-            querySnapshot.forEach(async (document) => {
-                await deleteDoc(doc(firestore, 'marketplace_listings', document.id));
-            });
-        };
-        // This will run once when the page loads to ensure a fresh start
-        purgeListings();
-    }, [firestore]);
 
     const filteredListings = useMemo(() => {
         if (!rawListings) return [];
@@ -54,10 +44,6 @@ export default function MarketplacePage() {
             const matchesCategory = category === 'all' || l.category === category;
             const matchesLocation = !location || (l.location || '').toLowerCase().includes(location.toLowerCase());
             return matchesSearch && matchesPrice && matchesCategory && matchesLocation;
-        }).sort((a, b) => {
-            const dateA = a.createdAt?.seconds ? a.createdAt.seconds : 0;
-            const dateB = b.createdAt?.seconds ? b.createdAt.seconds : 0;
-            return dateB - dateA;
         });
     }, [rawListings, searchQuery, priceRange, category, location]);
 
