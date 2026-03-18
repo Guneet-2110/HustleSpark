@@ -1,4 +1,3 @@
-
 'use client';
 
 import { firebaseConfig } from '@/firebase/config';
@@ -12,19 +11,8 @@ import { getFunctions } from 'firebase/functions';
  * This is designed to be called once on the client.
  */
 export function initializeFirebase() {
-  if (!getApps().length) {
-    let firebaseApp;
-    try {
-      firebaseApp = initializeApp(firebaseConfig);
-    } catch (e) {
-      // Fallback to automatic initialization if config is managed by environment
-      firebaseApp = initializeApp();
-    }
-
-    return getSdks(firebaseApp);
-  }
-
-  return getSdks(getApp());
+  const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+  return getSdks(app);
 }
 
 /**

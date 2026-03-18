@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo, useTransition } from 'react';
@@ -42,7 +41,7 @@ export default function MarketplacePage() {
             );
         }
 
-        // Public query MUST be filtered by status='approved' to match security rules
+        // Public query filtered by status='approved'
         return query(
             collection(firestore, 'marketplace_listings'),
             where('status', '==', 'approved'),
