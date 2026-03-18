@@ -7,7 +7,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, ShoppingCart, Globe, Calendar, ArrowLeft, ShieldCheck, Briefcase, Target, Rocket, Check, MessageSquare } from 'lucide-react';
+import { MapPin, ArrowLeft, Rocket, Check, MessageSquare, ArrowRight, Briefcase, Target } from 'lucide-react';
 import Image from 'next/image';
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
@@ -51,7 +51,7 @@ export default function MarketplaceListingDetailPage() {
 
             toast({ 
                 title: "Venture Acquired!", 
-                description: "Communication channel opened with the creator." 
+                description: "Transaction initialized. Communication channel opened." 
             });
             router.push(`/chats/${chatId}`);
         } else {
@@ -161,14 +161,15 @@ export default function MarketplaceListingDetailPage() {
                                     <DialogHeader>
                                         <DialogTitle className="text-2xl font-black">Secure Handshake</DialogTitle>
                                         <DialogDescription className="font-medium">
-                                            You are acquiring "<span className="text-primary">{listing.hustleName}</span>". Funds will be sent directly to the creator.
+                                            You are acquiring "<span className="text-primary">{listing.hustleName}</span>". Funds will be held in escrow until delivery.
                                         </DialogDescription>
                                     </DialogHeader>
                                     <PaypalButton 
                                      amount={total} 
-                                      payeeEmail={listing.paypalEmail}
-                                       listingId={listingId}
-                                     buyerId={listing.userId}
+                                     payeeEmail={listing.paypalEmail}
+                                     listingId={listingId}
+                                     sellerId={listing.userId}
+                                     hustleName={listing.hustleName}
                                      onSuccess={handleAcquisitionSuccess} 
                                     />
                                 </DialogContent>

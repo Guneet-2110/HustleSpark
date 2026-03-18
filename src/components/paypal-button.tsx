@@ -1,22 +1,25 @@
+
 "use client";
 
 import { PayPalButtons } from "@paypal/react-paypal-js";
 import { useToast } from "@/hooks/use-toast";
 import { Lock, ShieldCheck } from "lucide-react";
-import { httpsCallable } from "firebase/functions";
-import { useFirebase } from "@/firebase";
+import { useFirestore, useUser } from "@/firebase";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 
 interface PaypalButtonProps {
     amount: number;
     onSuccess: () => void;
     payeeEmail?: string;
     listingId?: string;
-    buyerId?: string;
+    sellerId?: string;
+    hustleName?: string;
 }
 
-export function PaypalButton({ amount, onSuccess, payeeEmail, listingId, buyerId }: PaypalButtonProps) {
+export function PaypalButton({ amount, onSuccess, payeeEmail, listingId, sellerId, hustleName }: PaypalButtonProps) {
     const { toast } = useToast();
-    const { functions } = useFirebase();
+    const firestore = useFirestore();
+    const { user } = useUser();
 
     return (
         <div className="w-full space-y-3">
@@ -31,8 +34,6 @@ export function PaypalButton({ amount, onSuccess, payeeEmail, listingId, buyerId
                                     currency_code: "USD",
                                     value: amount.toFixed(2),
                                 },
-                                // In a real PayPal production app, you might use 'payee' here
-                                // but for this prototype, splitting is handled by our Cloud Function
                             },
                         ],
                     });
@@ -41,23 +42,39 @@ export function PaypalButton({ amount, onSuccess, payeeEmail, listingId, buyerId
                     if (actions.order) {
                         return actions.order.capture().then(async (details) => {
                             try {
-                                // Call Cloud Function to split payment and record transaction
-                                const processPayment = httpsCallable(functions, "processMarketplacePayout");
-                                await processPayment({
-                                    sellerEmail: payeeEmail,
-                                    totalAmount: amount,
-                                    listingId: listingId,
-                                    buyerId: buyerId,
+                                if (!firestore || !user) throw new Error("Services unavailable");
+
+                                const sellerAmount = parseFloat((amount * 0.9).toFixed(2));
+                                const platformFee = parseFloat((amount * 0.1).toFixed(2));
+
+                                // Create Escrow Transaction Record
+                                await addDoc(collection(firestore, "transactions"), {
+                                    buyerId: user.uid,
+                                    buyerEmail: user.email,
+                                    sellerId: sellerId || "",
+                                    sellerEmail: payeeEmail || "",
+                                    listingId: listingId || "",
+                                    hustleName: hustleName || "Venture Acquisition",
+                                    amount: amount,
+                                    sellerAmount: sellerAmount,
+                                    platformFee: platformFee,
+                                    status: "pending_delivery",
+                                    createdAt: serverTimestamp(),
                                 });
+
+                                toast({
+                                    title: "Payment Captured",
+                                    description: "Transaction initialized in escrow. Awaiting delivery from the creator.",
+                                });
+
                                 onSuccess();
                             } catch (error: any) {
-                                console.error("Payout error:", error);
+                                console.error("Escrow recording error:", error);
                                 toast({
                                     variant: "destructive",
-                                    title: "Payout Error",
-                                    description: "Payment received but payout processing failed. Support notified.",
+                                    title: "System Error",
+                                    description: "Payment captured but record failed. Please contact support.",
                                 });
-                                // Still call onSuccess since buyer's primary transaction completed
                                 onSuccess();
                             }
                         });

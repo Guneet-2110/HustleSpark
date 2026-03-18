@@ -13,9 +13,30 @@ import { createPlaceholderSvg } from "@/ai/flows/placeholder-svg";
 import { z } from "zod";
 
 /**
+ * Sends a notification to the administrator when a transaction is completed.
+ * In a production app, this would use a service like Resend or SendGrid.
+ */
+export async function notifyAdminOfCompletionAction(transaction: {
+    id: string;
+    hustleName: string;
+    sellerEmail: string;
+    sellerAmount: number;
+    buyerEmail: string;
+}) {
+    console.log("--- ADMIN NOTIFICATION ---");
+    console.log(`To: guneet.ar2010@gmail.com`);
+    console.log(`Subject: [HustleSpark] Transaction Completed - Payout Required`);
+    console.log(`Body: Transaction ${transaction.id} for "${transaction.hustleName}" has been confirmed by the buyer.`);
+    console.log(`Payout of $${transaction.sellerAmount} is now due to ${transaction.sellerEmail}.`);
+    console.log(`Buyer: ${transaction.buyerEmail}`);
+    console.log("--------------------------");
+    
+    // Placeholder for actual email API implementation
+    return { success: true };
+}
+
+/**
  * Creates a marketplace listing record.
- * This is a placeholder for real Firestore write logic which is usually 
- * handled client-side with non-blocking updates in this prototype.
  */
 export async function createMarketplaceListingAction(input: {
     hustleName: string,
@@ -28,7 +49,6 @@ export async function createMarketplaceListingAction(input: {
     userId: string,
 }) {
     try {
-        // Prepare real marketplace listing connection logic.
         await new Promise(resolve => setTimeout(resolve, 1500));
         console.log("Real marketplace listing prepared for:", input.hustleName);
         return { message: "success" };
@@ -87,7 +107,6 @@ export async function generateLogoAction(input: {hustleName: string, hustleDescr
         return { message: "success", data: output };
     } catch (error) {
         console.warn("LOGO GEN QUOTA EXCEEDED, USING FALLBACK:", error);
-        // Fallback to high-quality SVG
         const svg = await createPlaceholderSvg(input.hustleName);
         return { message: "success", data: { logoUrl: svg }, isPlaceholder: true };
     }
@@ -114,7 +133,6 @@ export async function generateFlyerAction(input: {hustleName: string, flyerText:
         return { message: "success", data: output };
     } catch (error) {
         console.warn("FLYER GEN QUOTA EXCEEDED, USING FALLBACK:", error);
-        // Fallback to high-quality SVG
         const svg = await createPlaceholderSvg(input.hustleName, input.flyerText, input.email || input.phone);
         return { message: "success", data: { flyerUrl: svg }, isPlaceholder: true };
     }

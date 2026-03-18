@@ -125,6 +125,24 @@
         "senderId": { "type": "string" },
         "createdAt": { "type": "string", "format": "date-time" }
       }
+    },
+    "Transaction": {
+      "title": "Transaction",
+      "type": "object",
+      "description": "Represents a financial transaction in escrow status.",
+      "properties": {
+        "buyerId": { "type": "string" },
+        "buyerEmail": { "type": "string", "format": "email" },
+        "sellerId": { "type": "string" },
+        "sellerEmail": { "type": "string", "format": "email" },
+        "listingId": { "type": "string" },
+        "hustleName": { "type": "string" },
+        "amount": { "type": "number" },
+        "sellerAmount": { "type": "number" },
+        "platformFee": { "type": "number" },
+        "status": { "type": "string", "enum": ["pending_delivery", "pending_confirmation", "completed"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      }
     }
   },
   "auth": {
@@ -157,6 +175,12 @@
         "$ref": "#/backend/entities/ChatMessage"
       },
       "description": "Individual messages in a chat."
+    },
+    "/transactions/{transactionId}": {
+      "schema": {
+        "$ref": "#/backend/entities/Transaction"
+      },
+      "description": "Escrow transactions for marketplace sales."
     }
   }
 }
