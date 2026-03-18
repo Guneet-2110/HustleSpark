@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { HustleIdea } from '@/ai/flows/generate-hustle-ideas';
@@ -44,6 +45,7 @@ export const AuthContext = createContext<AuthContextType | null>(null);
 
 const USERS_STORAGE_KEY = 'hustleSparkUsers';
 
+// Helper to interact with local user cache (cleared for refresh)
 const getUsersFromStorage = (): Record<string, UserRecord> => {
     try {
         if (typeof window === 'undefined') return {};
@@ -61,6 +63,10 @@ const saveUsersToStorage = (users: Record<string, UserRecord>) => {
     } catch (error) {}
 }
 
+/**
+ * AuthProvider - Manages user state and synchronization.
+ * Note: localStorage is cleared on initial mount to ensure a fresh start as requested.
+ */
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -75,6 +81,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   
   const userRef = useRef<User | null>(null);
   userRef.current = user;
+
+  // Clear local storage on first mount for a proper refresh
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+        // Only clear if we haven't initialized yet in this session
+        if (!sessionStorage.getItem('hustleSpark_refreshed')) {
+            localStorage.removeItem(USERS_STORAGE_KEY);
+            sessionStorage.setItem('hustleSpark_refreshed', 'true');
+        }
+    }
+  }, []);
 
   const syncStateFromUser = useCallback((userData: User | null) => {
     if (!userData) {

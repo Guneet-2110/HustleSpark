@@ -9,22 +9,19 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
-import { ShoppingCart, Search, Filter, MapPin, DollarSign, Sparkles, Loader, Trash2, AlertTriangle } from 'lucide-react';
+import { ShoppingCart, Search, Filter, MapPin, DollarSign, Sparkles, Loader } from 'lucide-react';
 import Link from 'next/link';
 import { MarketplaceListingCard } from '@/components/marketplace-listing-card';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, getDocs, writeBatch } from 'firebase/firestore';
-import { useToast } from '@/hooks/use-toast';
+import { collection } from 'firebase/firestore';
 
 export default function MarketplacePage() {
     const { isLoggedIn } = useAuth();
-    const { toast } = useToast();
     const firestore = useFirestore();
     const [searchQuery, setSearchQuery] = useState('');
     const [priceRange, setPriceRange] = useState([0, 5000]);
     const [category, setCategory] = useState('all');
     const [location, setLocation] = useState('');
-    const [isResetting, setIsResetting] = useState(false);
 
     const listingsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
@@ -51,39 +48,6 @@ export default function MarketplacePage() {
         });
     }, [rawListings, searchQuery, priceRange, category, location]);
 
-    const handleResetMarketplace = async () => {
-        if (!firestore) return;
-        if (!confirm("Are you sure? This will delete ALL listings for all users. This is a developer-only destructive action.")) return;
-        
-        setIsResetting(true);
-        try {
-            const querySnapshot = await getDocs(collection(firestore, 'marketplace_listings'));
-            if (querySnapshot.empty) {
-                toast({ title: "No Listings", description: "The marketplace is already empty." });
-                setIsResetting(false);
-                return;
-            }
-
-            const batch = writeBatch(firestore);
-            querySnapshot.forEach((doc) => {
-                batch.delete(doc.ref);
-            });
-            await batch.commit();
-            toast({ title: "Marketplace Restarted", description: "All listings have been removed successfully." });
-        } catch (error: any) {
-            console.error("Reset Error:", error);
-            toast({ 
-                variant: 'destructive', 
-                title: "Reset Failed", 
-                description: error.code === 'permission-denied' 
-                    ? "Permission denied. Ensure you are signed in and rules allow global deletion."
-                    : error.message || "Something went wrong." 
-            });
-        } finally {
-            setIsResetting(false);
-        }
-    };
-
     return (
         <div className="container py-12">
             <div className="flex flex-col md:flex-row justify-between items-center gap-6 mb-12">
@@ -92,10 +56,6 @@ export default function MarketplacePage() {
                     <p className="text-muted-foreground mt-2 text-lg">Acquire ready-to-launch side hustles from our global creator community.</p>
                 </div>
                 <div className="flex gap-3">
-                    <Button variant="outline" size="lg" className="border-destructive/20 text-destructive hover:bg-destructive/10" onClick={handleResetMarketplace} disabled={isResetting}>
-                        {isResetting ? <Loader className="animate-spin mr-2 h-4 w-4" /> : <Trash2 className="mr-2 h-4 w-4" />}
-                        Reset Marketplace
-                    </Button>
                     {!isLoggedIn && (
                         <Button asChild size="lg" className="shadow-lg active:scale-95 transition-transform">
                             <Link href="/login?tab=signup">Post a Listing</Link>
@@ -182,10 +142,10 @@ export default function MarketplacePage() {
                 </Card>
 
                 <div className="lg:col-span-3">
-                    {isLoading || isResetting ? (
+                    {isLoading ? (
                         <div className="flex flex-col items-center justify-center py-32">
                             <Loader className="h-12 w-12 animate-spin text-primary mb-4" />
-                            <p className="text-muted-foreground animate-pulse font-medium">{isResetting ? 'Restarting marketplace...' : 'Curating the finest ventures...'}</p>
+                            <p className="text-muted-foreground animate-pulse font-medium">Curating the finest ventures...</p>
                         </div>
                     ) : filteredListings.length > 0 ? (
                         <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
