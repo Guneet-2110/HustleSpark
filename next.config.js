@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Forced refresh to resolve build chunk errors
   typescript: {
     ignoreBuildErrors: true,
   },

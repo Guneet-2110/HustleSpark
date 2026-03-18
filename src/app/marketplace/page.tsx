@@ -17,7 +17,7 @@ import { collection, orderBy, query, getDocs, deleteDoc, doc } from 'firebase/fi
 import { useToast } from '@/hooks/use-toast';
 
 export default function MarketplacePage() {
-    const { isLoggedIn } = useAuth();
+    const { isLoggedIn, user } = useAuth();
     const firestore = useFirestore();
     const { toast } = useToast();
     const [isResetting, startReset] = useTransition();
@@ -26,6 +26,8 @@ export default function MarketplacePage() {
     const [priceRange, setPriceRange] = useState([0, 5000]);
     const [category, setCategory] = useState('all');
     const [location, setLocation] = useState('');
+
+    const isDeveloper = user?.email === 'guneet.ar2010@gmail.com';
 
     const listingsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
@@ -52,8 +54,14 @@ export default function MarketplacePage() {
     }, [rawListings, searchQuery, priceRange, category, location]);
 
     const handleResetMarketplace = () => {
-        if (!firestore || !isLoggedIn) return;
+        if (!firestore || !isDeveloper) return;
         
+        const password = window.prompt("Enter Developer Password to Purge Marketplace:");
+        if (password !== '0wNERGun##t') {
+            toast({ variant: "destructive", title: "Access Denied", description: "Incorrect developer password." });
+            return;
+        }
+
         startReset(async () => {
             try {
                 const listingsRef = collection(firestore, 'marketplace_listings');
@@ -87,7 +95,7 @@ export default function MarketplacePage() {
                     <p className="text-muted-foreground mt-2 text-lg">Acquire ready-to-launch side hustles from our global creator community.</p>
                 </div>
                 <div className="flex gap-3">
-                    {isLoggedIn && (
+                    {isDeveloper && (
                         <Button 
                             variant="destructive" 
                             onClick={handleResetMarketplace} 
@@ -95,7 +103,7 @@ export default function MarketplacePage() {
                             className="shadow-lg active:scale-95 transition-transform"
                         >
                             {isResetting ? <Loader className="animate-spin mr-2 h-4 w-4" /> : <Trash2 className="mr-2 h-4 w-4" />}
-                            Reset Marketplace
+                            Reset Marketplace (Dev Only)
                         </Button>
                     )}
                     {!isLoggedIn && (
@@ -153,7 +161,7 @@ export default function MarketplacePage() {
                                 max={5000} 
                                 step={50} 
                                 value={priceRange}
-                                onValueChange={priceRange}
+                                onValueChange={setPriceRange}
                                 className="py-4"
                             />
                         </div>

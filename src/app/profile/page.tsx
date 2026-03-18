@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, Suspense } from "react";
-import { Star, List, ArrowRight, LayoutDashboard, Clock, Trash2, MessageSquare, Briefcase, Package, ShieldCheck, CheckCircle2 } from "lucide-react";
+import { Star, List, ArrowRight, LayoutDashboard, Clock, Trash2, MessageSquare, Briefcase, Package, ShieldCheck, CheckCircle2, ShieldAlert } from "lucide-react";
 import { slugify } from "@/lib/utils";
 import { HustleGenerator } from "@/components/hustle-generator";
 import type { HustleIdea } from "@/ai/flows/generate-hustle-ideas";
@@ -49,6 +49,8 @@ function ProfilePageContent() {
   const router = useRouter();
   const { toast } = useToast();
   const [timeLeft, setTimeLeft] = useState(calculateTimeLeft(localUser?.premiumExpiresAt));
+
+  const isDeveloper = localUser?.email === 'guneet.ar2010@gmail.com';
 
   useEffect(() => {
     if (!isLoggedIn) {
@@ -141,21 +143,39 @@ function ProfilePageContent() {
     setPaymentModalOpen(true);
   }
 
+  const handleFreePremiumClick = () => {
+    upgradeToPremium(365);
+    toast({ title: "Dev Mode: Activated", description: "1 year of premium added to your account." });
+  }
+
   if (!isLoggedIn || !localUser) {
     return <div className="container py-12"><Skeleton className="h-9 w-1/2" /><Skeleton className="h-5 w-1/3 mt-2" /></div>;
   }
 
   return (
     <div className="container py-12">
-        <div className="mb-12">
-            <h1 className="text-4xl font-black tracking-tight">Venture Dashboard</h1>
-            {isPremium && timeLeft.total > 0 ? (
-                 <div className="mt-4 inline-flex items-center gap-x-2 rounded-full bg-primary/10 border border-primary/20 px-4 py-2 text-sm font-medium">
-                    <Clock className="h-5 w-5 text-primary animate-pulse" />
-                    <span>Premium access: <span className="font-mono font-bold text-primary">{timeLeft.days}d {timeLeft.hours}h {timeLeft.minutes}m</span></span>
-                </div>
-            ) : (
-                <p className="text-muted-foreground mt-2 font-medium">Welcome back, {localUser.email}</p>
+        <div className="mb-12 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+            <div>
+                <h1 className="text-4xl font-black tracking-tight">Venture Dashboard</h1>
+                {isPremium && timeLeft.total > 0 ? (
+                     <div className="mt-4 inline-flex items-center gap-x-2 rounded-full bg-primary/10 border border-primary/20 px-4 py-2 text-sm font-medium">
+                        <Clock className="h-5 w-5 text-primary animate-pulse" />
+                        <span>Premium access: <span className="font-mono font-bold text-primary">{timeLeft.days}d {timeLeft.hours}h {timeLeft.minutes}m</span></span>
+                    </div>
+                ) : (
+                    <p className="text-muted-foreground mt-2 font-medium">Welcome back, {localUser.email}</p>
+                )}
+            </div>
+
+            {isDeveloper && (
+                <Button 
+                    variant="outline" 
+                    onClick={handleFreePremiumClick}
+                    className="border-primary/50 text-primary hover:bg-primary/5 rounded-2xl h-12 px-6 font-black"
+                >
+                    <ShieldAlert className="mr-2 h-5 w-5" />
+                    Activate Free Premium
+                </Button>
             )}
         </div>
 
