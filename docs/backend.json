@@ -61,6 +61,9 @@
         "state": {
           "type": "string"
         },
+        "city": {
+          "type": "string"
+        },
         "flyerUrl": {
           "type": "string",
           "format": "uri"
@@ -89,6 +92,11 @@
           "type": "string",
           "format": "email"
         },
+        "status": {
+          "type": "string",
+          "enum": ["pending_approval", "approved", "rejected"],
+          "default": "pending_approval"
+        },
         "createdAt": {
           "type": "string",
           "format": "date-time"
@@ -102,7 +110,8 @@
         "paypalEmail",
         "category",
         "country",
-        "state"
+        "state",
+        "city"
       ]
     },
     "Chat": {

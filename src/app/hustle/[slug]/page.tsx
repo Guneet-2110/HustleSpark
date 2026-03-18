@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useAuth } from '@/hooks/use-auth';
@@ -9,7 +10,7 @@ import {
     Sparkles, Bookmark, Check, Palette, FileText, Paintbrush, Loader, 
     Image as ImageIcon, Rocket, Printer, Calendar as CalendarIcon, 
     Target, TrendingUp, CircleDollarSign, Bot, Send, ShoppingBag, 
-    AlertCircle, LayoutDashboard, LineChart, CheckSquare, Settings2, Download
+    AlertCircle, LayoutDashboard, LineChart, CheckSquare, Settings2, Download, Eye
 } from 'lucide-react';
 import Image from 'next/image';
 import type { HustleIdea } from '@/ai/flows/generate-hustle-ideas';
@@ -72,6 +73,7 @@ function HustleDetailContent() {
     const [sellCategory, setSellCategory] = useState('Creative Services');
     const [sellCountry, setSellCountry] = useState('United States');
     const [sellState, setSellState] = useState('TX');
+    const [sellCity, setSellCity] = useState('');
     const [sellPaypal, setSellPaypal] = useState('');
     const [sellPitch, setSellPitch] = useState('');
     const [sellExperience, setSellExperience] = useState('');
@@ -102,9 +104,18 @@ function HustleDetailContent() {
         }
     }, [getHustleByName]); 
 
+    // Auto-fill form fields when sell modal opens
+    useEffect(() => {
+        if (showSellModal && hustle) {
+            if (!sellPitch) setSellPitch(hustle.description || '');
+            if (!sellExperience) setSellExperience(`Expertise in ${hustle.name}. Generated via HustleSpark AI Blueprint.`);
+            if (!sellWhoIHelp) setSellWhoIHelp(hustle.marketingIdea || 'Individuals looking for premium creative services.');
+            if (!sellPaypal && localUser?.email) setSellPaypal(localUser.email);
+        }
+    }, [showSellModal, hustle, localUser]);
+
     useEffect(() => {
         if (localUser?.email) {
-            setSellPaypal(localUser.email);
             setFlyerEmail(localUser.email);
         }
     }, [localUser]);
@@ -270,6 +281,11 @@ function HustleDetailContent() {
             return;
         }
 
+        if (!sellCity) {
+            toast({ variant: 'destructive', title: 'Location Required', description: 'Please provide a city for your listing.' });
+            return;
+        }
+
         startListingHustle(async () => {
             try {
                 let flyerUrl = hustle.flyerUrl || '';
@@ -300,18 +316,32 @@ function HustleDetailContent() {
                     category: sellCategory,
                     country: sellCountry,
                     state: sellState,
-                    location: `${sellState}, ${sellCountry}`,
+                    city: sellCity,
+                    location: `${sellCity}, ${sellState}, ${sellCountry}`,
                     paypalEmail: sellPaypal,
                     flyerUrl: flyerUrl,
                     logoUrl: logoUrl,
                     userId: currentUser.uid,
+                    status: 'pending_approval',
                     createdAt: serverTimestamp(),
                 };
 
                 const listingsRef = collection(firestore, 'marketplace_listings');
                 await addDoc(listingsRef, listingData);
+                
                 setShowSellModal(false);
-                toast({ title: "Venture Live!", description: "Your hustle is now on the marketplace." });
+                toast({ 
+                    title: "Submission Received!", 
+                    description: "Your venture is now in the approval queue. Admin will review it shortly." 
+                });
+                
+                // Simulated admin notification
+                console.log("--- APPROVAL REQUEST ---");
+                console.log(`From: ${currentUser.email}`);
+                console.log(`Venture: ${hustle.name}`);
+                console.log(`Reviewer: guneet.ar2010@gmail.com`);
+                console.log("--------------------------");
+
             } catch (error: any) {
                 console.error("Firestore write failed:", error);
                 toast({
@@ -669,12 +699,12 @@ function HustleDetailContent() {
             </Dialog>
 
             <Dialog open={showSellModal} onOpenChange={setShowSellModal}>
-                <DialogContent className="sm:max-w-lg rounded-[2.5rem]">
+                <DialogContent className="sm:max-w-2xl rounded-[2.5rem]">
                     <DialogHeader>
                         <DialogTitle className="text-2xl font-black">Marketplace Launchpad</DialogTitle>
-                        <DialogDescription>List your proven side hustle strategy for sale to the global community.</DialogDescription>
+                        <DialogDescription>AI has pre-filled your strategy. Review and submit for admin approval.</DialogDescription>
                     </DialogHeader>
-                    <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto px-1">
+                    <div className="space-y-6 py-4 max-h-[60vh] overflow-y-auto px-1">
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2"><Label className="font-bold">Sale Price ($)</Label><Input type="number" className="h-12 rounded-xl font-bold" value={sellPrice} onChange={(e) => setSellPrice(e.target.value)} /></div>
                             <div className="space-y-2"><Label className="font-bold">Operation</Label>
@@ -684,12 +714,36 @@ function HustleDetailContent() {
                                 </Select>
                             </div>
                         </div>
-                        <div className="space-y-2"><Label className="font-bold">The Pitch</Label><Textarea className="rounded-xl min-h-[100px]" placeholder="Why should someone buy this business?" value={sellPitch} onChange={(e) => setSellPitch(e.target.value)} /></div>
+
+                        <div className="grid grid-cols-3 gap-4">
+                             <div className="space-y-2"><Label className="font-bold">Country</Label><Input className="h-12 rounded-xl" value={sellCountry} onChange={(e) => setSellCountry(e.target.value)} /></div>
+                             <div className="space-y-2"><Label className="font-bold">State/Prov</Label><Input className="h-12 rounded-xl" value={sellState} onChange={(e) => setSellState(e.target.value)} /></div>
+                             <div className="space-y-2"><Label className="font-bold text-primary">City*</Label><Input className="h-12 rounded-xl border-primary/50" placeholder="e.g., Austin" value={sellCity} onChange={(e) => setSellCity(e.target.value)} /></div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label className="font-bold flex items-center gap-2"><Sparkles className="h-4 w-4 text-primary" /> The AI Pitch</Label>
+                            <Textarea className="rounded-xl min-h-[100px]" placeholder="Why should someone buy this business?" value={sellPitch} onChange={(e) => setSellPitch(e.target.value)} />
+                        </div>
                         <div className="space-y-2"><Label className="font-bold">Your Success Path</Label><Textarea className="rounded-xl" placeholder="Describe your experience with this hustle..." value={sellExperience} onChange={(e) => setSellExperience(e.target.value)} /></div>
                         <div className="space-y-2"><Label className="font-bold">Target Buyer</Label><Textarea className="rounded-xl" placeholder="Who is this business ideal for?" value={sellWhoIHelp} onChange={(e) => setSellWhoIHelp(e.target.value)} /></div>
+                        
+                        <div className="pt-4 border-t space-y-4">
+                             <Label className="font-bold flex items-center gap-2"><Eye className="h-4 w-4 text-muted-foreground" /> Asset Preview</Label>
+                             <div className="grid grid-cols-2 gap-4">
+                                  <div className="aspect-square relative rounded-2xl overflow-hidden border bg-muted">
+                                       {hustle.logoUrl && <Image src={hustle.logoUrl} alt="Logo" fill className="object-cover" />}
+                                       <div className="absolute bottom-2 left-2 bg-black/60 text-[8px] text-white px-2 py-0.5 rounded-full">LOGO</div>
+                                  </div>
+                                  <div className="aspect-square relative rounded-2xl overflow-hidden border bg-muted">
+                                       {hustle.flyerUrl && <Image src={hustle.flyerUrl} alt="Flyer" fill className="object-cover" />}
+                                       <div className="absolute bottom-2 left-2 bg-black/60 text-[8px] text-white px-2 py-0.5 rounded-full">FLYER</div>
+                                  </div>
+                             </div>
+                        </div>
                     </div>
                     <DialogFooter className="pt-4">
-                        <Button className="w-full h-14 rounded-2xl font-black text-xl shadow-xl" onClick={handleSellHustle} disabled={isListingHustle}>{isListingHustle ? 'Syncing...' : 'Publish to Marketplace'}</Button>
+                        <Button className="w-full h-14 rounded-2xl font-black text-xl shadow-xl bg-primary hover:bg-primary/90" onClick={handleSellHustle} disabled={isListingHustle}>{isListingHustle ? 'Syncing...' : 'Submit for Review'}</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

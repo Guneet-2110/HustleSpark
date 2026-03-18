@@ -9,12 +9,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
-import { Search, Filter, MapPin, DollarSign, Sparkles, Loader, ShoppingCart, Trash2 } from 'lucide-react';
+import { Search, Filter, MapPin, DollarSign, Sparkles, Loader, ShoppingCart, Trash2, ShieldCheck, Clock } from 'lucide-react';
 import Link from 'next/link';
 import { MarketplaceListingCard } from '@/components/marketplace-listing-card';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, orderBy, query, getDocs, deleteDoc, doc } from 'firebase/firestore';
+import { collection, orderBy, query, getDocs, deleteDoc, doc, where } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
+import { Badge } from '@/components/ui/badge';
 
 export default function MarketplacePage() {
     const { isLoggedIn, user } = useAuth();
@@ -31,11 +32,21 @@ export default function MarketplacePage() {
 
     const listingsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
+        
+        // Admin sees everything. Public sees only approved.
+        if (isDeveloper) {
+            return query(
+                collection(firestore, 'marketplace_listings'),
+                orderBy('createdAt', 'desc')
+            );
+        }
+
         return query(
             collection(firestore, 'marketplace_listings'),
+            where('status', '==', 'approved'),
             orderBy('createdAt', 'desc')
         );
-    }, [firestore]);
+    }, [firestore, isDeveloper]);
 
     const { data: rawListings, isLoading } = useCollection(listingsQuery);
 
@@ -96,15 +107,20 @@ export default function MarketplacePage() {
                 </div>
                 <div className="flex gap-3">
                     {isDeveloper && (
-                        <Button 
-                            variant="destructive" 
-                            onClick={handleResetMarketplace} 
-                            disabled={isResetting}
-                            className="shadow-lg active:scale-95 transition-transform"
-                        >
-                            {isResetting ? <Loader className="animate-spin mr-2 h-4 w-4" /> : <Trash2 className="mr-2 h-4 w-4" />}
-                            Reset Marketplace (Dev Only)
-                        </Button>
+                        <div className="flex gap-2">
+                             <Badge variant="outline" className="h-10 px-4 rounded-xl border-primary/30 text-primary font-bold bg-primary/5 flex items-center gap-2">
+                                <ShieldCheck className="h-4 w-4" /> Admin Console Active
+                             </Badge>
+                            <Button 
+                                variant="destructive" 
+                                onClick={handleResetMarketplace} 
+                                disabled={isResetting}
+                                className="shadow-lg active:scale-95 transition-transform h-10 rounded-xl"
+                            >
+                                {isResetting ? <Loader className="animate-spin mr-2 h-4 w-4" /> : <Trash2 className="mr-2 h-4 w-4" />}
+                                Reset
+                            </Button>
+                        </div>
                     )}
                     {!isLoggedIn && (
                         <Button asChild size="lg" className="shadow-lg active:scale-95 transition-transform">
@@ -113,6 +129,16 @@ export default function MarketplacePage() {
                     )}
                 </div>
             </div>
+
+            {isDeveloper && rawListings && rawListings.some(l => l.status === 'pending_approval') && (
+                <Alert className="mb-8 border-primary/50 bg-primary/5 rounded-[2rem]">
+                    <Clock className="h-5 w-5 text-primary" />
+                    <AlertTitle className="font-bold">Pending Approvals</AlertTitle>
+                    <AlertDescription>
+                        There are ventures awaiting your review. Check the listings below marked as "Pending Review".
+                    </AlertDescription>
+                </Alert>
+            )}
 
             <div className="grid lg:grid-cols-4 gap-8">
                 <Card className="lg:col-span-1 h-fit sticky top-20 border-primary/10">
@@ -200,7 +226,14 @@ export default function MarketplacePage() {
                     ) : filteredListings.length > 0 ? (
                         <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
                             {filteredListings.map(listing => (
-                                <MarketplaceListingCard key={listing.id} listing={listing as any} />
+                                <div key={listing.id} className="relative group">
+                                    {isDeveloper && listing.status === 'pending_approval' && (
+                                        <Badge className="absolute top-2 left-2 z-10 bg-orange-500 text-white border-none shadow-xl animate-pulse">
+                                            Pending Review
+                                        </Badge>
+                                    )}
+                                    <MarketplaceListingCard listing={listing as any} />
+                                </div>
                             ))}
                         </div>
                     ) : (
