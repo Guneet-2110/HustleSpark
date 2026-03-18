@@ -16,6 +16,7 @@ import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, orderBy, query, getDocs, deleteDoc, doc, where } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
 export default function MarketplacePage() {
     const { isLoggedIn, user } = useAuth();
@@ -41,6 +42,7 @@ export default function MarketplacePage() {
             );
         }
 
+        // Public query MUST be filtered by status='approved' to match security rules
         return query(
             collection(firestore, 'marketplace_listings'),
             where('status', '==', 'approved'),

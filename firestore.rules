@@ -26,9 +26,12 @@ service cloud.firestore {
     }
 
     match /marketplace_listings/{marketplaceListingId} {
-      // Public can only see approved listings. Admin can see all.
-      allow list: if isAdmin() || resource.data.status == 'approved';
-      allow get: if isAdmin() || resource.data.status == 'approved' || (isSignedIn() && resource.data.userId == request.auth.uid);
+      // Explicitly allow public listing of approved items
+      // Rules act as filters for queries.
+      allow list: if resource.data.status == 'approved' || isAdmin();
+      
+      // Allow reading specific documents if approved, or if the user is an admin or the owner.
+      allow get: if resource.data.status == 'approved' || isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
       
       allow create: if isSignedIn();
       allow update: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
