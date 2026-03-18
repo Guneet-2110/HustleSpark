@@ -1,3 +1,4 @@
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -24,8 +25,17 @@ service cloud.firestore {
       allow get, list: if true;
       allow create: if isSignedIn();
       allow update: if isSignedIn() && (resource.data.userId == request.auth.uid);
-      // Developer reset capability
       allow delete: if isSignedIn();
+    }
+
+    match /chats/{chatId} {
+      allow read, write: if isSignedIn() && (request.auth.uid == resource.data.buyerId || request.auth.uid == resource.data.sellerId);
+      allow create: if isSignedIn();
+
+      match /messages/{messageId} {
+        allow read: if isSignedIn() && (request.auth.uid == get(/databases/$(database)/documents/chats/$(chatId)).data.buyerId || request.auth.uid == get(/databases/$(database)/documents/chats/$(chatId)).data.sellerId);
+        allow create: if isSignedIn() && (request.auth.uid == get(/databases/$(database)/documents/chats/$(chatId)).data.buyerId || request.auth.uid == get(/databases/$(database)/documents/chats/$(chatId)).data.sellerId);
+      }
     }
 
     match /hustle_ideas/{hustleIdeaId} {

@@ -104,6 +104,27 @@
         "country",
         "state"
       ]
+    },
+    "Chat": {
+      "title": "Chat",
+      "type": "object",
+      "properties": {
+        "listingId": { "type": "string" },
+        "hustleName": { "type": "string" },
+        "buyerId": { "type": "string" },
+        "sellerId": { "type": "string" },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "lastMessage": { "type": "string" }
+      }
+    },
+    "ChatMessage": {
+      "title": "ChatMessage",
+      "type": "object",
+      "properties": {
+        "text": { "type": "string" },
+        "senderId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      }
     }
   },
   "auth": {
@@ -124,6 +145,18 @@
         "$ref": "#/backend/entities/MarketplaceListing"
       },
       "description": "Publicly accessible marketplace listings."
+    },
+    "/chats/{chatId}": {
+      "schema": {
+        "$ref": "#/backend/entities/Chat"
+      },
+      "description": "Conversations between buyers and sellers."
+    },
+    "/chats/{chatId}/messages/{messageId}": {
+      "schema": {
+        "$ref": "#/backend/entities/ChatMessage"
+      },
+      "description": "Individual messages in a chat."
     }
   }
 }
