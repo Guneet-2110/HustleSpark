@@ -4,11 +4,11 @@ import Link from 'next/link';
 import { Button } from './ui/button';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
-import { Sparkles, User, LogOut, Rocket, Store, Clock } from 'lucide-react';
+import { Sparkles, User, LogOut, Rocket, Store, Clock, CreditCard } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 
 export function Header() {
-  const { isLoggedIn, logout, user, isPremium, hasUnsavedChanges, setHasUnsavedChanges } = useAuth();
+  const { isLoggedIn, logout, user, isPremium, hasUnsavedChanges, setHasUnsavedChanges, setPaymentModalOpen } = useAuth();
   const router = useRouter();
   const [timeLeft, setTimeLeft] = useState<{days:number, hours:number, minutes:number, seconds:number, total:number} | null>(null);
 
@@ -73,6 +73,15 @@ export function Header() {
         <div className="flex items-center justify-end space-x-2">
           {isLoggedIn ? (
             <>
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => setPaymentModalOpen(true)}
+                className="hidden sm:flex items-center gap-2 active:scale-95 transition-transform"
+              >
+                <CreditCard className="h-4 w-4 text-primary" />
+                Show Payment
+              </Button>
               <Button variant="ghost" asChild className="active:scale-95 transition-transform touch-manipulation">
                 <Link href="/profile" onClick={(e) => handleLinkClick(e, '/profile')}>
                   <User className="mr-2 h-4 w-4" />
