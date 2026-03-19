@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useDoc, useFirestore, useMemoFirebase, useAuth } from '@/firebase';
@@ -36,10 +37,10 @@ export default function MarketplaceListingDetailPage() {
 
     const { data: listing, isLoading } = useDoc(memoizedDocRef);
 
-    const isAdmin = user?.email === 'guneet.ar2010@gmail.com';
+    const isOwner = user?.email === 'guneet.ar2010@gmail.com';
 
     const handleApprove = () => {
-        if (!firestore || !listingId) return;
+        if (!firestore || !listingId || !isOwner) return;
         startApproving(async () => {
             try {
                 const docRef = doc(firestore, 'marketplace_listings', listingId);
@@ -52,7 +53,7 @@ export default function MarketplaceListingDetailPage() {
     };
 
     const handleDelete = () => {
-        if (!firestore || !listingId) return;
+        if (!firestore || !listingId || !isOwner) return;
         startDeleting(async () => {
             try {
                 const docRef = doc(firestore, 'marketplace_listings', listingId);
@@ -121,7 +122,7 @@ export default function MarketplaceListingDetailPage() {
                     <ArrowLeft className="mr-2 h-4 w-4 transition-transform group-hover:-translate-x-1" /> Back to Marketplace
                 </Button>
                 
-                {isAdmin && (
+                {isOwner && (
                     <div className="flex gap-2">
                          {listing.status === 'pending_approval' && (
                              <AlertDialog>

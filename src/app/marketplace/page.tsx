@@ -1,6 +1,7 @@
+
 "use client";
 
-import { useState, useMemo, useTransition } from 'react';
+import { useState, useMemo, useTransition, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
-import { Search, Filter, MapPin, DollarSign, Sparkles, Loader, ShoppingBag, Trash2, ShieldCheck, Clock } from 'lucide-react';
+import { Search, Filter, MapPin, DollarSign, Sparkles, Loader, ShoppingBag, Trash2, ShieldCheck, Clock, Lock, Package, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 import { MarketplaceListingCard } from '@/components/marketplace-listing-card';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
@@ -16,6 +17,7 @@ import { collection, orderBy, query, getDocs, deleteDoc, doc, where } from 'fire
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 
 export default function MarketplacePage() {
     const { isLoggedIn, user } = useAuth();
@@ -27,8 +29,19 @@ export default function MarketplacePage() {
     const [priceRange, setPriceRange] = useState([0, 5000]);
     const [category, setCategory] = useState('all');
     const [location, setLocation] = useState('');
+    const [showTrustModal, setShowTrustModal] = useState(false);
 
-    const isDeveloper = user?.email === 'guneet.ar2010@gmail.com' || user?.email === 'tester@gmail.com';
+    // Show the trust modal on mount
+    useEffect(() => {
+        const hasSeenTrust = sessionStorage.getItem('hasSeenMarketplaceTrust');
+        if (!hasSeenTrust) {
+            setShowTrustModal(true);
+            sessionStorage.setItem('hasSeenMarketplaceTrust', 'true');
+        }
+    }, []);
+
+    const isOwner = user?.email === 'guneet.ar2010@gmail.com';
+    const isDeveloper = isOwner || user?.email === 'tester@gmail.com';
 
     const listingsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
@@ -66,11 +79,11 @@ export default function MarketplacePage() {
     }, [rawListings, searchQuery, priceRange, category, location]);
 
     const handleResetMarketplace = () => {
-        if (!firestore || !isDeveloper) return;
+        if (!firestore || !isOwner) return;
         
-        const password = window.prompt("Enter Developer Password to Purge Marketplace:");
+        const password = window.prompt("Enter Owner Password to Purge Marketplace:");
         if (password !== '0wNERGun##t') {
-            toast({ variant: "destructive", title: "Access Denied", description: "Incorrect developer password." });
+            toast({ variant: "destructive", title: "Access Denied", description: "Incorrect owner password." });
             return;
         }
 
@@ -101,6 +114,75 @@ export default function MarketplacePage() {
 
     return (
         <div className="container py-12">
+            {/* ESCROW TRUST MODAL */}
+            <Dialog open={showTrustModal} onOpenChange={setShowTrustModal}>
+                <DialogContent className="sm:max-w-xl rounded-[2.5rem] p-8">
+                    <DialogHeader>
+                        <DialogTitle className="text-3xl font-black flex items-center gap-3">
+                            <ShieldCheck className="h-8 w-8 text-primary" />
+                            Your Money is Always Protected
+                        </DialogTitle>
+                        <DialogDescription className="text-base font-medium pt-2">
+                            HustleSpark uses a secure escrow system for every transaction. Here's how it works:
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-6 py-6">
+                        <div className="flex items-start gap-4">
+                            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                                <Lock className="h-5 w-5 text-primary" />
+                            </div>
+                            <p className="text-sm leading-relaxed">
+                                <span className="font-black block text-base mb-0.5">🔒 You pay securely</span>
+                                Your payment is held safely and never goes directly to the seller.
+                            </p>
+                        </div>
+                        <div className="flex items-start gap-4">
+                            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                                <Package className="h-5 w-5 text-primary" />
+                            </div>
+                            <p className="text-sm leading-relaxed">
+                                <span className="font-black block text-base mb-0.5">📦 Seller delivers</span>
+                                The seller has 3 days to deliver the full hustle blueprint, strategy, and materials to you.
+                            </p>
+                        </div>
+                        <div className="flex items-start gap-4">
+                            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                                <CheckCircle2 className="h-5 w-5 text-primary" />
+                            </div>
+                            <p className="text-sm leading-relaxed">
+                                <span className="font-black block text-base mb-0.5">✅ You confirm</span>
+                                Once you're happy with what you received, you confirm delivery.
+                            </p>
+                        </div>
+                        <div className="flex items-start gap-4">
+                            <div className="h-10 w-10 rounded-full bg-green-500/10 flex items-center justify-center shrink-0">
+                                <DollarSign className="h-5 w-5 text-green-500" />
+                            </div>
+                            <p className="text-sm leading-relaxed">
+                                <span className="font-black block text-base mb-0.5">💸 Seller gets paid</span>
+                                Only after your confirmation do we release 90% of the payment to the seller.
+                            </p>
+                        </div>
+
+                        <div className="bg-primary/5 p-4 rounded-2xl border border-primary/10 mt-4">
+                            <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground leading-relaxed">
+                                🛡️ Every purchase is manually reviewed by the HustleSpark team before funds are released. If there's ever a dispute, we step in to make it right.
+                            </p>
+                        </div>
+                        <p className="text-xs text-center text-muted-foreground italic">
+                            Not satisfied? Contact us at <span className="text-primary font-bold">hustlespark.net/support</span> within 7 days and we'll make it right.
+                        </p>
+                    </div>
+
+                    <DialogFooter>
+                        <Button className="w-full h-14 rounded-2xl font-black text-lg shadow-xl" onClick={() => setShowTrustModal(false)}>
+                            Enter Marketplace
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
             <div className="flex flex-col md:flex-row justify-between items-center gap-6 mb-12">
                 <div>
                     <h1 className="text-4xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent">Venture Marketplace</h1>
@@ -112,15 +194,17 @@ export default function MarketplacePage() {
                              <Badge variant="outline" className="h-10 px-4 rounded-xl border-primary/30 text-primary font-bold bg-primary/5 flex items-center gap-2">
                                 <ShieldCheck className="h-4 w-4" /> Admin Console Active
                              </Badge>
-                            <Button 
-                                variant="destructive" 
-                                onClick={handleResetMarketplace} 
-                                disabled={isResetting}
-                                className="shadow-lg active:scale-95 transition-transform h-10 rounded-xl"
-                            >
-                                {isResetting ? <Loader className="animate-spin mr-2 h-4 w-4" /> : <Trash2 className="mr-2 h-4 w-4" />}
-                                Reset
-                            </Button>
+                            {isOwner && (
+                                <Button 
+                                    variant="destructive" 
+                                    onClick={handleResetMarketplace} 
+                                    disabled={isResetting}
+                                    className="shadow-lg active:scale-95 transition-transform h-10 rounded-xl"
+                                >
+                                    {isResetting ? <Loader className="animate-spin mr-2 h-4 w-4" /> : <Trash2 className="mr-2 h-4 w-4" />}
+                                    Reset
+                                </Button>
+                            )}
                         </div>
                     )}
                     {!isLoggedIn && (
