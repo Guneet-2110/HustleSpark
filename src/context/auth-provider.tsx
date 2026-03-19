@@ -45,7 +45,6 @@ export const AuthContext = createContext<AuthContextType | null>(null);
 
 const USERS_STORAGE_KEY = 'hustleSparkUsers_v2';
 
-// Helper to interact with local user cache
 const getUsersFromStorage = (): Record<string, UserRecord> => {
     try {
         if (typeof window === 'undefined') return {};
@@ -63,9 +62,6 @@ const saveUsersToStorage = (users: Record<string, UserRecord>) => {
     } catch (error) {}
 }
 
-/**
- * AuthProvider - Manages user state and synchronization.
- */
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -104,13 +100,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(firebaseAuth, (fbUser) => {
         if (fbUser && fbUser.email) {
+            const emailKey = fbUser.email.toLowerCase();
             const users = getUsersFromStorage();
-            const userRecord = users[fbUser.email];
+            const userRecord = users[emailKey];
             if (userRecord) {
                 syncStateFromUser(userRecord.user);
             } else {
                 const newUser: User = { email: fbUser.email, isPremium: false, savedHustles: [] };
-                users[fbUser.email] = { passwordHash: '', user: newUser };
+                users[emailKey] = { passwordHash: '', user: newUser };
                 saveUsersToStorage(users);
                 syncStateFromUser(newUser);
             }
@@ -144,7 +141,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
         await signOut(firebaseAuth);
     } catch (e) {}
-    // Clear session but leave localStorage for user profiles (which mimics a real DB for this demo)
     sessionStorage.clear();
     setUser(null);
     setIsLoggedIn(false);
@@ -158,12 +154,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const upgradeToPremium = useCallback((days = 30) => {
     const currentUser = userRef.current;
     if (currentUser) {
+        const emailKey = currentUser.email.toLowerCase();
         const users = getUsersFromStorage();
         const now = new Date();
         const expiry = new Date(now.getTime() + (days * 24 * 60 * 60 * 1000));
         const updatedUser = { ...currentUser, premiumExpiresAt: expiry.toISOString(), isPremium: true };
-        if (users[currentUser.email]) {
-            users[currentUser.email].user = updatedUser;
+        if (users[emailKey]) {
+            users[emailKey].user = updatedUser;
             saveUsersToStorage(users);
         }
         syncStateFromUser(updatedUser);
@@ -181,18 +178,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const saveHustle = useCallback((hustle: any) => {
     const currentUser = userRef.current;
     if (!currentUser) return;
+    const emailKey = currentUser.email.toLowerCase();
     const users = getUsersFromStorage();
-    if (!users[currentUser.email]) return;
+    if (!users[emailKey]) return;
 
-    const currentSaved = users[currentUser.email].user.savedHustles || [];
+    const currentSaved = users[emailKey].user.savedHustles || [];
     const exists = currentSaved.some((h: any) => h.name === hustle.name);
     
     const newSaved = exists
       ? currentSaved.map((h: any) => h.name === hustle.name ? { ...h, ...hustle } : h)
       : [...currentSaved, hustle];
     
-    const updatedUser = { ...users[currentUser.email].user, savedHustles: newSaved };
-    users[currentUser.email].user = updatedUser;
+    const updatedUser = { ...users[emailKey].user, savedHustles: newSaved };
+    users[emailKey].user = updatedUser;
     saveUsersToStorage(users);
     syncStateFromUser(updatedUser);
   }, [syncStateFromUser]);
@@ -200,12 +198,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const unsaveHustle = useCallback((hustleName: string) => {
     const currentUser = userRef.current;
     if (!currentUser) return;
+    const emailKey = currentUser.email.toLowerCase();
     const users = getUsersFromStorage();
-    if (!users[currentUser.email]) return;
+    if (!users[emailKey]) return;
 
-    const newSaved = (users[currentUser.email].user.savedHustles || []).filter((h: any) => h.name !== hustleName);
-    const updatedUser = { ...users[currentUser.email].user, savedHustles: newSaved };
-    users[currentUser.email].user = updatedUser;
+    const newSaved = (users[emailKey].user.savedHustles || []).filter((h: any) => h.name !== hustleName);
+    const updatedUser = { ...users[emailKey].user, savedHustles: newSaved };
+    users[emailKey].user = updatedUser;
     saveUsersToStorage(users);
     syncStateFromUser(updatedUser);
   }, [syncStateFromUser]);
@@ -215,7 +214,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [savedHustles]);
 
   const doesUserExist = useCallback((email: string) => {
-    return !!getUsersFromStorage()[email];
+    return !!getUsersFromStorage()[email.toLowerCase()];
   }, []);
 
   if (!isInitialized) return null;

@@ -11,7 +11,7 @@ import {
     Image as ImageIcon, Rocket, Printer, Calendar as CalendarIcon, 
     Target, TrendingUp, CircleDollarSign, Bot, Send, ShoppingBag, 
     AlertCircle, LayoutDashboard, LineChart, CheckSquare, Settings2, Download, Eye,
-    Globe, Heart
+    Globe, Heart, Briefcase
 } from 'lucide-react';
 import Image from 'next/image';
 import type { HustleIdea } from '@/ai/flows/generate-hustle-ideas';
@@ -375,7 +375,16 @@ function HustleDetailContent() {
                         <Button 
                             variant="outline" 
                             className="h-12 px-6 rounded-2xl font-bold border-2"
-                            onClick={() => missingAssets ? toast({ variant: 'destructive', title: "Assets Missing", description: "Generate Logo and Flyer first." }) : setShowSellModal(true)} 
+                            onClick={() => {
+                                if (missingAssets) {
+                                    toast({ variant: 'destructive', title: "Assets Missing", description: "Generate Logo and Flyer first." });
+                                } else {
+                                    if (!hustle.aboutUs) {
+                                        handleGenerateBlueprint();
+                                    }
+                                    setShowSellModal(true);
+                                }
+                            }} 
                         >
                             <ShoppingBag className="mr-2 h-5 w-5" />
                             Exit to Marketplace
