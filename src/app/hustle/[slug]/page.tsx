@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { useEffect, useState, Suspense, useTransition, useCallback, useRef } from 'react';
 import React from 'react';
 import { 
-    Sparkles, Bookmark, Check, Palette, FileText, Paintbrush, Loader, 
+    Sparkles, Bookmark, Check, Palette, FileText, Paintbrush, Loader2, 
     Image as ImageIcon, Rocket, Printer, Calendar as CalendarIcon, 
     Target, TrendingUp, CircleDollarSign, Bot, Send, ShoppingBag, 
     AlertCircle, LayoutDashboard, LineChart, CheckSquare, Settings2, Download, Eye,
@@ -447,7 +447,7 @@ function HustleDetailContent() {
                                     {!hustle.schedule ? (
                                         <div className="text-center py-12 bg-background/40 rounded-[2rem] border-2 border-dashed border-primary/20">
                                             <Button onClick={handleGenerateSchedule} disabled={isGeneratingSchedule} className="rounded-2xl h-12 px-8 font-bold">
-                                                {isGeneratingSchedule ? <Loader className="animate-spin mr-2" /> : <CalendarIcon className="mr-2 h-5 w-5" />}
+                                                {isGeneratingSchedule ? <Loader2 className="animate-spin mr-2" /> : <CalendarIcon className="mr-2 h-5 w-5" />}
                                                 Generate 4-Week Action Plan
                                             </Button>
                                         </div>
@@ -564,7 +564,7 @@ function HustleDetailContent() {
                                         ) : (
                                             <ImageIcon className="h-16 w-16 text-muted-foreground/30" />
                                         )}
-                                        {isGeneratingLogo && <div className="absolute inset-0 bg-background/60 backdrop-blur-sm flex items-center justify-center"><Loader className="animate-spin text-primary h-8 w-8" /></div>}
+                                        {isGeneratingLogo && <div className="absolute inset-0 bg-background/60 backdrop-blur-sm flex items-center justify-center"><Loader2 className="animate-spin text-primary h-8 w-8" /></div>}
                                     </div>
                                     <Button variant="outline" className="w-full h-12 rounded-2xl border-2 font-bold" onClick={handleGenerateLogo} disabled={isGeneratingLogo}>
                                         {hustle.logoUrl ? 'Redesign Logo' : 'Generate Identity'}
@@ -578,7 +578,7 @@ function HustleDetailContent() {
                                         ) : (
                                             <Printer className="h-16 w-16 text-muted-foreground/30" />
                                         )}
-                                        {isGeneratingFlyer && <div className="absolute inset-0 bg-background/60 backdrop-blur-sm flex items-center justify-center"><Loader className="animate-spin text-primary h-8 w-8" /></div>}
+                                        {isGeneratingFlyer && <div className="absolute inset-0 bg-background/60 backdrop-blur-sm flex items-center justify-center"><Loader2 className="animate-spin text-primary h-8 w-8" /></div>}
                                         {hustle.flyerUrl && !isGeneratingFlyer && (
                                             <div className="absolute bottom-4 right-4">
                                                 <Button size="icon" className="rounded-full shadow-2xl h-12 w-12" onClick={handlePrintFlyer}>
@@ -627,7 +627,7 @@ function HustleDetailContent() {
                                                 </div>
                                             </div>
                                         ))}
-                                        {isCoachReplying && <div className="flex gap-2 items-center text-xs text-muted-foreground animate-pulse font-bold uppercase tracking-wider"><Loader className="h-3 w-3 animate-spin" /> Sparky is strategizing...</div>}
+                                        {isCoachReplying && <div className="flex gap-2 items-center text-xs text-muted-foreground animate-pulse font-bold uppercase tracking-wider"><Loader2 className="h-3 w-3 animate-spin" /> Sparky is strategizing...</div>}
                                     </div>
                                 </ScrollArea>
                             </CardContent>
@@ -764,7 +764,7 @@ function HustleDetailContent() {
 
 export default function HustleDetailPage() {
     return (
-        <Suspense fallback={<div className="container py-20 text-center"><Loader className="animate-spin h-10 w-10 mx-auto text-primary" /></div>}>
+        <Suspense fallback={<div className="container py-20 text-center"><Loader2 className="animate-spin h-10 w-10 mx-auto text-primary" /></div>}>
             <HustleDetailContent />
         </Suspense>
     )
