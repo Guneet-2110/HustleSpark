@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -34,37 +33,37 @@ export function EscrowTrustDialog({ open, onOpenChange }: EscrowTrustDialogProps
                                 <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                                     <Lock className="h-5 w-5 text-primary" />
                                 </div>
-                                <p className="text-sm leading-relaxed">
+                                <div className="text-sm leading-relaxed">
                                     <span className="font-black block text-base mb-0.5">🔒 You pay securely</span>
                                     Your payment is held safely and never goes directly to the seller.
-                                </p>
+                                </div>
                             </div>
                             <div className="flex items-start gap-4">
                                 <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                                     <Package className="h-5 w-5 text-primary" />
                                 </div>
-                                <p className="text-sm leading-relaxed">
+                                <div className="text-sm leading-relaxed">
                                     <span className="font-black block text-base mb-0.5">📦 Seller delivers</span>
                                     The seller has 3 days to deliver the full hustle blueprint, strategy, and materials to you.
-                                </p>
+                                </div>
                             </div>
                             <div className="flex items-start gap-4">
                                 <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                                     <CheckCircle2 className="h-5 w-5 text-primary" />
                                 </div>
-                                <p className="text-sm leading-relaxed">
+                                <div className="text-sm leading-relaxed">
                                     <span className="font-black block text-base mb-0.5">✅ You confirm</span>
                                     Once you're happy with what you received, you confirm delivery.
-                                </p>
+                                </div>
                             </div>
                             <div className="flex items-start gap-4">
                                 <div className="h-10 w-10 rounded-full bg-green-500/10 flex items-center justify-center shrink-0">
                                     <DollarSign className="h-5 w-5 text-green-500" />
                                 </div>
-                                <p className="text-sm leading-relaxed">
+                                <div className="text-sm leading-relaxed">
                                     <span className="font-black block text-base mb-0.5">💸 Seller gets paid</span>
                                     Only after your confirmation do we release 90% of the payment to the seller.
-                                </p>
+                                </div>
                             </div>
 
                             <div className="bg-primary/5 p-4 rounded-2xl border border-primary/10 mt-4">

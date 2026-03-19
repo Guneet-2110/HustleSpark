@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo, useTransition, useEffect } from 'react';
@@ -9,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
-import { Search, Filter, MapPin, DollarSign, Sparkles, Loader, ShoppingBag, Trash2, ShieldCheck, Clock } from 'lucide-react';
+import { Search, Filter, MapPin, DollarSign, Sparkles, Loader2, ShoppingBag, Trash2, ShieldCheck, Clock } from 'lucide-react';
 import Link from 'next/link';
 import { MarketplaceListingCard } from '@/components/marketplace-listing-card';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
@@ -134,7 +133,7 @@ export default function MarketplacePage() {
                                     disabled={isResetting}
                                     className="shadow-lg active:scale-95 transition-transform h-10 rounded-xl"
                                 >
-                                    {isResetting ? <Loader className="animate-spin mr-2 h-4 w-4" /> : <Trash2 className="mr-2 h-4 w-4" />}
+                                    {isResetting ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <Trash2 className="mr-2 h-4 w-4" />}
                                     Reset
                                 </Button>
                             )}
@@ -238,7 +237,7 @@ export default function MarketplacePage() {
                 <div className="lg:col-span-3">
                     {isLoading ? (
                         <div className="flex flex-col items-center justify-center py-32">
-                            <Loader className="h-12 w-12 animate-spin text-primary mb-4" />
+                            <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
                             <p className="text-muted-foreground animate-pulse font-medium">Curating the finest ventures...</p>
                         </div>
                     ) : filteredListings.length > 0 ? (
