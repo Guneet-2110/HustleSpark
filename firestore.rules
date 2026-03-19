@@ -1,3 +1,4 @@
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -8,6 +9,7 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
     function isAdmin() {
+      // Owner-only approval and oversight privileges
       return isSignedIn() && (request.auth.token.email == 'guneet.ar2010@gmail.com');
     }
     match /users/{userId} {
@@ -19,10 +21,15 @@ service cloud.firestore {
       }
     }
     match /marketplace_listings/{marketplaceListingId} {
+      // Users can only create listings as pending approval
       allow create: if isSignedIn() && request.resource.data.status == 'pending_approval';
-      allow list: if true;
+      // Approved listings are visible to everyone
+      allow list: if resource.data.status == 'approved' || isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
       allow get: if resource.data.status == 'approved' || isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+      // Only admin can approve (status change) or update any listing
+      // Owners can update their own data but not the status
       allow update: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid && request.resource.data.status == resource.data.status);
+      // Admin and owner can delete
       allow delete: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
     }
     match /chats/{chatId} {

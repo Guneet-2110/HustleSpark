@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { HustleIdea } from '@/ai/flows/generate-hustle-ideas';
@@ -42,7 +43,7 @@ interface AuthContextType {
 
 export const AuthContext = createContext<AuthContextType | null>(null);
 
-const USERS_STORAGE_KEY = 'hustleSparkUsers_v2';
+const USERS_STORAGE_KEY = 'hustleSparkUsers_v3';
 
 const getUsersFromStorage = (): Record<string, UserRecord> => {
     try {
