@@ -1,19 +1,21 @@
 "use client";
 
 import { useDoc, useFirestore, useMemoFirebase, useAuth } from '@/firebase';
-import { doc, setDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp, updateDoc, deleteDoc } from 'firebase/firestore';
 import { useParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, ArrowLeft, Rocket, Check, MessageSquare, ArrowRight, Briefcase, Target, Globe, Heart, ShieldCheck, Loader } from 'lucide-react';
+import { MapPin, ArrowLeft, Rocket, Check, MessageSquare, ArrowRight, Briefcase, Target, Globe, Heart, ShieldCheck, Loader, Trash2 } from 'lucide-react';
 import Image from 'next/image';
 import { useState, useTransition } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { PaypalButton } from '@/components/paypal-button';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import placeholders from '@/app/lib/placeholder-images.json';
+import { EscrowTrustBanner } from '@/components/escrow-trust-banner';
 
 export default function MarketplaceListingDetailPage() {
     const params = useParams();
@@ -23,6 +25,7 @@ export default function MarketplaceListingDetailPage() {
     const { user } = useAuth();
     const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
     const [isApproving, startApproving] = useTransition();
+    const [isDeleting, startDeleting] = useTransition();
 
     const listingId = params.id as string;
     
@@ -33,7 +36,7 @@ export default function MarketplaceListingDetailPage() {
 
     const { data: listing, isLoading } = useDoc(memoizedDocRef);
 
-    const isDeveloper = user?.email === 'guneet.ar2010@gmail.com' || user?.email === 'tester@gmail.com';
+    const isAdmin = user?.email === 'guneet.ar2010@gmail.com';
 
     const handleApprove = () => {
         if (!firestore || !listingId) return;
@@ -47,6 +50,20 @@ export default function MarketplaceListingDetailPage() {
             }
         });
     };
+
+    const handleDelete = () => {
+        if (!firestore || !listingId) return;
+        startDeleting(async () => {
+            try {
+                const docRef = doc(firestore, 'marketplace_listings', listingId);
+                await deleteDoc(docRef);
+                toast({ title: "Venture Removed", description: "The listing has been permanently deleted." });
+                router.push('/marketplace');
+            } catch (error: any) {
+                toast({ variant: 'destructive', title: "Deletion Failed", description: error.message });
+            }
+        });
+    }
 
     const handleAcquisitionSuccess = async () => {
         setIsCheckoutOpen(false);
@@ -104,11 +121,51 @@ export default function MarketplaceListingDetailPage() {
                     <ArrowLeft className="mr-2 h-4 w-4 transition-transform group-hover:-translate-x-1" /> Back to Marketplace
                 </Button>
                 
-                {isDeveloper && listing.status === 'pending_approval' && (
-                    <Button onClick={handleApprove} disabled={isApproving} className="rounded-2xl h-12 px-8 font-black bg-orange-500 hover:bg-orange-600 shadow-xl">
-                        {isApproving ? <Loader className="animate-spin mr-2 h-5 w-5" /> : <ShieldCheck className="mr-2 h-5 w-5" />}
-                        Approve Venture
-                    </Button>
+                {isAdmin && (
+                    <div className="flex gap-2">
+                         {listing.status === 'pending_approval' && (
+                             <AlertDialog>
+                                 <AlertDialogTrigger asChild>
+                                     <Button disabled={isApproving} className="rounded-2xl h-12 px-8 font-black bg-orange-500 hover:bg-orange-600 shadow-xl">
+                                         {isApproving ? <Loader className="animate-spin mr-2 h-5 w-5" /> : <ShieldCheck className="mr-2 h-5 w-5" />}
+                                         Approve Venture
+                                     </Button>
+                                 </AlertDialogTrigger>
+                                 <AlertDialogContent className="rounded-[2.5rem]">
+                                     <AlertDialogHeader>
+                                         <AlertDialogTitle>Are you sure you want to approve this?</AlertDialogTitle>
+                                         <AlertDialogDescription>
+                                             Approving this venture will make it live and visible to all users on the marketplace.
+                                         </AlertDialogDescription>
+                                     </AlertDialogHeader>
+                                     <AlertDialogFooter>
+                                         <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
+                                         <AlertDialogAction onClick={handleApprove} className="rounded-xl bg-orange-500">Approve Listing</AlertDialogAction>
+                                     </AlertDialogFooter>
+                                 </AlertDialogContent>
+                             </AlertDialog>
+                         )}
+                         <AlertDialog>
+                             <AlertDialogTrigger asChild>
+                                 <Button variant="destructive" disabled={isDeleting} className="rounded-2xl h-12 px-8 font-black shadow-xl">
+                                     {isDeleting ? <Loader className="animate-spin mr-2 h-5 w-5" /> : <Trash2 className="mr-2 h-5 w-5" />}
+                                     Remove Listing
+                                 </Button>
+                             </AlertDialogTrigger>
+                             <AlertDialogContent className="rounded-[2.5rem]">
+                                 <AlertDialogHeader>
+                                     <AlertDialogTitle>Permanently delete this venture?</AlertDialogTitle>
+                                     <AlertDialogDescription>
+                                         This action cannot be undone. This listing will be removed from the marketplace and all user views.
+                                     </AlertDialogDescription>
+                                 </AlertDialogHeader>
+                                 <AlertDialogFooter>
+                                     <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
+                                     <AlertDialogAction onClick={handleDelete} className="rounded-xl bg-destructive">Confirm Removal</AlertDialogAction>
+                                 </AlertDialogFooter>
+                             </AlertDialogContent>
+                         </AlertDialog>
+                    </div>
                 )}
             </div>
 
@@ -186,13 +243,16 @@ export default function MarketplaceListingDetailPage() {
                                         {listing.status === 'approved' && <ArrowRight className="ml-2 h-6 w-6 transition-transform group-hover:translate-x-1" />}
                                     </Button>
                                 </DialogTrigger>
-                                <DialogContent className="rounded-[2.5rem]">
+                                <DialogContent className="sm:max-w-xl rounded-[2.5rem]">
                                     <DialogHeader>
-                                        <DialogTitle className="text-2xl font-black">Secure Handshake</DialogTitle>
+                                        <DialogTitle className="text-2xl font-black">Secure Acquisition</DialogTitle>
                                         <DialogDescription className="font-medium">
-                                            You are acquiring "<span className="text-primary">{listing.hustleName}</span>". Funds will be held in escrow until delivery.
+                                            You are acquiring "<span className="text-primary">{listing.hustleName}</span>".
                                         </DialogDescription>
                                     </DialogHeader>
+                                    
+                                    <EscrowTrustBanner />
+
                                     <PaypalButton 
                                      amount={total} 
                                      payeeEmail={listing.paypalEmail}

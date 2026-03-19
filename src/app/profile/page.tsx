@@ -8,14 +8,15 @@ import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, Suspense } from "react";
-import { Star, List, ArrowRight, LayoutDashboard, Clock, Trash2, MessageSquare, Briefcase, Package, ShieldCheck, CheckCircle2, ShieldAlert } from "lucide-react";
+import { Star, List, ArrowRight, LayoutDashboard, Clock, Trash2, MessageSquare, Briefcase, Package, ShieldCheck, CheckCircle2, ShieldAlert, Store } from "lucide-react";
 import { slugify } from "@/lib/utils";
 import { HustleGenerator } from "@/components/hustle-generator";
 import type { HustleIdea } from "@/ai/flows/generate-hustle-ideas";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { collection, query, where, orderBy, doc, updateDoc } from 'firebase/firestore';
+import { collection, query, where, orderBy, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { notifyAdminOfCompletionAction } from "@/lib/actions";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 const calculateTimeLeft = (expiryDate: string | null | undefined) => {
     if (!expiryDate) return { days: 0, hours: 0, minutes: 0, seconds: 0, total: 0 };
@@ -79,6 +80,18 @@ function ProfilePageContent() {
   const { data: rawChats, isLoading: isChatsLoading } = useCollection(chatsQuery);
   const filteredChats = rawChats?.filter(c => c.buyerId === firebaseUser?.uid || c.sellerId === firebaseUser?.uid) || [];
 
+  // Fetch User's Marketplace Listings
+  const myListingsQuery = useMemoFirebase(() => {
+      if (!firestore || !firebaseUser) return null;
+      return query(
+          collection(firestore, 'marketplace_listings'),
+          where('userId', '==', firebaseUser.uid),
+          orderBy('createdAt', 'desc')
+      );
+  }, [firestore, firebaseUser]);
+
+  const { data: myListings, isLoading: isMyListingsLoading } = useCollection(myListingsQuery);
+
   // Fetch Transactions (Purchases and Sales)
   const salesQuery = useMemoFirebase(() => {
       if (!firestore || !firebaseUser) return null;
@@ -110,7 +123,6 @@ function ProfilePageContent() {
           const transRef = doc(firestore, 'transactions', transaction.id);
           await updateDoc(transRef, { status: 'completed' });
           
-          // Notify Admin for Manual Payout
           await notifyAdminOfCompletionAction({
               id: transaction.id,
               hustleName: transaction.hustleName,
@@ -122,6 +134,16 @@ function ProfilePageContent() {
           toast({ title: "Receipt Confirmed!", description: "The creator has been notified and payout is being processed." });
       } catch (e) {
           toast({ variant: 'destructive', title: "Update Failed", description: "Could not confirm receipt." });
+      }
+  };
+
+  const handleDeleteListing = async (listingId: string) => {
+      if (!firestore) return;
+      try {
+          await deleteDoc(doc(firestore, 'marketplace_listings', listingId));
+          toast({ title: "Listing Removed", description: "Your venture has been removed from the marketplace." });
+      } catch (e) {
+          toast({ variant: 'destructive', title: "Deletion Failed", description: "Could not remove listing." });
       }
   };
 
@@ -180,6 +202,64 @@ function ProfilePageContent() {
 
       <div className="grid gap-12 lg:grid-cols-12">
         <div className="lg:col-span-8 space-y-12">
+            {/* MY MARKETPLACE LISTINGS */}
+            <Card className="shadow-xl rounded-[2.5rem] border-primary/20 overflow-hidden">
+                <CardHeader className="bg-primary/5 border-b">
+                    <CardTitle className="flex items-center gap-2"><Store className="h-6 w-6 text-primary"/> Your Marketplace Ventures</CardTitle>
+                    <CardDescription>Manage ventures you have listed for sale.</CardDescription>
+                </CardHeader>
+                <CardContent className="p-6">
+                    {isMyListingsLoading ? <Skeleton className="h-32 w-full" /> : myListings && myListings.length > 0 ? (
+                        <div className="space-y-4">
+                            {myListings.map((l) => (
+                                <div key={l.id} className="p-5 border rounded-3xl bg-muted/20 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                                    <div className="flex-1">
+                                        <div className="flex items-center gap-2">
+                                            <p className="font-black text-lg">{l.hustleName}</p>
+                                            <Badge variant={l.status === 'approved' ? 'default' : 'secondary'} className="text-[10px] uppercase">
+                                                {l.status.replace('_', ' ')}
+                                            </Badge>
+                                        </div>
+                                        <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{l.description}</p>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <Button variant="outline" size="sm" asChild className="rounded-xl">
+                                            <Link href={`/marketplace/listing/${l.id}`}>View</Link>
+                                        </Button>
+                                        <AlertDialog>
+                                            <AlertDialogTrigger asChild>
+                                                <Button variant="ghost" size="icon" className="rounded-xl text-destructive hover:bg-destructive/10">
+                                                    <Trash2 className="h-4 w-4" />
+                                                </Button>
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent className="rounded-[2.5rem]">
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                                    <AlertDialogDescription>
+                                                        This will permanently delete your venture listing from the marketplace.
+                                                    </AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={() => handleDeleteListing(l.id)} className="rounded-xl bg-destructive">Delete Listing</AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="text-center py-12 border-2 border-dashed rounded-3xl opacity-60">
+                            <p className="font-bold uppercase tracking-widest text-[10px]">No ventures listed yet</p>
+                            <Button variant="link" className="mt-2" asChild>
+                                <Link href="/marketplace">Explore Marketplace</Link>
+                            </Button>
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+
             {/* ESCROW TRANSACTIONS: SALES */}
             <Card className="shadow-xl rounded-[2.5rem] border-primary/10 overflow-hidden">
                 <CardHeader className="bg-primary/5 border-b">

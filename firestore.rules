@@ -8,7 +8,7 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
     function isAdmin() {
-      return isSignedIn() && (request.auth.token.email == 'guneet.ar2010@gmail.com' || request.auth.token.email == 'tester@gmail.com');
+      return isSignedIn() && (request.auth.token.email == 'guneet.ar2010@gmail.com');
     }
     match /users/{userId} {
       allow get, list: if isOwner(userId);
@@ -23,7 +23,7 @@ service cloud.firestore {
       allow list: if true;
       allow get: if resource.data.status == 'approved' || isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
       allow update: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid && request.resource.data.status == resource.data.status);
-      allow delete: if isAdmin();
+      allow delete: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
     }
     match /chats/{chatId} {
       allow read, write: if isSignedIn() && (request.auth.uid == resource.data.buyerId || request.auth.uid == resource.data.sellerId);
