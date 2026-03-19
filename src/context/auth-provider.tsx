@@ -1,4 +1,3 @@
-
 'use client';
 
 import type { HustleIdea } from '@/ai/flows/generate-hustle-ideas';

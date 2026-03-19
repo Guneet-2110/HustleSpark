@@ -1,15 +1,14 @@
-
 "use client";
 
 import { useDoc, useFirestore, useMemoFirebase, useAuth } from '@/firebase';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { useParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, ArrowLeft, Rocket, Check, MessageSquare, ArrowRight, Briefcase, Target, Globe, Heart } from 'lucide-react';
+import { MapPin, ArrowLeft, Rocket, Check, MessageSquare, ArrowRight, Briefcase, Target, Globe, Heart, ShieldCheck, Loader } from 'lucide-react';
 import Image from 'next/image';
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
 import { PaypalButton } from '@/components/paypal-button';
 import { useToast } from '@/hooks/use-toast';
@@ -23,6 +22,7 @@ export default function MarketplaceListingDetailPage() {
     const firestore = useFirestore();
     const { user } = useAuth();
     const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+    const [isApproving, startApproving] = useTransition();
 
     const listingId = params.id as string;
     
@@ -33,10 +33,24 @@ export default function MarketplaceListingDetailPage() {
 
     const { data: listing, isLoading } = useDoc(memoizedDocRef);
 
+    const isDeveloper = user?.email === 'guneet.ar2010@gmail.com' || user?.email === 'tester@gmail.com';
+
+    const handleApprove = () => {
+        if (!firestore || !listingId) return;
+        startApproving(async () => {
+            try {
+                const docRef = doc(firestore, 'marketplace_listings', listingId);
+                await updateDoc(docRef, { status: 'approved' });
+                toast({ title: "Venture Approved", description: "The listing is now live on the marketplace." });
+            } catch (error: any) {
+                toast({ variant: 'destructive', title: "Approval Failed", description: error.message });
+            }
+        });
+    };
+
     const handleAcquisitionSuccess = async () => {
         setIsCheckoutOpen(false);
         if (firestore && user && listing) {
-            // Initialize chat between buyer and seller
             const chatId = `${listingId}_${user.uid}`;
             const chatRef = doc(firestore, 'chats', chatId);
             
@@ -85,9 +99,18 @@ export default function MarketplaceListingDetailPage() {
 
     return (
         <div className="container py-12 max-w-6xl">
-            <Button variant="ghost" onClick={() => router.back()} className="mb-8 rounded-full group">
-                <ArrowLeft className="mr-2 h-4 w-4 transition-transform group-hover:-translate-x-1" /> Back to Marketplace
-            </Button>
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+                <Button variant="ghost" onClick={() => router.back()} className="rounded-full group">
+                    <ArrowLeft className="mr-2 h-4 w-4 transition-transform group-hover:-translate-x-1" /> Back to Marketplace
+                </Button>
+                
+                {isDeveloper && listing.status === 'pending_approval' && (
+                    <Button onClick={handleApprove} disabled={isApproving} className="rounded-2xl h-12 px-8 font-black bg-orange-500 hover:bg-orange-600 shadow-xl">
+                        {isApproving ? <Loader className="animate-spin mr-2 h-5 w-5" /> : <ShieldCheck className="mr-2 h-5 w-5" />}
+                        Approve Venture
+                    </Button>
+                )}
+            </div>
 
             <div className="grid lg:grid-cols-3 gap-8">
                 <div className="lg:col-span-2 space-y-8">
@@ -117,7 +140,7 @@ export default function MarketplaceListingDetailPage() {
                         <CardContent className="space-y-8">
                             <div className="space-y-3">
                                 <h4 className="font-black text-xs uppercase tracking-widest text-primary flex items-center gap-2">
-                                    <Globe className="h-4 w-4" /> About Us
+                                    <Globe className="h-4 w-4" /> About us
                                 </h4>
                                 <p className="text-lg text-muted-foreground leading-relaxed italic">"{listing.pitch}"</p>
                             </div>
@@ -125,13 +148,13 @@ export default function MarketplaceListingDetailPage() {
                             <div className="grid md:grid-cols-2 gap-8 pt-8 border-t">
                                 <div className="space-y-3">
                                     <h4 className="font-black text-xs uppercase tracking-widest text-primary flex items-center gap-2">
-                                        <Briefcase className="h-4 w-4" /> What We Do
+                                        <Briefcase className="h-4 w-4" /> What we do
                                     </h4>
                                     <p className="text-sm text-muted-foreground leading-relaxed">{listing.experience}</p>
                                 </div>
                                 <div className="space-y-3">
                                     <h4 className="font-black text-xs uppercase tracking-widest text-primary flex items-center gap-2">
-                                        <Heart className="h-4 w-4" /> Our Goal
+                                        <Target className="h-4 w-4" /> Our goal
                                     </h4>
                                     <p className="text-sm text-muted-foreground leading-relaxed">{listing.whoIHelp}</p>
                                 </div>
@@ -158,9 +181,9 @@ export default function MarketplaceListingDetailPage() {
                             </div>
                             <Dialog open={isCheckoutOpen} onOpenChange={setIsCheckoutOpen}>
                                 <DialogTrigger asChild>
-                                    <Button className="w-full h-16 text-xl font-black rounded-2xl shadow-xl transition-all hover:scale-[1.02] active:scale-95 group">
-                                        Acquire Now
-                                        <ArrowRight className="ml-2 h-6 w-6 transition-transform group-hover:translate-x-1" />
+                                    <Button disabled={listing.status !== 'approved'} className="w-full h-16 text-xl font-black rounded-2xl shadow-xl transition-all hover:scale-[1.02] active:scale-95 group">
+                                        {listing.status === 'approved' ? 'Acquire Now' : 'Pending Approval'}
+                                        {listing.status === 'approved' && <ArrowRight className="ml-2 h-6 w-6 transition-transform group-hover:translate-x-1" />}
                                     </Button>
                                 </DialogTrigger>
                                 <DialogContent className="rounded-[2.5rem]">
