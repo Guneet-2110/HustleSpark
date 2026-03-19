@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, useTransition, useEffect } from 'react';
@@ -8,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
-import { Search, Filter, MapPin, DollarSign, Sparkles, Loader, ShoppingBag, Trash2, ShieldCheck, Clock, Lock, Package, CheckCircle2, X } from 'lucide-react';
+import { Search, Filter, MapPin, DollarSign, Sparkles, Loader, ShoppingBag, Trash2, ShieldCheck, Clock } from 'lucide-react';
 import Link from 'next/link';
 import { MarketplaceListingCard } from '@/components/marketplace-listing-card';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
@@ -16,8 +17,7 @@ import { collection, orderBy, query, getDocs, deleteDoc, doc, where } from 'fire
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { EscrowTrustDialog } from '@/components/escrow-trust-dialog';
 
 export default function MarketplacePage() {
     const { isLoggedIn, user } = useAuth();
@@ -114,80 +114,7 @@ export default function MarketplacePage() {
 
     return (
         <div className="container py-12">
-            {/* ESCROW TRUST MODAL */}
-            <Dialog open={showTrustModal} onOpenChange={setShowTrustModal}>
-                <DialogContent className="sm:max-w-xl rounded-[2.5rem] p-0 overflow-hidden border-none shadow-2xl">
-                    <div className="bg-background max-h-[90vh] flex flex-col">
-                        <DialogHeader className="p-8 pb-4">
-                            <div className="flex items-center justify-between">
-                                <DialogTitle className="text-3xl font-black flex items-center gap-3">
-                                    <ShieldCheck className="h-8 w-8 text-primary" />
-                                    Your Money is Always Protected
-                                </DialogTitle>
-                            </div>
-                            <DialogDescription className="text-base font-medium pt-2">
-                                HustleSpark uses a secure escrow system for every transaction. Here's how it works:
-                            </DialogDescription>
-                        </DialogHeader>
-
-                        <ScrollArea className="flex-1 px-8 pb-6">
-                            <div className="space-y-6 py-4">
-                                <div className="flex items-start gap-4">
-                                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                                        <Lock className="h-5 w-5 text-primary" />
-                                    </div>
-                                    <p className="text-sm leading-relaxed">
-                                        <span className="font-black block text-base mb-0.5">🔒 You pay securely</span>
-                                        Your payment is held safely and never goes directly to the seller.
-                                    </p>
-                                </div>
-                                <div className="flex items-start gap-4">
-                                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                                        <Package className="h-5 w-5 text-primary" />
-                                    </div>
-                                    <p className="text-sm leading-relaxed">
-                                        <span className="font-black block text-base mb-0.5">📦 Seller delivers</span>
-                                        The seller has 3 days to deliver the full hustle blueprint, strategy, and materials to you.
-                                    </p>
-                                </div>
-                                <div className="flex items-start gap-4">
-                                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                                        <CheckCircle2 className="h-5 w-5 text-primary" />
-                                    </div>
-                                    <p className="text-sm leading-relaxed">
-                                        <span className="font-black block text-base mb-0.5">✅ You confirm</span>
-                                        Once you're happy with what you received, you confirm delivery.
-                                    </p>
-                                </div>
-                                <div className="flex items-start gap-4">
-                                    <div className="h-10 w-10 rounded-full bg-green-500/10 flex items-center justify-center shrink-0">
-                                        <DollarSign className="h-5 w-5 text-green-500" />
-                                    </div>
-                                    <p className="text-sm leading-relaxed">
-                                        <span className="font-black block text-base mb-0.5">💸 Seller gets paid</span>
-                                        Only after your confirmation do we release 90% of the payment to the seller.
-                                    </p>
-                                </div>
-
-                                <div className="bg-primary/5 p-4 rounded-2xl border border-primary/10 mt-4">
-                                    <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground leading-relaxed">
-                                        🛡️ Every purchase is manually reviewed by the HustleSpark team before funds are released. If there's ever a dispute, we step in to make it right.
-                                    </p>
-                                </div>
-                                <p className="text-xs text-center text-muted-foreground italic">
-                                    Not satisfied? Contact us at <span className="text-primary font-bold">hustlespark.net/support</span> within 7 days and we'll make it right.
-                                </p>
-                            </div>
-                        </ScrollArea>
-
-                        <DialogFooter className="p-8 pt-4 bg-muted/20 border-t">
-                            <Button className="w-full h-14 rounded-2xl font-black text-lg shadow-xl" onClick={() => setShowTrustModal(false)}>
-                                Enter Marketplace
-                            </Button>
-                        </DialogFooter>
-                    </div>
-                </DialogContent>
-            </Dialog>
+            <EscrowTrustDialog open={showTrustModal} onOpenChange={setShowTrustModal} />
 
             <div className="flex flex-col md:flex-row justify-between items-center gap-6 mb-12">
                 <div>

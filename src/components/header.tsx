@@ -1,16 +1,19 @@
+
 "use client";
 
 import Link from 'next/link';
 import { Button } from './ui/button';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
-import { Sparkles, User, LogOut, Rocket, Store, Clock, CreditCard } from 'lucide-react';
+import { Sparkles, User, LogOut, Rocket, Store, Clock, CreditCard, ShieldCheck } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
+import { EscrowTrustDialog } from './escrow-trust-dialog';
 
 export function Header() {
   const { isLoggedIn, logout, user, isPremium, hasUnsavedChanges, setHasUnsavedChanges, setPaymentModalOpen } = useAuth();
   const router = useRouter();
   const [timeLeft, setTimeLeft] = useState<{days:number, hours:number, minutes:number, seconds:number, total:number} | null>(null);
+  const [isEscrowModalOpen, setIsEscrowModalOpen] = useState(false);
 
   useEffect(() => {
     const calculate = () => {
@@ -76,6 +79,15 @@ export function Header() {
               <Button 
                 variant="ghost" 
                 size="sm"
+                onClick={() => setIsEscrowModalOpen(true)}
+                className="hidden lg:flex items-center gap-2 active:scale-95 transition-transform"
+              >
+                <ShieldCheck className="h-4 w-4 text-primary" />
+                Escrow Protection
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm"
                 onClick={() => setPaymentModalOpen(true)}
                 className="hidden sm:flex items-center gap-2 active:scale-95 transition-transform"
               >
@@ -95,6 +107,15 @@ export function Header() {
             </>
           ) : (
              <>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => setIsEscrowModalOpen(true)}
+                  className="hidden md:flex items-center gap-2 active:scale-95 transition-transform"
+                >
+                  <ShieldCheck className="h-4 w-4 text-primary" />
+                  Escrow Protection
+                </Button>
                 <Button variant="ghost" asChild className="active:scale-95 transition-transform touch-manipulation">
                     <Link href="/login">Login</Link>
                 </Button>
@@ -108,6 +129,7 @@ export function Header() {
           )}
         </div>
       </div>
+      <EscrowTrustDialog open={isEscrowModalOpen} onOpenChange={setIsEscrowModalOpen} />
     </header>
   );
 }
