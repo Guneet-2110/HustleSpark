@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useAuth } from "@/hooks/use-auth";
@@ -48,7 +49,9 @@ function ProfilePageContent() {
   const firestore = useFirestore();
   const router = useRouter();
   const { toast } = useToast();
-  const [timeLeft, setTimeLeft] = useState(calculateTimeLeft(localUser?.premiumExpiresAt));
+  
+  // Hydration fix: Initialize with null and calculate in useEffect
+  const [timeLeft, setTimeLeft] = useState<{days:number, hours:number, minutes:number, seconds:number, total:number} | null>(null);
 
   const isDeveloper = localUser?.email === 'guneet.ar2010@gmail.com' || localUser?.email === 'tester@gmail.com';
 
@@ -59,6 +62,11 @@ function ProfilePageContent() {
   }, [isLoggedIn, router]);
 
   useEffect(() => {
+    // Initial calculation after mount
+    if (isPremium && localUser?.premiumExpiresAt) {
+        setTimeLeft(calculateTimeLeft(localUser.premiumExpiresAt));
+    }
+
     const timer = setInterval(() => {
         if (isPremium && localUser?.premiumExpiresAt) {
             setTimeLeft(calculateTimeLeft(localUser.premiumExpiresAt));
@@ -178,7 +186,7 @@ function ProfilePageContent() {
         <div className="mb-12 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
             <div>
                 <h1 className="text-4xl font-black tracking-tight">Venture Dashboard</h1>
-                {isPremium && timeLeft.total > 0 ? (
+                {isPremium && timeLeft && timeLeft.total > 0 ? (
                      <div className="mt-4 inline-flex items-center gap-x-2 rounded-full bg-primary/10 border border-primary/20 px-4 py-2 text-sm font-medium">
                         <Clock className="h-5 w-5 text-primary animate-pulse" />
                         <span>Premium access: <span className="font-mono font-bold text-primary">{timeLeft.days}d {timeLeft.hours}h {timeLeft.minutes}m</span></span>
