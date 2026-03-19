@@ -10,7 +10,8 @@ import {
     Sparkles, Bookmark, Check, Palette, FileText, Paintbrush, Loader, 
     Image as ImageIcon, Rocket, Printer, Calendar as CalendarIcon, 
     Target, TrendingUp, CircleDollarSign, Bot, Send, ShoppingBag, 
-    AlertCircle, LayoutDashboard, LineChart, CheckSquare, Settings2, Download, Eye
+    AlertCircle, LayoutDashboard, LineChart, CheckSquare, Settings2, Download, Eye,
+    Globe, Heart
 } from 'lucide-react';
 import Image from 'next/image';
 import type { HustleIdea } from '@/ai/flows/generate-hustle-ideas';
@@ -39,6 +40,9 @@ type Message = {
 type HustleIdeaWithExtras = HustleIdea & { 
     schedule?: GenerateHustleScheduleOutput;
     coachHistory?: Message[];
+    aboutUs?: string;
+    whatWeDo?: string;
+    ourGoal?: string;
 };
 
 function HustleDetailContent() {
@@ -75,9 +79,9 @@ function HustleDetailContent() {
     const [sellState, setSellState] = useState('TX');
     const [sellCity, setSellCity] = useState('');
     const [sellPaypal, setSellPaypal] = useState('');
-    const [sellPitch, setSellPitch] = useState('');
-    const [sellExperience, setSellExperience] = useState('');
-    const [sellWhoIHelp, setSellWhoIHelp] = useState('');
+    const [sellAboutUs, setSellAboutUs] = useState('');
+    const [sellWhatWeDo, setSellWhatWeDo] = useState('');
+    const [sellOurGoal, setSellOurGoal] = useState('');
     const [sellWorkFrom, setSellWorkFrom] = useState('Remote');
     
     const isSaved = hustle ? isHustleSaved(hustle.name) : false;
@@ -90,7 +94,7 @@ function HustleDetailContent() {
             if (hustleDataStr) {
                 try {
                     const parsedHustle: HustleIdeaWithExtras = JSON.parse(hustleDataStr);
-                    const savedVersion = getHustleByName(parsedHustle.name);
+                    const savedVersion = getHustleByName(parsedHustle.name) as HustleIdeaWithExtras;
                     const initialData = savedVersion || parsedHustle;
                     setHustle({ ...initialData });
                     if (initialData.trackerData?.earningsGoal) {
@@ -107,12 +111,12 @@ function HustleDetailContent() {
     // Auto-fill form fields when sell modal opens
     useEffect(() => {
         if (showSellModal && hustle) {
-            if (!sellPitch) setSellPitch(hustle.description || '');
-            if (!sellExperience) setSellExperience(`Expertise in ${hustle.name}. Generated via HustleSpark AI Blueprint.`);
-            if (!sellWhoIHelp) setSellWhoIHelp(hustle.marketingIdea || 'Individuals looking for premium creative services.');
+            if (!sellAboutUs) setSellAboutUs(hustle.aboutUs || hustle.description || '');
+            if (!sellWhatWeDo) setSellWhatWeDo(hustle.whatWeDo || `Expertise in ${hustle.name}. Generated via HustleSpark AI Blueprint.`);
+            if (!sellOurGoal) setSellOurGoal(hustle.ourGoal || hustle.marketingIdea || 'To become the premier provider of creative excellence.');
             if (!sellPaypal && localUser?.email) setSellPaypal(localUser.email);
         }
-    }, [showSellModal, hustle, localUser]);
+    }, [showSellModal, hustle, localUser, sellAboutUs, sellWhatWeDo, sellOurGoal, sellPaypal]);
 
     useEffect(() => {
         if (localUser?.email) {
@@ -308,9 +312,9 @@ function HustleDetailContent() {
                 const listingData = {
                     hustleName: hustle.name,
                     description: hustle.description,
-                    pitch: sellPitch,
-                    experience: sellExperience,
-                    whoIHelp: sellWhoIHelp,
+                    pitch: sellAboutUs,
+                    experience: sellWhatWeDo,
+                    whoIHelp: sellOurGoal,
                     workFrom: sellWorkFrom,
                     price: parseFloat(sellPrice),
                     category: sellCategory,
@@ -332,24 +336,15 @@ function HustleDetailContent() {
                 setShowSellModal(false);
                 toast({ 
                     title: "Submission Received!", 
-                    description: "Your venture is now in the approval queue. Admin will review it shortly." 
+                    description: "Your venture is now in the approval queue." 
                 });
-                
-                // Simulated admin notification
-                console.log("--- APPROVAL REQUEST ---");
-                console.log(`From: ${currentUser.email}`);
-                console.log(`Venture: ${hustle.name}`);
-                console.log(`Reviewer: guneet.ar2010@gmail.com`);
-                console.log("--------------------------");
 
             } catch (error: any) {
                 console.error("Firestore write failed:", error);
                 toast({
                     variant: 'destructive',
                     title: 'Publish Failed',
-                    description: error.code === 'permission-denied'
-                        ? 'Permission denied. Make sure you are logged in.'
-                        : error.message || 'Something went wrong.',
+                    description: error.message || 'Something went wrong.',
                 });
             }
         });
@@ -722,11 +717,17 @@ function HustleDetailContent() {
                         </div>
 
                         <div className="space-y-2">
-                            <Label className="font-bold flex items-center gap-2"><Sparkles className="h-4 w-4 text-primary" /> The AI Pitch</Label>
-                            <Textarea className="rounded-xl min-h-[100px]" placeholder="Why should someone buy this business?" value={sellPitch} onChange={(e) => setSellPitch(e.target.value)} />
+                            <Label className="font-bold flex items-center gap-2"><Globe className="h-4 w-4 text-primary" /> About us</Label>
+                            <Textarea className="rounded-xl min-h-[100px]" placeholder="Tell the world who you are..." value={sellAboutUs} onChange={(e) => setSellAboutUs(e.target.value)} />
                         </div>
-                        <div className="space-y-2"><Label className="font-bold">Your Success Path</Label><Textarea className="rounded-xl" placeholder="Describe your experience with this hustle..." value={sellExperience} onChange={(e) => setSellExperience(e.target.value)} /></div>
-                        <div className="space-y-2"><Label className="font-bold">Target Buyer</Label><Textarea className="rounded-xl" placeholder="Who is this business ideal for?" value={sellWhoIHelp} onChange={(e) => setSellWhoIHelp(e.target.value)} /></div>
+                        <div className="space-y-2">
+                            <Label className="font-bold flex items-center gap-2"><Briefcase className="h-4 w-4 text-primary" /> What we do</Label>
+                            <Textarea className="rounded-xl min-h-[100px]" placeholder="Explain your services and expertise..." value={sellWhatWeDo} onChange={(e) => setSellWhatWeDo(e.target.value)} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label className="font-bold flex items-center gap-2"><Heart className="h-4 w-4 text-primary" /> Our goal</Label>
+                            <Textarea className="rounded-xl min-h-[100px]" placeholder="What is the mission of this venture?" value={sellOurGoal} onChange={(e) => setSellOurGoal(e.target.value)} />
+                        </div>
                         
                         <div className="pt-4 border-t space-y-4">
                              <Label className="font-bold flex items-center gap-2"><Eye className="h-4 w-4 text-muted-foreground" /> Asset Preview</Label>

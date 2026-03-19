@@ -43,7 +43,7 @@ interface AuthContextType {
 
 export const AuthContext = createContext<AuthContextType | null>(null);
 
-const USERS_STORAGE_KEY = 'hustleSparkUsers';
+const USERS_STORAGE_KEY = 'hustleSparkUsers_v2';
 
 // Helper to interact with local user cache
 const getUsersFromStorage = (): Record<string, UserRecord> => {
@@ -65,7 +65,6 @@ const saveUsersToStorage = (users: Record<string, UserRecord>) => {
 
 /**
  * AuthProvider - Manages user state and synchronization.
- * Forced cache purge implemented for a completely fresh start.
  */
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -81,19 +80,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   
   const userRef = useRef<User | null>(null);
   userRef.current = user;
-
-  // Complete purge of all local storage and session data on initialization
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-        if (!sessionStorage.getItem('hustleSpark_hard_refresh')) {
-            localStorage.clear();
-            sessionStorage.clear();
-            sessionStorage.setItem('hustleSpark_hard_refresh', 'true');
-            // Force a reload to ensure all states are cleared
-            window.location.reload();
-        }
-    }
-  }, []);
 
   const syncStateFromUser = useCallback((userData: User | null) => {
     if (!userData) {
@@ -158,6 +144,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
         await signOut(firebaseAuth);
     } catch (e) {}
+    // Clear session but leave localStorage for user profiles (which mimics a real DB for this demo)
     sessionStorage.clear();
     setUser(null);
     setIsLoggedIn(false);

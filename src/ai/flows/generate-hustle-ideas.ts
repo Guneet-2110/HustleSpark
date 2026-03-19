@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview Generates personalized side hustle ideas using Gemini 2.5 Flash.
@@ -30,6 +31,9 @@ export type HustleIdea = z.infer<typeof HustleIdeaSchema> & {
   trackerData?: z.infer<typeof HustleTrackerDataSchema>;
   schedule?: any;
   coachHistory?: any;
+  aboutUs?: string;
+  whatWeDo?: string;
+  ourGoal?: string;
 };
 
 const GenerateHustleIdeasInputSchema = z.object({

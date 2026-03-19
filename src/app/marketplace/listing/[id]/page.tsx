@@ -7,7 +7,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, ArrowLeft, Rocket, Check, MessageSquare, ArrowRight, Briefcase, Target } from 'lucide-react';
+import { MapPin, ArrowLeft, Rocket, Check, MessageSquare, ArrowRight, Briefcase, Target, Globe, Heart } from 'lucide-react';
 import Image from 'next/image';
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
@@ -113,19 +113,25 @@ export default function MarketplaceListingDetailPage() {
                     </div>
 
                     <Card className="rounded-[2.5rem] shadow-xl border-primary/10">
-                        <CardHeader><CardTitle className="text-2xl flex items-center gap-2"><Rocket className="h-6 w-6 text-primary"/> Business Pitch</CardTitle></CardHeader>
+                        <CardHeader><CardTitle className="text-2xl flex items-center gap-2"><Rocket className="h-6 w-6 text-primary"/> Strategic Blueprint</CardTitle></CardHeader>
                         <CardContent className="space-y-8">
-                            <p className="text-lg text-muted-foreground leading-relaxed italic">"{listing.pitch}"</p>
+                            <div className="space-y-3">
+                                <h4 className="font-black text-xs uppercase tracking-widest text-primary flex items-center gap-2">
+                                    <Globe className="h-4 w-4" /> About Us
+                                </h4>
+                                <p className="text-lg text-muted-foreground leading-relaxed italic">"{listing.pitch}"</p>
+                            </div>
+
                             <div className="grid md:grid-cols-2 gap-8 pt-8 border-t">
                                 <div className="space-y-3">
                                     <h4 className="font-black text-xs uppercase tracking-widest text-primary flex items-center gap-2">
-                                        <Briefcase className="h-4 w-4" /> Founder Experience
+                                        <Briefcase className="h-4 w-4" /> What We Do
                                     </h4>
                                     <p className="text-sm text-muted-foreground leading-relaxed">{listing.experience}</p>
                                 </div>
                                 <div className="space-y-3">
                                     <h4 className="font-black text-xs uppercase tracking-widest text-primary flex items-center gap-2">
-                                        <Target className="h-4 w-4" /> Ideal Target
+                                        <Heart className="h-4 w-4" /> Our Goal
                                     </h4>
                                     <p className="text-sm text-muted-foreground leading-relaxed">{listing.whoIHelp}</p>
                                 </div>
