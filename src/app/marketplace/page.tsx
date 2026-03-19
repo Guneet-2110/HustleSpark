@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
-import { Search, Filter, MapPin, DollarSign, Sparkles, Loader, ShoppingCart, Trash2, ShieldCheck, Clock } from 'lucide-react';
+import { Search, Filter, MapPin, DollarSign, Sparkles, Loader, ShoppingBag, Trash2, ShieldCheck, Clock } from 'lucide-react';
 import Link from 'next/link';
 import { MarketplaceListingCard } from '@/components/marketplace-listing-card';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
@@ -28,7 +28,7 @@ export default function MarketplacePage() {
     const [category, setCategory] = useState('all');
     const [location, setLocation] = useState('');
 
-    const isDeveloper = user?.email === 'guneet.ar2010@gmail.com';
+    const isDeveloper = user?.email === 'guneet.ar2010@gmail.com' || user?.email === 'tester@gmail.com';
 
     const listingsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
@@ -261,7 +261,7 @@ export default function MarketplacePage() {
                     <div className="hidden md:block">
                         <div className="relative h-64 w-64">
                              <DollarSign className="h-48 w-48 text-primary opacity-20 absolute top-0 left-0 animate-bounce" />
-                             <ShoppingCart className="h-32 w-32 text-accent opacity-20 absolute bottom-0 right-0 animate-pulse" />
+                             <ShoppingBag className="h-32 w-32 text-accent opacity-20 absolute bottom-0 right-0 animate-pulse" />
                         </div>
                     </div>
                 </div>

@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useAuth } from "@/hooks/use-auth";
@@ -50,7 +49,7 @@ function ProfilePageContent() {
   const { toast } = useToast();
   const [timeLeft, setTimeLeft] = useState(calculateTimeLeft(localUser?.premiumExpiresAt));
 
-  const isDeveloper = localUser?.email === 'guneet.ar2010@gmail.com';
+  const isDeveloper = localUser?.email === 'guneet.ar2010@gmail.com' || localUser?.email === 'tester@gmail.com';
 
   useEffect(() => {
     if (!isLoggedIn) {
