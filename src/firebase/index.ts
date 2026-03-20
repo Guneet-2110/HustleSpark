@@ -29,7 +29,7 @@ export function getSdks(firebaseApp: FirebaseApp) {
 
 // Export all providers, hooks, and utilities
 export * from './provider';
-export * from './client-provider';
+// Note: client-provider is not exported here to avoid circular dependencies
 export * from './firestore/use-collection';
 export * from './firestore/use-doc';
 export * from './non-blocking-updates';
