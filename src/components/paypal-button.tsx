@@ -3,9 +3,10 @@
 
 import { PayPalButtons } from "@paypal/react-paypal-js";
 import { useToast } from "@/hooks/use-toast";
-import { Lock, ShieldCheck } from "lucide-react";
+import { Lock, ShieldCheck, Loader2 } from "lucide-react";
 import { useFirestore, useUser } from "@/firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { useState } from "react";
 
 interface PaypalButtonProps {
     amount: number;
@@ -20,34 +21,36 @@ export function PaypalButton({ amount, onSuccess, payeeEmail, listingId, sellerI
     const { toast } = useToast();
     const firestore = useFirestore();
     const { user } = useUser();
+    const [isProcessing, setIsProcessing] = useState(false);
 
     return (
-        <div className="w-full space-y-3">
+        <div className="w-full space-y-3 relative">
+            {isProcessing && (
+                <div className="absolute inset-0 z-50 bg-background/60 backdrop-blur-sm flex flex-col items-center justify-center rounded-2xl">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary mb-2" />
+                    <p className="text-xs font-bold uppercase tracking-widest text-primary">Finalizing Acquisition...</p>
+                </div>
+            )}
+            
             <PayPalButtons
                 style={{ layout: "vertical", shape: "rect", label: "pay" }}
+                disabled={isProcessing}
                 createOrder={(data, actions) => {
-                    const purchaseUnit: any = {
-                        amount: {
-                            currency_code: "USD",
-                            value: amount.toFixed(2),
-                        }
-                    };
-
-                    // If a specific payee is provided, direct the payment to them
-                    if (payeeEmail) {
-                        purchaseUnit.payee = {
-                            email_address: payeeEmail
-                        };
-                    }
-
                     return actions.order.create({
                         intent: "CAPTURE",
-                        purchase_units: [purchaseUnit],
+                        purchase_units: [{
+                            amount: {
+                                currency_code: "USD",
+                                value: amount.toFixed(2),
+                            },
+                            ...(payeeEmail ? { payee: { email_address: payeeEmail } } : {})
+                        }],
                     });
                 }}
                 onApprove={(data, actions) => {
                     if (actions.order) {
                         return actions.order.capture().then(async (details) => {
+                            setIsProcessing(true);
                             try {
                                 if (!firestore || !user) throw new Error("Services unavailable");
 
@@ -74,9 +77,13 @@ export function PaypalButton({ amount, onSuccess, payeeEmail, listingId, sellerI
                                     description: "Transaction initialized in escrow. Awaiting delivery from the creator.",
                                 });
 
-                                onSuccess();
+                                // Ensure navigation happens after a short delay to allow PayPal UI to close
+                                setTimeout(() => {
+                                    onSuccess();
+                                }, 500);
                             } catch (error: any) {
                                 console.error("Escrow recording error:", error);
+                                setIsProcessing(false);
                                 toast({
                                     variant: "destructive",
                                     title: "System Error",
@@ -90,6 +97,7 @@ export function PaypalButton({ amount, onSuccess, payeeEmail, listingId, sellerI
                 }}
                 onError={(err) => {
                     console.error("PayPal Error:", err);
+                    setIsProcessing(false);
                     toast({
                         variant: "destructive",
                         title: "Transaction Failed",

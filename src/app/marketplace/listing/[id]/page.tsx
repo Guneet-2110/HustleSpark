@@ -55,7 +55,6 @@ export default function MarketplaceListingDetailPage() {
 
     const handleDelete = () => {
         if (!firestore || !listingId) return;
-        // Owners can delete their own, or admins can delete any
         const isOwner = listing?.userId === user?.uid;
         if (!isAdmin && !isOwner) return;
 
@@ -74,23 +73,31 @@ export default function MarketplaceListingDetailPage() {
     const handleAcquisitionSuccess = async () => {
         setIsCheckoutOpen(false);
         if (firestore && user && listing) {
-            const chatId = `${listingId}_${user.uid}`;
-            const chatRef = doc(firestore, 'chats', chatId);
-            
-            await setDoc(chatRef, {
-                listingId,
-                hustleName: listing.hustleName,
-                buyerId: user.uid,
-                sellerId: listing.userId,
-                updatedAt: serverTimestamp(),
-                lastMessage: 'Venture acquired! Start the conversation.'
-            }, { merge: true });
+            try {
+                const chatId = `${listingId}_${user.uid}`;
+                const chatRef = doc(firestore, 'chats', chatId);
+                
+                await setDoc(chatRef, {
+                    listingId,
+                    hustleName: listing.hustleName,
+                    buyerId: user.uid,
+                    sellerId: listing.userId,
+                    updatedAt: serverTimestamp(),
+                    lastMessage: 'Venture acquired! Start the conversation.'
+                }, { merge: true });
 
-            toast({ 
-                title: "Venture Acquired!", 
-                description: "Transaction initialized. Communication channel opened." 
-            });
-            router.push(`/chats/${chatId}`);
+                toast({ 
+                    title: "Venture Acquired!", 
+                    description: "Transaction initialized. Communication channel opened." 
+                });
+                
+                // Allow a small pause for Firestore sync before redirect
+                setTimeout(() => {
+                    router.push(`/chats/${chatId}`);
+                }, 300);
+            } catch (err) {
+                router.push('/profile');
+            }
         } else {
             router.push('/profile');
         }
