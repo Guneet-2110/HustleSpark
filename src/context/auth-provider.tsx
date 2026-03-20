@@ -1,4 +1,3 @@
-
 'use client';
 
 import type { HustleIdea } from '@/ai/flows/generate-hustle-ideas';
@@ -75,7 +74,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const firebaseAuth = useFirebaseInstance();
   
   const userRef = useRef<User | null>(null);
-  userRef.current = user;
 
   const syncStateFromUser = useCallback((userData: User | null) => {
     if (!userData) {
@@ -83,6 +81,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsLoggedIn(false);
       setIsPremium(false);
       setSavedHustles([]);
+      userRef.current = null;
       return;
     }
 
@@ -95,6 +94,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoggedIn(true);
     setIsPremium(premiumStatus);
     setSavedHustles(userData.savedHustles || []);
+    userRef.current = mergedUser;
   }, []);
 
   useEffect(() => {
@@ -148,6 +148,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSavedHustles([]);
     setGeneratedHustlesState([]);
     setHasUnsavedChanges(false);
+    userRef.current = null;
     router.push('/');
   }, [router, firebaseAuth]);
 

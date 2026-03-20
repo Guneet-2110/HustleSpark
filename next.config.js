@@ -1,9 +1,8 @@
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // Forced refresh to resolve build chunk errors
   generateBuildId: async () => {
-    return 'hustlespark-build-' + Date.now();
+    return 'hustlespark-stable-' + Date.now();
   },
   typescript: {
     ignoreBuildErrors: true,
