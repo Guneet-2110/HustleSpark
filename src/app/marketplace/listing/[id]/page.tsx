@@ -1,6 +1,6 @@
 "use client";
 
-import { useDoc, useFirestore, useMemoFirebase, useAuth } from '@/firebase';
+import { useDoc, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import { doc, setDoc, serverTimestamp, updateDoc, deleteDoc } from 'firebase/firestore';
 import { useParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -22,7 +22,7 @@ export default function MarketplaceListingDetailPage() {
     const router = useRouter();
     const { toast } = useToast();
     const firestore = useFirestore();
-    const { user } = useAuth();
+    const { user } = useUser();
     const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
     const [isApproving, startApproving] = useTransition();
     const [isDeleting, startDeleting] = useTransition();
@@ -36,10 +36,11 @@ export default function MarketplaceListingDetailPage() {
 
     const { data: listing, isLoading } = useDoc(memoizedDocRef);
 
-    const isOwner = user?.email === 'guneet.ar2010@gmail.com';
+    // Site Administrator (Owner)
+    const isAdmin = user?.email === 'guneet.ar2010@gmail.com';
 
     const handleApprove = () => {
-        if (!firestore || !listingId || !isOwner) return;
+        if (!firestore || !listingId || !isAdmin) return;
         startApproving(async () => {
             try {
                 const docRef = doc(firestore, 'marketplace_listings', listingId);
@@ -52,7 +53,7 @@ export default function MarketplaceListingDetailPage() {
     };
 
     const handleDelete = () => {
-        if (!firestore || !listingId || !isOwner) return;
+        if (!firestore || !listingId || !isAdmin) return;
         startDeleting(async () => {
             try {
                 const docRef = doc(firestore, 'marketplace_listings', listingId);
@@ -121,7 +122,7 @@ export default function MarketplaceListingDetailPage() {
                     <ArrowLeft className="mr-2 h-4 w-4 transition-transform group-hover:-translate-x-1" /> Back to Marketplace
                 </Button>
                 
-                {isOwner && (
+                {isAdmin && (
                     <div className="flex gap-2">
                          {listing.status === 'pending_approval' && (
                              <AlertDialog>
