@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { MapPin, ArrowLeft, Rocket, Check, MessageSquare, ArrowRight, Briefcase, Target, Globe, Heart, ShieldCheck, Loader2, Trash2 } from 'lucide-react';
 import Image from 'next/image';
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { PaypalButton } from '@/components/paypal-button';
@@ -22,7 +22,7 @@ export default function MarketplaceListingDetailPage() {
     const router = useRouter();
     const { toast } = useToast();
     const firestore = useFirestore();
-    const { user } = useUser();
+    const { user, isUserLoading } = useUser();
     const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
     const [isApproving, startApproving] = useTransition();
     const [isDeleting, startDeleting] = useTransition();
@@ -34,10 +34,10 @@ export default function MarketplaceListingDetailPage() {
         return doc(firestore, 'marketplace_listings', listingId);
     }, [firestore, listingId]);
 
-    const { data: listing, isLoading } = useDoc(memoizedDocRef);
+    const { data: listing, isLoading: isListingLoading } = useDoc(memoizedDocRef);
 
     // Site Administrator (Owner)
-    const isAdmin = user?.email === 'guneet.ar2010@gmail.com';
+    const isAdmin = user?.email === 'guneet.ar2010@gmail.com' || user?.email === 'tester@gmail.com';
 
     const handleApprove = () => {
         if (!firestore || !listingId || !isAdmin) return;
@@ -91,7 +91,7 @@ export default function MarketplaceListingDetailPage() {
         }
     };
 
-    if (isLoading) {
+    if (isListingLoading || isUserLoading) {
         return (
             <div className="container py-20 space-y-8">
                 <Skeleton className="h-10 w-1/3" />

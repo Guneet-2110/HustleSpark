@@ -32,15 +32,17 @@ export default function MarketplacePage() {
 
     // Show the trust modal on mount
     useEffect(() => {
-        const hasSeenTrust = sessionStorage.getItem('hasSeenMarketplaceTrust');
-        if (!hasSeenTrust) {
-            setShowTrustModal(true);
-            sessionStorage.setItem('hasSeenMarketplaceTrust', 'true');
+        if (typeof window !== 'undefined') {
+            const hasSeenTrust = sessionStorage.getItem('hasSeenMarketplaceTrust');
+            if (!hasSeenTrust) {
+                setShowTrustModal(true);
+                sessionStorage.setItem('hasSeenMarketplaceTrust', 'true');
+            }
         }
     }, []);
 
+    const isDeveloper = user?.email === 'guneet.ar2010@gmail.com' || user?.email === 'tester@gmail.com';
     const isOwner = user?.email === 'guneet.ar2010@gmail.com';
-    const isDeveloper = isOwner || user?.email === 'tester@gmail.com';
 
     const listingsQuery = useMemoFirebase(() => {
         if (!firestore) return null;

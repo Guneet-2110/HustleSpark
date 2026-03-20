@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from 'next/link';
@@ -30,6 +29,7 @@ export function Header() {
     };
 
     if (isPremium && user?.premiumExpiresAt) {
+        // Initial set to avoid delay
         setTimeLeft(calculate());
         const timer = setInterval(() => setTimeLeft(calculate()), 1000);
         return () => clearInterval(timer);
