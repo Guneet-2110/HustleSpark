@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useDoc, useFirestore, useMemoFirebase, useUser } from '@/firebase';
@@ -36,7 +37,7 @@ export default function MarketplaceListingDetailPage() {
 
     const { data: listing, isLoading: isListingLoading } = useDoc(memoizedDocRef);
 
-    // Site Administrator (Owner)
+    // Site Administrator privileges
     const isAdmin = user?.email === 'guneet.ar2010@gmail.com' || user?.email === 'tester@gmail.com';
 
     const handleApprove = () => {
@@ -53,7 +54,11 @@ export default function MarketplaceListingDetailPage() {
     };
 
     const handleDelete = () => {
-        if (!firestore || !listingId || !isAdmin) return;
+        if (!firestore || !listingId) return;
+        // Owners can delete their own, or admins can delete any
+        const isOwner = listing?.userId === user?.uid;
+        if (!isAdmin && !isOwner) return;
+
         startDeleting(async () => {
             try {
                 const docRef = doc(firestore, 'marketplace_listings', listingId);
@@ -114,6 +119,7 @@ export default function MarketplaceListingDetailPage() {
 
     const total = listing.price || 0;
     const flyerUrl = listing.flyerUrl || placeholders.listings.default.url;
+    const isOwner = listing.userId === user?.uid;
 
     return (
         <div className="container py-12 max-w-6xl">
@@ -122,9 +128,9 @@ export default function MarketplaceListingDetailPage() {
                     <ArrowLeft className="mr-2 h-4 w-4 transition-transform group-hover:-translate-x-1" /> Back to Marketplace
                 </Button>
                 
-                {isAdmin && (
+                {(isAdmin || isOwner) && (
                     <div className="flex gap-2">
-                         {listing.status === 'pending_approval' && (
+                         {isAdmin && listing.status === 'pending_approval' && (
                              <AlertDialog>
                                  <AlertDialogTrigger asChild>
                                      <Button disabled={isApproving} className="rounded-2xl h-12 px-8 font-black bg-orange-500 hover:bg-orange-600 shadow-xl">
@@ -157,7 +163,7 @@ export default function MarketplaceListingDetailPage() {
                                  <AlertDialogHeader>
                                      <AlertDialogTitle>Permanently delete this venture?</AlertDialogTitle>
                                      <AlertDialogDescription>
-                                         This action cannot be undone. This listing will be removed from the marketplace and all user views.
+                                         This action cannot be undone. This listing will be removed from the marketplace.
                                      </AlertDialogDescription>
                                  </AlertDialogHeader>
                                  <AlertDialogFooter>

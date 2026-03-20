@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useAuth } from "@/hooks/use-auth";
@@ -49,19 +50,22 @@ function ProfilePageContent() {
   const router = useRouter();
   const { toast } = useToast();
   
-  // Hydration fix: Initialize with null and calculate in useEffect
   const [timeLeft, setTimeLeft] = useState<{days:number, hours:number, minutes:number, seconds:number, total:number} | null>(null);
+  const [isClient, setIsClient] = useState(false);
 
-  const isDeveloper = localUser?.email === 'guneet.ar2010@gmail.com' || localUser?.email === 'tester@gmail.com' || localUser?.email === 'tester@gmail.com';
+  const isDeveloper = localUser?.email === 'guneet.ar2010@gmail.com' || localUser?.email === 'tester@gmail.com';
 
   useEffect(() => {
-    if (!isLoggedIn) {
+    setIsClient(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isLoggedIn && isClient) {
       router.push('/login');
     }
-  }, [isLoggedIn, router]);
+  }, [isLoggedIn, router, isClient]);
 
   useEffect(() => {
-    // Initial calculation after mount
     if (isPremium && localUser?.premiumExpiresAt) {
         setTimeLeft(calculateTimeLeft(localUser.premiumExpiresAt));
     }
@@ -74,7 +78,6 @@ function ProfilePageContent() {
     return () => clearInterval(timer);
   }, [isPremium, localUser?.premiumExpiresAt]);
 
-  // Fetch active chats
   const chatsQuery = useMemoFirebase(() => {
     if (!firestore || !firebaseUser) return null;
     return query(
@@ -87,7 +90,6 @@ function ProfilePageContent() {
   const { data: rawChats, isLoading: isChatsLoading } = useCollection(chatsQuery);
   const filteredChats = rawChats?.filter(c => c.buyerId === firebaseUser?.uid || c.sellerId === firebaseUser?.uid) || [];
 
-  // Fetch User's Marketplace Listings
   const myListingsQuery = useMemoFirebase(() => {
       if (!firestore || !firebaseUser) return null;
       return query(
@@ -99,7 +101,6 @@ function ProfilePageContent() {
 
   const { data: myListings, isLoading: isMyListingsLoading } = useCollection(myListingsQuery);
 
-  // Fetch Transactions (Purchases and Sales)
   const salesQuery = useMemoFirebase(() => {
       if (!firestore || !firebaseUser) return null;
       return query(collection(firestore, 'transactions'), where('sellerId', '==', firebaseUser.uid), orderBy('createdAt', 'desc'));
@@ -167,16 +168,7 @@ function ProfilePageContent() {
     toast({ title: "Venture Removed", description: `${hustleName} has been deleted.` });
   }
 
-  const handleUpgradeClick = () => {
-    setPaymentModalOpen(true);
-  }
-
-  const handleFreePremiumClick = () => {
-    upgradeToPremium(365);
-    toast({ title: "Dev Mode: Activated", description: "1 year of premium added to your account." });
-  }
-
-  if (!isLoggedIn || !localUser) {
+  if (!isLoggedIn || !localUser || !isClient) {
     return <div className="container py-12"><Skeleton className="h-9 w-1/2" /><Skeleton className="h-5 w-1/3 mt-2" /></div>;
   }
 
@@ -198,7 +190,7 @@ function ProfilePageContent() {
             {isDeveloper && (
                 <Button 
                     variant="outline" 
-                    onClick={handleFreePremiumClick}
+                    onClick={() => upgradeToPremium(365)}
                     className="border-primary/50 text-primary hover:bg-primary/5 rounded-2xl h-12 px-6 font-black"
                 >
                     <ShieldAlert className="mr-2 h-5 w-5" />
@@ -209,7 +201,6 @@ function ProfilePageContent() {
 
       <div className="grid gap-12 lg:grid-cols-12">
         <div className="lg:col-span-8 space-y-12">
-            {/* MY MARKETPLACE LISTINGS */}
             <Card className="shadow-xl rounded-[2.5rem] border-primary/20 overflow-hidden">
                 <CardHeader className="bg-primary/5 border-b">
                     <CardTitle className="flex items-center gap-2"><Store className="h-6 w-6 text-primary"/> Your Marketplace Ventures</CardTitle>
@@ -267,7 +258,6 @@ function ProfilePageContent() {
                 </CardContent>
             </Card>
 
-            {/* ESCROW TRANSACTIONS: SALES */}
             <Card className="shadow-xl rounded-[2.5rem] border-primary/10 overflow-hidden">
                 <CardHeader className="bg-primary/5 border-b">
                     <CardTitle className="flex items-center gap-2"><Package className="h-6 w-6 text-primary"/> Venture Sales (Creator)</CardTitle>
@@ -311,7 +301,6 @@ function ProfilePageContent() {
                 </CardContent>
             </Card>
 
-            {/* ESCROW TRANSACTIONS: PURCHASES */}
             <Card className="shadow-xl rounded-[2.5rem] border-accent/10 overflow-hidden">
                 <CardHeader className="bg-accent/5 border-b">
                     <CardTitle className="flex items-center gap-2 text-accent"><ShieldCheck className="h-6 w-6"/> Acquired Ventures (Buyer)</CardTitle>
@@ -355,7 +344,6 @@ function ProfilePageContent() {
                 </CardContent>
             </Card>
 
-            {/* STRATEGY LAB */}
             <Card className="bg-gradient-to-br from-primary/10 via-transparent to-accent/5 shadow-2xl border-primary/20 rounded-[2.5rem] overflow-hidden">
                 <CardHeader className="pb-2">
                     <CardTitle className="flex items-center gap-2 text-2xl"><LayoutDashboard className="h-6 w-6 text-primary"/>Side Hustle Lab</CardTitle>
@@ -424,7 +412,7 @@ function ProfilePageContent() {
                         <span className="font-bold text-xs uppercase tracking-widest text-muted-foreground">Tier</span>
                         <Badge variant={isPremium ? "default" : "secondary"} className="shadow-sm font-bold">{isPremium ? 'PREMIUM ACTIVE' : 'FREE TIER'}</Badge>
                     </div>
-                    <Button className="w-full h-14 rounded-2xl shadow-xl font-black text-lg group" onClick={handleUpgradeClick}>
+                    <Button className="w-full h-14 rounded-2xl shadow-xl font-black text-lg group" onClick={() => setPaymentModalOpen(true)}>
                         <Star className="mr-2 h-5 w-5 transition-transform group-hover:rotate-45" />
                         {isPremium ? 'Extend Access' : 'Upgrade to Pro'}
                     </Button>

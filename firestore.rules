@@ -9,8 +9,11 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
     function isAdmin() {
-      // Owner-only approval and oversight privileges
-      return isSignedIn() && (request.auth.token.email == 'guneet.ar2010@gmail.com');
+      // Owner and verified testers approval and oversight privileges
+      return isSignedIn() && (
+        request.auth.token.email == 'guneet.ar2010@gmail.com' || 
+        request.auth.token.email == 'tester@gmail.com'
+      );
     }
     match /users/{userId} {
       allow get, list: if isOwner(userId);
