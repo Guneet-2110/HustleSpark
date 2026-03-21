@@ -2,15 +2,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { loadStripe } from "@stripe/stripe-js";
 import { getFunctions, httpsCallable } from "firebase/functions";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Lock, ShieldCheck, Loader2, AlertCircle } from "lucide-react";
+import { Lock, ShieldCheck, Loader2, AlertCircle, ArrowRight } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-
-// Load stripe outside of component to prevent re-initialization
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || "");
 
 interface StripeCheckoutProps {
     amount: number;
@@ -29,20 +25,12 @@ export function StripeCheckout({ amount, listingId, sellerEmail, hustleName, buy
     useEffect(() => {
         if (!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) {
             console.error("Missing NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY");
-            setIsStripeError(true);
+            // Note: For hosted checkout sessions, we only need the backend secret key,
+            // but we use the publishable key logic as a guard for the demo.
         }
     }, []);
 
     const handlePayment = async () => {
-        if (!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) {
-            toast({
-                variant: "destructive",
-                title: "Configuration Error",
-                description: "Stripe is not properly configured. Please contact support.",
-            });
-            return;
-        }
-
         setIsLoading(true);
         try {
             const functions = getFunctions();
@@ -55,21 +43,13 @@ export function StripeCheckout({ amount, listingId, sellerEmail, hustleName, buy
                 hustleName,
             });
 
-            const { clientSecret } = result.data;
-            const stripe = await stripePromise;
+            const { url } = result.data;
 
-            if (!stripe) throw new Error("Stripe SDK failed to initialize.");
-
-            // Redirect to Stripe hosted checkout or handle via Elements
-            const { error } = await stripe.confirmPayment({
-                clientSecret,
-                confirmParams: {
-                    return_url: `${window.location.origin}/payment-success?listingId=${listingId}&sellerEmail=${encodeURIComponent(sellerEmail)}&amount=${amount}`,
-                },
-            });
-
-            if (error) {
-                throw new Error(error.message);
+            if (url) {
+                // Redirect to Stripe's hosted checkout page
+                window.location.href = url;
+            } else {
+                throw new Error("Failed to initialize checkout session.");
             }
 
         } catch (error: any) {
@@ -79,22 +59,9 @@ export function StripeCheckout({ amount, listingId, sellerEmail, hustleName, buy
                 title: "Payment Process Failed",
                 description: error.message || "An unexpected error occurred during checkout.",
             });
-        } finally {
             setIsLoading(false);
         }
     };
-
-    if (isStripeError) {
-        return (
-            <Alert variant="destructive" className="rounded-2xl">
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Checkout Unavailable</AlertTitle>
-                <AlertDescription>
-                    Stripe configuration keys are missing. Please check your environment variables.
-                </AlertDescription>
-            </Alert>
-        );
-    }
 
     return (
         <div className="w-full space-y-4">
@@ -121,7 +88,10 @@ export function StripeCheckout({ amount, listingId, sellerEmail, hustleName, buy
                 {isLoading ? (
                     <><Loader2 className="animate-spin mr-2 h-6 w-6" /> Processing Securely...</>
                 ) : (
-                    `Complete Acquisition ($${amount.toLocaleString()})`
+                    <div className="flex items-center">
+                        Proceed to Secure Checkout
+                        <ArrowRight className="ml-2 h-6 w-6" />
+                    </div>
                 )}
             </Button>
 

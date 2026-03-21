@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useDoc, useFirestore, useMemoFirebase, useUser } from '@/firebase';
@@ -37,7 +38,7 @@ export default function MarketplaceListingDetailPage() {
 
     const { data: listing, isLoading: isListingLoading } = useDoc(memoizedDocRef);
 
-    // Site Administrator privileges
+    // Site Administrator privileges check
     const isAdmin = user?.email === 'guneet.ar2010@gmail.com' || user?.email === 'tester@gmail.com';
 
     const handleApprove = () => {
@@ -46,7 +47,7 @@ export default function MarketplaceListingDetailPage() {
             try {
                 const docRef = doc(firestore, 'marketplace_listings', listingId);
                 await updateDoc(docRef, { status: 'approved' });
-                toast({ title: "Venture Approved", description: "The listing is now live on the marketplace." });
+                toast({ title: "Venture Approved", description: "The listing is now live for all users." });
             } catch (error: any) {
                 toast({ variant: 'destructive', title: "Approval Failed", description: error.message });
             }
@@ -62,7 +63,7 @@ export default function MarketplaceListingDetailPage() {
             try {
                 const docRef = doc(firestore, 'marketplace_listings', listingId);
                 await deleteDoc(docRef);
-                toast({ title: "Venture Removed", description: "The listing has been permanently deleted." });
+                toast({ title: "Listing Removed", description: "The venture has been permanently deleted." });
                 router.push('/marketplace');
             } catch (error: any) {
                 toast({ variant: 'destructive', title: "Deletion Failed", description: error.message });
@@ -70,41 +71,9 @@ export default function MarketplaceListingDetailPage() {
         });
     }
 
-    const handleAcquisitionSuccess = async () => {
-        setIsCheckoutOpen(false);
-        if (firestore && user && listing) {
-            try {
-                const chatId = `${listingId}_${user.uid}`;
-                const chatRef = doc(firestore, 'chats', chatId);
-                
-                await setDoc(chatRef, {
-                    listingId,
-                    hustleName: listing.hustleName,
-                    buyerId: user.uid,
-                    sellerId: listing.userId,
-                    updatedAt: serverTimestamp(),
-                    lastMessage: 'Venture acquired! Start the conversation.'
-                }, { merge: true });
-
-                toast({ 
-                    title: "Venture Acquired!", 
-                    description: "Transaction initialized. Communication channel opened." 
-                });
-                
-                setTimeout(() => {
-                    router.push(`/chats/${chatId}`);
-                }, 300);
-            } catch (err) {
-                router.push('/profile');
-            }
-        } else {
-            router.push('/profile');
-        }
-    };
-
     if (isListingLoading || isUserLoading) {
         return (
-            <div className="container py-20 space-y-8 text-center">
+            <div className="container py-20 text-center space-y-4">
                 <Loader2 className="animate-spin h-10 w-10 mx-auto text-primary" />
                 <p className="font-bold text-muted-foreground">Syncing venture data...</p>
             </div>
@@ -136,7 +105,7 @@ export default function MarketplaceListingDetailPage() {
                          {isAdmin && listing.status === 'pending_approval' && (
                              <AlertDialog>
                                  <AlertDialogTrigger asChild>
-                                     <Button disabled={isApproving} className="rounded-2xl h-12 px-8 font-black bg-orange-500 hover:bg-orange-600 shadow-xl">
+                                     <Button disabled={isApproving} className="rounded-2xl h-12 px-8 font-black bg-orange-500 hover:bg-orange-600 shadow-xl text-white">
                                          {isApproving ? <Loader2 className="animate-spin mr-2 h-5 w-5" /> : <ShieldCheck className="mr-2 h-5 w-5" />}
                                          Approve Venture
                                      </Button>
@@ -145,7 +114,7 @@ export default function MarketplaceListingDetailPage() {
                                      <AlertDialogHeader>
                                          <AlertDialogTitle>Are you sure you want to approve this?</AlertDialogTitle>
                                          <AlertDialogDescription>
-                                             Approving this venture will make it live and visible to all users on the marketplace.
+                                             Once approved, this venture will be visible to all users on the marketplace.
                                          </AlertDialogDescription>
                                      </AlertDialogHeader>
                                      <AlertDialogFooter>
@@ -166,12 +135,12 @@ export default function MarketplaceListingDetailPage() {
                                  <AlertDialogHeader>
                                      <AlertDialogTitle>Permanently delete this venture?</AlertDialogTitle>
                                      <AlertDialogDescription>
-                                         This action cannot be undone. This listing will be removed from the marketplace.
+                                         This action cannot be undone. This listing will be removed from all results.
                                      </AlertDialogDescription>
                                  </AlertDialogHeader>
                                  <AlertDialogFooter>
                                      <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
-                                     <AlertDialogAction onClick={handleDelete} className="rounded-xl bg-destructive">Confirm Removal</AlertDialogAction>
+                                     <AlertDialogAction onClick={handleDelete} className="rounded-xl bg-destructive text-white">Confirm Removal</AlertDialogAction>
                                  </AlertDialogFooter>
                              </AlertDialogContent>
                          </AlertDialog>
@@ -181,7 +150,7 @@ export default function MarketplaceListingDetailPage() {
 
             <div className="grid lg:grid-cols-3 gap-8">
                 <div className="lg:col-span-2 space-y-8">
-                    <div className="relative aspect-video rounded-[2.5rem] overflow-hidden border shadow-2xl">
+                    <div className="relative aspect-video rounded-[2.5rem] overflow-hidden border shadow-2xl bg-muted">
                         <Image src={flyerUrl} alt={listing.hustleName} fill className="object-cover" />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
                         <div className="absolute bottom-8 left-8 flex items-center gap-6">
@@ -195,7 +164,7 @@ export default function MarketplaceListingDetailPage() {
                                 <div className="flex items-center gap-2 mt-2">
                                     <Badge className="bg-primary/20 text-white border-white/10">{listing.category}</Badge>
                                     <span className="text-white/60 text-sm font-bold flex items-center gap-1">
-                                        <MapPin className="h-3 w-3" /> {listing.location}
+                                        <MapPin className="h-3 w-3" /> {listing.location || 'Remote'}
                                     </span>
                                 </div>
                             </div>
@@ -209,7 +178,7 @@ export default function MarketplaceListingDetailPage() {
                                 <h4 className="font-black text-xs uppercase tracking-widest text-primary flex items-center gap-2">
                                     <Globe className="h-4 w-4" /> About us
                                 </h4>
-                                <p className="text-lg text-muted-foreground leading-relaxed italic">"{listing.pitch}"</p>
+                                <p className="text-lg text-muted-foreground leading-relaxed italic">"{listing.pitch || listing.description}"</p>
                             </div>
 
                             <div className="grid md:grid-cols-2 gap-8 pt-8 border-t">
@@ -217,13 +186,13 @@ export default function MarketplaceListingDetailPage() {
                                     <h4 className="font-black text-xs uppercase tracking-widest text-primary flex items-center gap-2">
                                         <Briefcase className="h-4 w-4" /> What we do
                                     </h4>
-                                    <p className="text-sm text-muted-foreground leading-relaxed">{listing.experience}</p>
+                                    <p className="text-sm text-muted-foreground leading-relaxed">{listing.experience || 'Proprietary venture strategy and branding.'}</p>
                                 </div>
                                 <div className="space-y-3">
                                     <h4 className="font-black text-xs uppercase tracking-widest text-primary flex items-center gap-2">
                                         <Target className="h-4 w-4" /> Our goal
                                     </h4>
-                                    <p className="text-sm text-muted-foreground leading-relaxed">{listing.whoIHelp}</p>
+                                    <p className="text-sm text-muted-foreground leading-relaxed">{listing.whoIHelp || 'To empower new entrepreneurs with elite starting assets.'}</p>
                                 </div>
                             </div>
                         </CardContent>
@@ -249,32 +218,34 @@ export default function MarketplaceListingDetailPage() {
                             <Dialog open={isCheckoutOpen} onOpenChange={setIsCheckoutOpen}>
                                 <DialogTrigger asChild>
                                     <Button disabled={listing.status !== 'approved'} className="w-full h-16 text-xl font-black rounded-2xl shadow-xl transition-all hover:scale-[1.02] active:scale-95 group">
-                                        {listing.status === 'approved' ? 'Acquire Now' : 'Pending Approval'}
+                                        {listing.status === 'approved' ? 'Acquire Venture' : 'Reviewing...'}
                                         {listing.status === 'approved' && <ArrowRight className="ml-2 h-6 w-6 transition-transform group-hover:translate-x-1" />}
                                     </Button>
                                 </DialogTrigger>
-                                <DialogContent className="sm:max-w-xl rounded-[2.5rem] p-0 overflow-hidden">
-                                    <DialogHeader className="p-8 pb-0">
-                                        <DialogTitle className="text-2xl font-black">Secure Acquisition</DialogTitle>
-                                        <DialogDescription className="font-medium">
-                                            You are acquiring "<span className="text-primary">{listing.hustleName}</span>".
-                                        </DialogDescription>
-                                    </DialogHeader>
-                                    
-                                    <ScrollArea className="max-h-[70vh] px-8 pb-8 pt-4">
-                                        <div className="space-y-6">
-                                            <EscrowTrustBanner />
+                                <DialogContent className="sm:max-w-xl rounded-[2.5rem] p-0 overflow-hidden border-none shadow-2xl">
+                                    <div className="bg-background max-h-[90vh] flex flex-col">
+                                        <DialogHeader className="p-8 pb-4">
+                                            <DialogTitle className="text-2xl font-black">Secure Acquisition</DialogTitle>
+                                            <DialogDescription className="font-medium">
+                                                Review and finalize your acquisition of "<span className="text-primary">{listing.hustleName}</span>".
+                                            </DialogDescription>
+                                        </DialogHeader>
+                                        
+                                        <ScrollArea className="flex-1 px-8 pb-8">
+                                            <div className="space-y-6 py-4">
+                                                <EscrowTrustBanner />
 
-                                            <StripeCheckout
-                                                amount={total}
-                                                listingId={listingId}
-                                                sellerEmail={listing.paypalEmail}
-                                                hustleName={listing.hustleName}
-                                                buyerId={user?.uid || ""}
-                                                onSuccess={handleAcquisitionSuccess}
-                                            />
-                                        </div>
-                                    </ScrollArea>
+                                                <StripeCheckout
+                                                    amount={total}
+                                                    listingId={listingId}
+                                                    sellerEmail={listing.paypalEmail}
+                                                    hustleName={listing.hustleName}
+                                                    buyerId={user?.uid || ""}
+                                                    onSuccess={() => setIsCheckoutOpen(false)}
+                                                />
+                                            </div>
+                                        </ScrollArea>
+                                    </div>
                                 </DialogContent>
                             </Dialog>
                         </CardContent>
