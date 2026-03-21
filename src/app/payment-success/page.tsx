@@ -3,17 +3,19 @@
 
 import { useEffect, useState, Suspense, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { getFunctions, httpsCallable } from "firebase/functions";
-import { Loader2, CheckCircle, XCircle, Rocket, ArrowRight } from "lucide-react";
+import { httpsCallable } from "firebase/functions";
+import { Loader2, CheckCircle, XCircle, Rocket, ArrowRight, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
+import { useFunctions } from "@/firebase";
 
 function PaymentSuccessContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
     const { user, isUserLoading } = useAuth();
     const { toast } = useToast();
+    const functions = useFunctions();
     const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
     const processingRef = useRef(false);
 
@@ -26,15 +28,16 @@ function PaymentSuccessContent() {
             const amount = parseFloat(searchParams.get("amount") || "0");
             const sessionId = searchParams.get("session_id");
 
-            if (!listingId || !sellerEmail || !amount || !sessionId) {
-                console.error("Missing required payment success parameters");
-                setStatus("error");
+            if (!listingId || !sellerEmail || !amount || !sessionId || !functions) {
+                if (!functions && !isUserLoading) {
+                    console.error("Functions SDK not ready");
+                    setStatus("error");
+                }
                 return;
             }
 
             processingRef.current = true;
             try {
-                const functions = getFunctions();
                 const confirmPayout = httpsCallable(functions, "confirmAndPayoutSeller");
                 
                 await confirmPayout({
@@ -62,12 +65,8 @@ function PaymentSuccessContent() {
 
         if (!isUserLoading && user && status === "loading") {
             processSuccess();
-        } else if (!isUserLoading && !user && status === "loading") {
-            // Wait for user or fallback to error if not logged in
-            // For hosted checkout sessions, the user might be logged out in a different tab
-            // but they should be authenticated if they started the flow.
         }
-    }, [user, isUserLoading, searchParams, status, toast]);
+    }, [user, isUserLoading, searchParams, status, toast, functions]);
 
     if (status === "loading") {
         return (
@@ -97,10 +96,12 @@ function PaymentSuccessContent() {
                         The creator has been notified. You can now access your new venture assets and start a conversation from your dashboard.
                     </p>
                 </div>
-                <Button size="lg" className="h-16 px-10 rounded-2xl font-black text-xl shadow-xl group" onClick={() => router.push("/profile")}>
-                    Go to Venture Dashboard
-                    <Rocket className="ml-2 h-6 w-6 transition-transform group-hover:scale-110" />
-                </Button>
+                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                    <Button size="lg" className="h-16 px-10 rounded-2xl font-black text-xl shadow-xl group" onClick={() => router.push("/profile")}>
+                        Go to Venture Dashboard
+                        <Rocket className="ml-2 h-6 w-6 transition-transform group-hover:scale-110" />
+                    </Button>
+                </div>
             </div>
         );
     }

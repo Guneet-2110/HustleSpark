@@ -7,7 +7,7 @@ import { collection, addDoc, serverTimestamp, query, orderBy, doc, updateDoc } f
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Send, User as UserIcon, Loader2 } from 'lucide-react';
+import { Send, User as UserIcon, Loader2, ShieldCheck } from 'lucide-react';
 
 interface ChatBoxProps {
     chatId: string;
@@ -46,7 +46,7 @@ export function ChatBox({ chatId, currentUserId }: ChatBoxProps) {
         const chatRef = doc(firestore, 'chats', chatId);
 
         // Add message
-        await addDoc(messagesRef, {
+        addDoc(messagesRef, {
             text: messageText,
             senderId: currentUserId,
             createdAt: serverTimestamp()
@@ -61,14 +61,23 @@ export function ChatBox({ chatId, currentUserId }: ChatBoxProps) {
 
     if (isLoading) {
         return (
-            <div className="flex items-center justify-center h-full">
+            <div className="flex flex-col items-center justify-center h-full space-y-4">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Loading secure channel...</p>
             </div>
         );
     }
 
     return (
-        <div className="flex flex-col h-full bg-card rounded-3xl border shadow-xl overflow-hidden">
+        <div className="flex flex-col h-full bg-card rounded-[2.5rem] border shadow-2xl overflow-hidden border-primary/20">
+            <div className="bg-primary/5 px-6 py-3 border-b border-primary/10 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                    <ShieldCheck className="h-4 w-4 text-primary" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-primary">Escrow Protected Conversation</span>
+                </div>
+                <Badge variant="outline" className="text-[8px] border-green-500/30 text-green-500 font-black">ENCRYPTED</Badge>
+            </div>
+            
             <ScrollArea className="flex-1 p-6">
                 <div className="space-y-4">
                     {messages?.map((msg) => (
@@ -80,7 +89,9 @@ export function ChatBox({ chatId, currentUserId }: ChatBoxProps) {
                                 className={`max-w-[80%] rounded-2xl p-4 text-sm shadow-sm ${
                                     msg.senderId === currentUserId
                                         ? 'bg-primary text-primary-foreground rounded-tr-none'
-                                        : 'bg-muted rounded-tl-none'
+                                        : msg.senderId === 'system' 
+                                            ? 'bg-accent/10 border border-accent/20 text-accent font-bold italic text-center w-full max-w-none'
+                                            : 'bg-muted rounded-tl-none'
                                 }`}
                             >
                                 <p className="leading-relaxed">{msg.text}</p>
@@ -91,15 +102,15 @@ export function ChatBox({ chatId, currentUserId }: ChatBoxProps) {
                 </div>
             </ScrollArea>
 
-            <form onSubmit={handleSendMessage} className="p-4 bg-muted/30 border-t flex gap-2">
+            <form onSubmit={handleSendMessage} className="p-6 bg-muted/30 border-t flex gap-3">
                 <Input
-                    placeholder="Type a message..."
+                    placeholder="Ask a question or provide delivery info..."
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
-                    className="h-12 rounded-2xl bg-background shadow-inner border-2"
+                    className="h-14 rounded-2xl bg-background shadow-inner border-2 focus:ring-primary"
                 />
-                <Button type="submit" size="icon" className="h-12 w-12 rounded-2xl shadow-lg transition-all hover:scale-105" disabled={!newMessage.trim()}>
-                    <Send className="h-5 w-5" />
+                <Button type="submit" size="icon" className="h-14 w-14 rounded-2xl shadow-xl transition-all hover:scale-105 active:scale-95" disabled={!newMessage.trim()}>
+                    <Send className="h-6 w-6" />
                 </Button>
             </form>
         </div>

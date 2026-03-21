@@ -1,10 +1,12 @@
+
 "use client";
 
 import { useState } from "react";
-import { getFunctions, httpsCallable } from "firebase/functions";
+import { httpsCallable } from "firebase/functions";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Lock, ShieldCheck, Loader2, ArrowRight } from "lucide-react";
+import { useFunctions } from "@/firebase";
 
 interface StripeCheckoutProps {
     amount: number;
@@ -17,12 +19,21 @@ interface StripeCheckoutProps {
 
 export function StripeCheckout({ amount, listingId, sellerEmail, hustleName, buyerId, onSuccess }: StripeCheckoutProps) {
     const { toast } = useToast();
+    const functions = useFunctions();
     const [isLoading, setIsLoading] = useState(false);
 
     const handlePayment = async () => {
+        if (!functions) {
+            toast({
+                variant: "destructive",
+                title: "System Error",
+                description: "Payment services are still initializing. Please wait a moment.",
+            });
+            return;
+        }
+
         setIsLoading(true);
         try {
-            const functions = getFunctions();
             const createPayment = httpsCallable(functions, "createStripePayment");
             
             const result: any = await createPayment({
@@ -38,14 +49,11 @@ export function StripeCheckout({ amount, listingId, sellerEmail, hustleName, buy
                 // Redirect to Stripe's hosted checkout page
                 window.location.href = url;
             } else {
-                console.error("Checkout response missing URL:", result.data);
                 throw new Error("The payment system responded but didn't provide a checkout link.");
             }
 
         } catch (error: any) {
             console.error("Stripe Checkout Error:", error);
-            
-            // Extract the specific message from Firebase HttpsError if available
             const errorMessage = error.message || "An unexpected error occurred during checkout initialization.";
             
             toast({
