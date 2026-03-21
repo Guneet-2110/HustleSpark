@@ -17,6 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import placeholders from '@/app/lib/placeholder-images.json';
 import { EscrowTrustBanner } from '@/components/escrow-trust-banner';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 export default function MarketplaceListingDetailPage() {
     const params = useParams();
@@ -256,24 +257,28 @@ export default function MarketplaceListingDetailPage() {
                                         {listing.status === 'approved' && <ArrowRight className="ml-2 h-6 w-6 transition-transform group-hover:translate-x-1" />}
                                     </Button>
                                 </DialogTrigger>
-                                <DialogContent className="sm:max-w-xl rounded-[2.5rem]">
-                                    <DialogHeader>
+                                <DialogContent className="sm:max-w-xl rounded-[2.5rem] p-0 overflow-hidden">
+                                    <DialogHeader className="p-8 pb-0">
                                         <DialogTitle className="text-2xl font-black">Secure Acquisition</DialogTitle>
                                         <DialogDescription className="font-medium">
                                             You are acquiring "<span className="text-primary">{listing.hustleName}</span>".
                                         </DialogDescription>
                                     </DialogHeader>
                                     
-                                    <EscrowTrustBanner />
+                                    <ScrollArea className="max-h-[70vh] px-8 pb-8 pt-4">
+                                        <div className="space-y-6">
+                                            <EscrowTrustBanner />
 
-                                    <StripeCheckout
-                                        amount={total}
-                                        listingId={listingId}
-                                        sellerEmail={listing.paypalEmail}
-                                        hustleName={listing.hustleName}
-                                        buyerId={user?.uid || ""}
-                                        onSuccess={handleAcquisitionSuccess}
-                                    />
+                                            <StripeCheckout
+                                                amount={total}
+                                                listingId={listingId}
+                                                sellerEmail={listing.paypalEmail}
+                                                hustleName={listing.hustleName}
+                                                buyerId={user?.uid || ""}
+                                                onSuccess={handleAcquisitionSuccess}
+                                            />
+                                        </div>
+                                    </ScrollArea>
                                 </DialogContent>
                             </Dialog>
                         </CardContent>
