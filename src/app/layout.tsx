@@ -1,4 +1,7 @@
-import type { Metadata } from 'next';
+
+"use client";
+
+import { useEffect, useState } from 'react';
 import './globals.css';
 import { AuthProvider } from '@/context/auth-provider';
 import { Header } from '@/components/header';
@@ -7,16 +10,17 @@ import { PaymentModal } from '@/components/payment-modal';
 import { PayPalClientProvider } from '@/components/providers/paypal-client-provider';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
 
-export const metadata: Metadata = {
-  title: 'HustleSpark',
-  description: 'Generate your next side hustle idea with AI.',
-};
-
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   return (
     <html lang="en" className="dark" suppressHydrationWarning>
       <head>
@@ -28,18 +32,24 @@ export default function RootLayout({
         ></link>
       </head>
       <body className="antialiased font-body" suppressHydrationWarning>
-        <FirebaseClientProvider>
-          <PayPalClientProvider>
-            <AuthProvider>
-              <div className="relative flex min-h-screen flex-col">
-                <Header />
-                <main className="flex-1">{children}</main>
-              </div>
-              <Toaster />
-              <PaymentModal />
-            </AuthProvider>
-          </PayPalClientProvider>
-        </FirebaseClientProvider>
+        {mounted ? (
+          <FirebaseClientProvider>
+            <PayPalClientProvider>
+              <AuthProvider>
+                <div className="relative flex min-h-screen flex-col">
+                  <Header />
+                  <main className="flex-1">{children}</main>
+                </div>
+                <Toaster />
+                <PaymentModal />
+              </AuthProvider>
+            </PayPalClientProvider>
+          </FirebaseClientProvider>
+        ) : (
+          <div className="min-h-screen bg-background flex items-center justify-center">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+          </div>
+        )}
       </body>
     </html>
   );

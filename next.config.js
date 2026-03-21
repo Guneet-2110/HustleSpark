@@ -1,8 +1,9 @@
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Forced refresh to resolve build chunk errors with a unique ID
+  // Hard refresh Build ID to resolve chunk errors and stale modules
   generateBuildId: async () => {
-    return 'hustlespark-v2-stable-' + Date.now();
+    return 'hustlespark-v2-stable-hardened-' + Date.now();
   },
   typescript: {
     ignoreBuildErrors: true,
