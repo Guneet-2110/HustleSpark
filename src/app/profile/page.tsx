@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useState } from "react";
 import { Clock, Trash2, MessageSquare, Briefcase, Package, ShieldCheck, Store, Loader2, ArrowRight, ShieldAlert, ShoppingBag } from "lucide-react";
 import { slugify } from "@/lib/utils";
 import { HustleGenerator } from "@/components/hustle-generator";
@@ -30,11 +30,28 @@ export default function ProfilePage() {
   // standardized Queries for the Dashboard
   const chatsQuery = useMemoFirebase(() => {
     if (!firestore || !firebaseUser) return null;
-    return query(collection(firestore, 'chats'), orderBy('updatedAt', 'desc'));
+    return query(
+      collection(firestore, 'chats'), 
+      where('buyerId', '==', firebaseUser.uid),
+      orderBy('updatedAt', 'desc')
+    );
   }, [firestore, firebaseUser]);
 
-  const { data: rawChats, isLoading: isChatsLoading } = useCollection(chatsQuery);
-  const filteredChats = rawChats?.filter(c => c.buyerId === firebaseUser?.uid || c.sellerId === firebaseUser?.uid) || [];
+  const sellerChatsQuery = useMemoFirebase(() => {
+    if (!firestore || !firebaseUser) return null;
+    return query(
+      collection(firestore, 'chats'), 
+      where('sellerId', '==', firebaseUser.uid),
+      orderBy('updatedAt', 'desc')
+    );
+  }, [firestore, firebaseUser]);
+
+  const { data: buyerChats, isLoading: isBuyerChatsLoading } = useCollection(chatsQuery);
+  const { data: sellerChats, isLoading: isSellerChatsLoading } = useCollection(sellerChatsQuery);
+  
+  const allChats = [...(buyerChats || []), ...(sellerChats || [])].sort((a, b) => 
+    (b.updatedAt?.seconds || 0) - (a.updatedAt?.seconds || 0)
+  );
 
   const myListingsQuery = useMemoFirebase(() => {
       if (!firestore || !firebaseUser) return null;
@@ -226,11 +243,11 @@ export default function ProfilePage() {
             </Card>
 
             <Card className="shadow-xl rounded-[2.5rem] border-accent/10 overflow-hidden">
-                <CardHeader className="bg-muted/30"><CardTitle className="text-lg flex items-center gap-2 text-accent font-black"><MessageSquare className="h-5 w-5"/>Active Support</CardTitle></CardHeader>
+                <CardHeader className="bg-muted/30"><CardTitle className="text-lg flex items-center gap-2 text-accent font-black"><MessageSquare className="h-5 w-5"/>Support Channels</CardTitle></CardHeader>
                 <CardContent className="p-4 pt-4">
-                    {isChatsLoading ? <Skeleton className="h-10 w-full rounded-xl" /> : filteredChats.length > 0 ? (
+                    {(isBuyerChatsLoading || isSellerChatsLoading) ? <Skeleton className="h-10 w-full rounded-xl" /> : allChats.length > 0 ? (
                         <div className="space-y-3">
-                            {filteredChats.map(chat => (
+                            {allChats.map(chat => (
                                 <Link key={chat.id} href={`/chats/${chat.id}`} className="block group">
                                     <div className="border p-4 rounded-2xl hover:bg-accent/5 hover:border-accent/30 transition-all">
                                         <div className="flex justify-between items-start">

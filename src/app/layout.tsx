@@ -48,8 +48,8 @@ export default function RootLayout({
             </PayPalClientProvider>
           </FirebaseClientProvider>
         ) : (
-          <div className="min-h-screen bg-background flex items-center justify-center">
-            <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+          <div className="min-h-screen bg-[#1A1A2E] flex items-center justify-center">
+            <div className="h-10 w-10 animate-spin rounded-full border-4 border-[#9D4EDD] border-t-transparent"></div>
           </div>
         )}
       </body>

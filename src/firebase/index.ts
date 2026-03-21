@@ -9,26 +9,18 @@ import { getFunctions } from 'firebase/functions';
 
 /**
  * Initializes Firebase App and core services.
- * This is designed to be called once on the client.
  */
 export function initializeFirebase() {
   const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-  return getSdks(app);
-}
-
-/**
- * Returns initialized SDK instances.
- */
-export function getSdks(firebaseApp: FirebaseApp) {
   return {
-    firebaseApp,
-    auth: getAuth(firebaseApp),
-    firestore: getFirestore(firebaseApp),
-    functions: getFunctions(firebaseApp)
+    firebaseApp: app,
+    auth: getAuth(app),
+    firestore: getFirestore(app),
+    functions: getFunctions(app)
   };
 }
 
-// Export specific hooks and utilities directly to avoid circular barrel dependencies
+// Export specific hooks and utilities directly from their sources to avoid circular barrel dependencies
 export { 
   FirebaseProvider, 
   useFirebase, 
