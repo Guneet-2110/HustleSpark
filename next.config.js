@@ -1,7 +1,7 @@
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Hard refresh Build ID to resolve chunk errors and stale modules
+  // Hard refresh Build ID to resolve chunk errors and stale modules in the Studio environment
   generateBuildId: async () => {
     return 'hustlespark-v2-stable-hardened-' + Date.now();
   },

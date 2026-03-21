@@ -18,6 +18,8 @@ export default function RootLayout({
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    // Hydration guard to prevent "Cannot read properties of undefined (reading 'call')"
+    // This ensures no Firebase or Interactive components run until the client is ready.
     setMounted(true);
   }, []);
 
@@ -47,7 +49,7 @@ export default function RootLayout({
           </FirebaseClientProvider>
         ) : (
           <div className="min-h-screen bg-background flex items-center justify-center">
-            <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+            <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
           </div>
         )}
       </body>
