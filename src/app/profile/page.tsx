@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Clock, Trash2, MessageSquare, Briefcase, Package, ShieldCheck, Store, Loader2, ArrowRight, ShieldAlert, ShoppingBag, Send } from "lucide-react";
+import { Trash2, MessageSquare, Briefcase, Package, ShieldCheck, Store, Loader2, ArrowRight, ShieldAlert, ShoppingBag, Send, Eye } from "lucide-react";
 import { slugify } from "@/lib/utils";
 import { HustleGenerator } from "@/components/hustle-generator";
 import { useToast } from "@/hooks/use-toast";
@@ -28,7 +28,7 @@ export default function ProfilePage() {
   }, []);
 
   // standardized Queries for the Dashboard
-  const chatsQuery = useMemoFirebase(() => {
+  const buyerChatsQuery = useMemoFirebase(() => {
     if (!firestore || !firebaseUser) return null;
     return query(
       collection(firestore, 'chats'), 
@@ -46,7 +46,7 @@ export default function ProfilePage() {
     );
   }, [firestore, firebaseUser]);
 
-  const { data: buyerChats, isLoading: isBuyerChatsLoading } = useCollection(chatsQuery);
+  const { data: buyerChats, isLoading: isBuyerChatsLoading } = useCollection(buyerChatsQuery);
   const { data: sellerChats, isLoading: isSellerChatsLoading } = useCollection(sellerChatsQuery);
   
   const allChats = [...(buyerChats || []), ...(sellerChats || [])].sort((a, b) => 
@@ -135,6 +135,7 @@ export default function ProfilePage() {
 
       <div className="grid gap-12 lg:grid-cols-12">
         <div className="lg:col-span-8 space-y-12">
+            {/* 1. CREATOR VENTURES */}
             <Card className="shadow-xl rounded-[2.5rem] border-primary/20 overflow-hidden bg-card/50">
                 <CardHeader className="bg-primary/5 border-b">
                     <CardTitle className="flex items-center gap-2 text-xl font-black"><Store className="h-6 w-6 text-primary"/> Your Marketplace Ventures</CardTitle>
@@ -150,7 +151,7 @@ export default function ProfilePage() {
                                         <Badge variant="secondary" className="text-[10px] mt-1 font-bold">{l.status.replace('_', ' ').toUpperCase()}</Badge>
                                     </div>
                                     <div className="flex gap-2">
-                                        <Button variant="outline" size="sm" asChild className="rounded-xl font-bold"><Link href={`/marketplace/listing/${l.id}`}>View</Link></Button>
+                                        <Button variant="outline" size="sm" asChild className="rounded-xl font-bold"><Link href={`/marketplace/listing/${l.id}`}>View Listing</Link></Button>
                                         <Button variant="ghost" size="icon" onClick={() => handleDeleteListing(l.id)} className="text-destructive rounded-xl hover:bg-destructive/10 transition-colors"><Trash2 className="h-4 w-4" /></Button>
                                     </div>
                                 </div>
@@ -160,6 +161,7 @@ export default function ProfilePage() {
                 </CardContent>
             </Card>
 
+            {/* 2. CREATOR SALES */}
             <Card className="shadow-xl rounded-[2.5rem] border-primary/10 overflow-hidden bg-card/50">
                 <CardHeader className="bg-primary/5 border-b">
                     <CardTitle className="flex items-center gap-2 text-xl font-black"><Package className="h-6 w-6 text-primary"/> Venture Sales (Creator)</CardTitle>
@@ -171,23 +173,23 @@ export default function ProfilePage() {
                             {sales.map((t) => {
                                 const chatForSale = allChats.find(c => c.listingId === t.listingId);
                                 return (
-                                    <div key={t.id} className="p-4 border rounded-2xl bg-background/50 flex justify-between items-center">
+                                    <div key={t.id} className="p-4 border rounded-2xl bg-background/50 flex flex-col sm:flex-row justify-between sm:items-center gap-4">
                                         <div>
-                                            <p className="font-black">{t.hustleName}</p>
-                                            <div className="flex items-center gap-2 mt-1">
+                                            <p className="font-black text-lg">{t.hustleName}</p>
+                                            <div className="flex items-center gap-2 mt-1 flex-wrap">
                                                 <Badge variant="outline" className="text-[10px] font-bold uppercase">{t.status.replace('_', ' ')}</Badge>
-                                                <span className="text-[10px] text-muted-foreground font-bold tracking-tight">${t.sellerAmount.toLocaleString()} Payout</span>
+                                                <span className="text-[10px] text-muted-foreground font-bold tracking-tight">${t.sellerAmount.toLocaleString()} Net Payout</span>
                                             </div>
                                         </div>
                                         <div className="flex gap-2">
                                             {chatForSale && (
-                                                <Button variant="outline" size="sm" className="rounded-xl font-bold" asChild>
-                                                    <Link href={`/chats/${chatForSale.id}`}>Chat Buyer</Link>
+                                                <Button variant="secondary" size="sm" className="rounded-xl font-bold" asChild>
+                                                    <Link href={`/chats/${chatForSale.id}`}><MessageSquare className="h-4 w-4 mr-2" /> Chat Buyer</Link>
                                                 </Button>
                                             )}
                                             {t.status === 'pending_delivery' && (
-                                                <Button onClick={() => handleMarkAsDelivered(t)} size="sm" className="rounded-xl font-bold">
-                                                    Mark Delivered
+                                                <Button onClick={() => handleMarkAsDelivered(t)} size="sm" className="rounded-xl font-bold bg-primary text-primary-foreground">
+                                                    Mark as Delivered
                                                 </Button>
                                             )}
                                         </div>
@@ -199,6 +201,7 @@ export default function ProfilePage() {
                 </CardContent>
             </Card>
 
+            {/* 3. BUYER ACQUISITIONS */}
             <Card className="shadow-xl rounded-[2.5rem] border-accent/10 overflow-hidden bg-card/50">
                 <CardHeader className="bg-accent/5 border-b">
                     <CardTitle className="flex items-center gap-2 text-xl font-black text-accent"><ShieldCheck className="h-6 w-6"/> Acquired Ventures (Buyer)</CardTitle>
@@ -210,24 +213,27 @@ export default function ProfilePage() {
                             {purchases.map((t) => {
                                 const chatForAcquisition = allChats.find(c => c.listingId === t.listingId);
                                 return (
-                                    <div key={t.id} className="p-4 border rounded-2xl bg-background/50 flex justify-between items-center">
+                                    <div key={t.id} className="p-4 border rounded-2xl bg-background/50 flex flex-col sm:flex-row justify-between sm:items-center gap-4">
                                         <div>
-                                            <p className="font-black">{t.hustleName}</p>
-                                            <Badge variant="outline" className="text-[10px] mt-1 border-accent/30 text-accent font-bold uppercase">{t.status.replace('_', ' ')}</Badge>
+                                            <p className="font-black text-lg">{t.hustleName}</p>
+                                            <div className="flex items-center gap-2 mt-1">
+                                                <Badge variant="outline" className="text-[10px] border-accent/30 text-accent font-bold uppercase">{t.status.replace('_', ' ')}</Badge>
+                                                <span className="text-[10px] text-muted-foreground font-bold">${t.amount.toLocaleString()} Invested</span>
+                                            </div>
                                         </div>
                                         <div className="flex gap-2">
                                             {chatForAcquisition && (
-                                                <Button variant="outline" size="sm" className="rounded-xl font-bold" asChild>
-                                                    <Link href={`/chats/${chatForAcquisition.id}`}><MessageSquare className="h-4 w-4 mr-2" /> Chat Seller</Link>
+                                                <Button variant="secondary" size="sm" className="rounded-xl font-bold" asChild>
+                                                    <Link href={`/chats/${chatForAcquisition.id}`}><MessageSquare className="h-4 w-4 mr-2" /> Chat Creator</Link>
                                                 </Button>
                                             )}
                                             {t.status === 'pending_confirmation' && (
-                                                <Button onClick={() => handleConfirmReceipt(t)} size="sm" className="bg-accent hover:bg-accent/90 rounded-xl font-bold">
+                                                <Button onClick={() => handleConfirmReceipt(t)} size="sm" className="bg-accent hover:bg-accent/90 text-white rounded-xl font-bold">
                                                     Confirm Receipt
                                                 </Button>
                                             )}
-                                            <Button variant="secondary" size="sm" className="rounded-xl font-bold" asChild>
-                                                <Link href={`/marketplace/listing/${t.listingId}`}>Assets</Link>
+                                            <Button variant="outline" size="sm" className="rounded-xl font-bold" asChild>
+                                                <Link href={`/marketplace/listing/${t.listingId}`}><Eye className="h-4 w-4 mr-2" /> View Assets</Link>
                                             </Button>
                                         </div>
                                     </div>
