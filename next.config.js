@@ -3,7 +3,7 @@
 const nextConfig = {
   // Hard refresh Build ID to resolve chunk errors and stale modules in the Studio environment
   generateBuildId: async () => {
-    return 'hustlespark-v2-stable-hardened-' + Date.now();
+    return 'hustlespark-v3-stable-' + Date.now();
   },
   typescript: {
     ignoreBuildErrors: true,

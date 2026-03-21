@@ -1,3 +1,4 @@
+
 'use client';
 
 import { firebaseConfig } from '@/firebase/config';
@@ -27,9 +28,18 @@ export function getSdks(firebaseApp: FirebaseApp) {
   };
 }
 
-// Export all providers, hooks, and utilities
-export * from './provider';
-// Note: client-provider is not exported here to avoid circular dependencies
+// Export specific hooks and utilities directly to avoid circular barrel dependencies
+export { 
+  FirebaseProvider, 
+  useFirebase, 
+  useAuth, 
+  useFirestore, 
+  useFunctions, 
+  useFirebaseApp, 
+  useMemoFirebase, 
+  useUser 
+} from './provider';
+
 export * from './firestore/use-collection';
 export * from './firestore/use-doc';
 export * from './non-blocking-updates';
