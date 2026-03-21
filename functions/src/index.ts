@@ -1,108 +1,107 @@
+
 import * as functions from "firebase-functions/v2";
 import * as admin from "firebase-admin";
-import axios from "axios";
+import Stripe from "stripe";
 
 admin.initializeApp();
 
-const PAYPAL_BASE_URL = "https://api-m.paypal.com";
-
-async function getPayPalAccessToken(): Promise<string> {
-  const clientId = process.env.PAYPAL_CLIENT_ID;
-  const clientSecret = process.env.PAYPAL_CLIENT_SECRET;
-
-  console.log("Getting PayPal access token...");
-  console.log("Client ID exists:", !!clientId);
-  console.log("Client Secret exists:", !!clientSecret);
-
-  const response = await axios.post(
-    `${PAYPAL_BASE_URL}/v1/oauth2/token`,
-    "grant_type=client_credentials",
-    {
-      auth: { username: clientId!, password: clientSecret! },
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    }
-  );
-
-  console.log("Access token received:", !!response.data.access_token);
-  return response.data.access_token;
-}
-
-export const processMarketplacePayout = functions.https.onCall(
+export const createStripePayment = functions.https.onCall(
   {
-    secrets: ["PAYPAL_CLIENT_ID", "PAYPAL_CLIENT_SECRET", "PAYPAL_PLATFORM_EMAIL"],
+    secrets: ["STRIPE_SECRET_KEY"],
   },
   async (request) => {
-    console.log("Function called with data:", JSON.stringify(request.data));
-
     if (!request.auth) {
       throw new functions.https.HttpsError("unauthenticated", "You must be logged in.");
     }
 
-    const { sellerEmail, totalAmount, listingId, buyerId } = request.data;
-    console.log("Seller email:", sellerEmail);
-    console.log("Total amount:", totalAmount);
-    console.log("Listing ID:", listingId);
+    const { amount, listingId, sellerEmail, hustleName } = request.data;
 
-    if (!sellerEmail || !totalAmount || !listingId) {
+    if (!amount || !listingId || !sellerEmail) {
       throw new functions.https.HttpsError("invalid-argument", "Missing required fields.");
     }
 
-    const sellerAmount = (totalAmount * 0.9).toFixed(2);
-    const platformAmount = (totalAmount * 0.1).toFixed(2);
-    console.log("Seller amount:", sellerAmount);
-    console.log("Platform amount:", platformAmount);
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
     try {
-      console.log("Getting access token...");
-      const accessToken = await getPayPalAccessToken();
-      console.log("Got access token, sending payout...");
+      console.log("Creating payment intent for amount:", amount);
 
-      const payoutResponse = await axios.post(
-        `${PAYPAL_BASE_URL}/v1/payments/payouts`,
-        {
-          sender_batch_header: {
-            sender_batch_id: `payout_${listingId}_${Date.now()}`,
-            email_subject: "You sold a hustle on HustleSpark! 🚀",
-            email_message: "Congratulations! Your venture has been acquired. Here is your payout.",
-          },
-          items: [
-            {
-              recipient_type: "EMAIL",
-              amount: { value: sellerAmount, currency: "USD" },
-              receiver: sellerEmail,
-              note: "HustleSpark marketplace sale payout (90%)",
-            },
-          ],
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: Math.round(amount * 100), // Convert to cents
+        currency: "usd",
+        metadata: {
+          listingId,
+          sellerEmail,
+          hustleName,
+          buyerId: request.auth.uid,
         },
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      });
 
-      console.log("Payout response:", JSON.stringify(payoutResponse.data));
+      console.log("Payment intent created:", paymentIntent.id);
 
-      await admin.firestore().collection("transactions").add({
+      return {
+        clientSecret: paymentIntent.client_secret,
+        paymentIntentId: paymentIntent.id,
+      };
+
+    } catch (error: any) {
+      console.error("Stripe error:", error.message);
+      throw new functions.https.HttpsError("internal", error.message);
+    }
+  }
+);
+
+export const confirmAndPayoutSeller = functions.https.onCall(
+  {
+    secrets: ["STRIPE_SECRET_KEY"],
+  },
+  async (request) => {
+    if (!request.auth) {
+      throw new functions.https.HttpsError("unauthenticated", "You must be logged in.");
+    }
+
+    const { paymentIntentId, sellerEmail, totalAmount, listingId } = request.data;
+
+    if (!paymentIntentId || !sellerEmail || totalAmount === undefined) {
+      throw new functions.https.HttpsError("invalid-argument", "Missing confirm parameters.");
+    }
+
+    try {
+      const sellerPayout = totalAmount * 0.9;
+      const platformFee = totalAmount * 0.1;
+
+      // Save transaction to Firestore using a transaction or set with ID to prevent duplicates
+      const transactionId = `txn_${paymentIntentId}`;
+      const txnRef = admin.firestore().collection("transactions").doc(transactionId);
+      
+      const existingTxn = await txnRef.get();
+      if (existingTxn.exists) {
+          return { success: true, message: "Transaction already processed." };
+      }
+
+      await txnRef.set({
+        paymentIntentId,
         listingId,
-        buyerId,
+        buyerId: request.auth.uid,
+        buyerEmail: request.auth.token.email || "",
         sellerEmail,
         totalAmount,
-        sellerPayout: parseFloat(sellerAmount),
-        platformFee: parseFloat(platformAmount),
-        status: "completed",
+        sellerPayout,
+        platformFee,
+        status: "pending_delivery", // Funds held in escrow until delivery confirmation
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
       });
 
-      console.log("Transaction saved to Firestore!");
-      return { success: true, sellerPayout: sellerAmount, platformFee: platformAmount };
+      console.log("Escrow transaction recorded:", transactionId);
+
+      return {
+        success: true,
+        sellerPayout,
+        platformFee,
+      };
 
     } catch (error: any) {
-      console.error("Payout error FULL:", JSON.stringify(error.response?.data, null, 2));
-      console.error("Payout error MESSAGE:", error.message);
-      console.error("Payout error STATUS:", error.response?.status);
-      throw new functions.https.HttpsError("internal", "Payout failed. Please try again.");
+      console.error("Payout error:", error.message);
+      throw new functions.https.HttpsError("internal", error.message);
     }
   }
 );

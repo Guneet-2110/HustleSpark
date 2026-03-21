@@ -12,7 +12,7 @@ import Image from 'next/image';
 import { useState, useTransition, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { PaypalButton } from '@/components/paypal-button';
+import { StripeCheckout } from '@/components/stripe-checkout';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import placeholders from '@/app/lib/placeholder-images.json';
@@ -91,7 +91,6 @@ export default function MarketplaceListingDetailPage() {
                     description: "Transaction initialized. Communication channel opened." 
                 });
                 
-                // Allow a small pause for Firestore sync before redirect
                 setTimeout(() => {
                     router.push(`/chats/${chatId}`);
                 }, 300);
@@ -267,13 +266,13 @@ export default function MarketplaceListingDetailPage() {
                                     
                                     <EscrowTrustBanner />
 
-                                    <PaypalButton 
-                                     amount={total} 
-                                     payeeEmail={listing.paypalEmail}
-                                     listingId={listingId}
-                                     sellerId={listing.userId}
-                                     hustleName={listing.hustleName}
-                                     onSuccess={handleAcquisitionSuccess} 
+                                    <StripeCheckout
+                                        amount={total}
+                                        listingId={listingId}
+                                        sellerEmail={listing.paypalEmail}
+                                        hustleName={listing.hustleName}
+                                        buyerId={user?.uid || ""}
+                                        onSuccess={handleAcquisitionSuccess}
                                     />
                                 </DialogContent>
                             </Dialog>
