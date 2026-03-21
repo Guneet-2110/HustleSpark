@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Clock, Trash2, MessageSquare, Briefcase, Package, ShieldCheck, Store, Loader2, ArrowRight, ShieldAlert, ShoppingBag } from "lucide-react";
+import { Clock, Trash2, MessageSquare, Briefcase, Package, ShieldCheck, Store, Loader2, ArrowRight, ShieldAlert, ShoppingBag, Send } from "lucide-react";
 import { slugify } from "@/lib/utils";
 import { HustleGenerator } from "@/components/hustle-generator";
 import { useToast } from "@/hooks/use-toast";
@@ -168,22 +168,32 @@ export default function ProfilePage() {
                 <CardContent className="p-6">
                     {isSalesLoading ? <Skeleton className="h-20 w-full rounded-2xl" /> : sales && sales.length > 0 ? (
                         <div className="space-y-4">
-                            {sales.map((t) => (
-                                <div key={t.id} className="p-4 border rounded-2xl bg-background/50 flex justify-between items-center">
-                                    <div>
-                                        <p className="font-black">{t.hustleName}</p>
-                                        <div className="flex items-center gap-2 mt-1">
-                                            <Badge variant="outline" className="text-[10px] font-bold uppercase">{t.status.replace('_', ' ')}</Badge>
-                                            <span className="text-[10px] text-muted-foreground font-bold tracking-tight">${t.sellerAmount.toLocaleString()} Payout</span>
+                            {sales.map((t) => {
+                                const chatForSale = allChats.find(c => c.listingId === t.listingId);
+                                return (
+                                    <div key={t.id} className="p-4 border rounded-2xl bg-background/50 flex justify-between items-center">
+                                        <div>
+                                            <p className="font-black">{t.hustleName}</p>
+                                            <div className="flex items-center gap-2 mt-1">
+                                                <Badge variant="outline" className="text-[10px] font-bold uppercase">{t.status.replace('_', ' ')}</Badge>
+                                                <span className="text-[10px] text-muted-foreground font-bold tracking-tight">${t.sellerAmount.toLocaleString()} Payout</span>
+                                            </div>
+                                        </div>
+                                        <div className="flex gap-2">
+                                            {chatForSale && (
+                                                <Button variant="outline" size="sm" className="rounded-xl font-bold" asChild>
+                                                    <Link href={`/chats/${chatForSale.id}`}>Chat Buyer</Link>
+                                                </Button>
+                                            )}
+                                            {t.status === 'pending_delivery' && (
+                                                <Button onClick={() => handleMarkAsDelivered(t)} size="sm" className="rounded-xl font-bold">
+                                                    Mark Delivered
+                                                </Button>
+                                            )}
                                         </div>
                                     </div>
-                                    {t.status === 'pending_delivery' && (
-                                        <Button onClick={() => handleMarkAsDelivered(t)} size="sm" className="rounded-xl font-bold">
-                                            Mark Delivered
-                                        </Button>
-                                    )}
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     ) : <div className="text-center py-10 italic text-muted-foreground border-2 border-dashed rounded-3xl font-medium">No sales recorded.</div>}
                 </CardContent>
@@ -197,24 +207,32 @@ export default function ProfilePage() {
                 <CardContent className="p-6">
                     {isPurchasesLoading ? <Skeleton className="h-20 w-full rounded-2xl" /> : purchases && purchases.length > 0 ? (
                         <div className="space-y-4">
-                            {purchases.map((t) => (
-                                <div key={t.id} className="p-4 border rounded-2xl bg-background/50 flex justify-between items-center">
-                                    <div>
-                                        <p className="font-black">{t.hustleName}</p>
-                                        <Badge variant="outline" className="text-[10px] mt-1 border-accent/30 text-accent font-bold uppercase">{t.status.replace('_', ' ')}</Badge>
-                                    </div>
-                                    <div className="flex gap-2">
-                                        {t.status === 'pending_confirmation' && (
-                                            <Button onClick={() => handleConfirmReceipt(t)} size="sm" className="bg-accent hover:bg-accent/90 rounded-xl font-bold">
-                                                Confirm Receipt
+                            {purchases.map((t) => {
+                                const chatForAcquisition = allChats.find(c => c.listingId === t.listingId);
+                                return (
+                                    <div key={t.id} className="p-4 border rounded-2xl bg-background/50 flex justify-between items-center">
+                                        <div>
+                                            <p className="font-black">{t.hustleName}</p>
+                                            <Badge variant="outline" className="text-[10px] mt-1 border-accent/30 text-accent font-bold uppercase">{t.status.replace('_', ' ')}</Badge>
+                                        </div>
+                                        <div className="flex gap-2">
+                                            {chatForAcquisition && (
+                                                <Button variant="outline" size="sm" className="rounded-xl font-bold" asChild>
+                                                    <Link href={`/chats/${chatForAcquisition.id}`}><MessageSquare className="h-4 w-4 mr-2" /> Chat Seller</Link>
+                                                </Button>
+                                            )}
+                                            {t.status === 'pending_confirmation' && (
+                                                <Button onClick={() => handleConfirmReceipt(t)} size="sm" className="bg-accent hover:bg-accent/90 rounded-xl font-bold">
+                                                    Confirm Receipt
+                                                </Button>
+                                            )}
+                                            <Button variant="secondary" size="sm" className="rounded-xl font-bold" asChild>
+                                                <Link href={`/marketplace/listing/${t.listingId}`}>Assets</Link>
                                             </Button>
-                                        )}
-                                        <Button variant="outline" size="sm" className="rounded-xl font-bold" asChild>
-                                            <Link href={`/marketplace/listing/${t.listingId}`}>Assets</Link>
-                                        </Button>
+                                        </div>
                                     </div>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     ) : <div className="text-center py-10 italic text-muted-foreground border-2 border-dashed rounded-3xl font-medium">No acquisitions yet.</div>}
                 </CardContent>

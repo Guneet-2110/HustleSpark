@@ -19,7 +19,7 @@ export default function RootLayout({
 
   useEffect(() => {
     // Hydration guard to prevent "Cannot read properties of undefined (reading 'call')"
-    // This ensures no Firebase or Interactive components run until the client is ready.
+    // This ensures no Firebase or Interactive components run until the client is fully ready.
     setMounted(true);
   }, []);
 
