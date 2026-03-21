@@ -1,4 +1,3 @@
-
 import * as functions from "firebase-functions/v2";
 import * as admin from "firebase-admin";
 import Stripe from "stripe";
@@ -13,20 +12,32 @@ export const createStripePayment = functions.https.onCall(
     secrets: ["STRIPE_SECRET_KEY"],
   },
   async (request) => {
+    // 1. Authentication Guard
     if (!request.auth) {
       throw new functions.https.HttpsError("unauthenticated", "You must be logged in.");
     }
 
     const { amount, listingId, sellerEmail, hustleName } = request.data;
 
-    if (!amount || !listingId || !sellerEmail) {
-      throw new functions.https.HttpsError("invalid-argument", "Missing required fields.");
+    // 2. Validation Guard
+    if (!amount || !listingId || !sellerEmail || !hustleName) {
+      throw new functions.https.HttpsError("invalid-argument", "Missing required fields for payment.");
     }
 
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+    // 3. Environment Guard
+    const stripeSecret = process.env.STRIPE_SECRET_KEY;
+    if (!stripeSecret) {
+      console.error("CRITICAL: STRIPE_SECRET_KEY is not configured in Firebase Secrets.");
+      throw new functions.https.HttpsError("failed-precondition", "Payment system is currently offline (Secret Key missing).");
+    }
+
+    const stripe = new Stripe(stripeSecret);
 
     try {
-      console.log("Creating checkout session for:", hustleName);
+      console.log(`Initializing checkout for: ${hustleName} ($${amount})`);
+
+      // 4. Origin Resolution
+      const origin = request.rawRequest.headers.origin || "http://localhost:3000";
 
       const session = await stripe.checkout.sessions.create({
         payment_method_types: ['card'],
@@ -36,9 +47,9 @@ export const createStripePayment = functions.https.onCall(
               currency: 'usd',
               product_data: {
                 name: hustleName,
-                description: `Acquisition of venture: ${hustleName}`,
+                description: `Acquisition of Venture: ${hustleName}`,
               },
-              unit_amount: Math.round(amount * 100),
+              unit_amount: Math.round(amount * 100), // Stripe expects cents
             },
             quantity: 1,
           },
@@ -50,11 +61,11 @@ export const createStripePayment = functions.https.onCall(
           hustleName,
           buyerId: request.auth.uid,
         },
-        success_url: `${request.rawRequest.headers.origin}/payment-success?session_id={CHECKOUT_SESSION_ID}&listingId=${listingId}&sellerEmail=${encodeURIComponent(sellerEmail)}&amount=${amount}`,
-        cancel_url: `${request.rawRequest.headers.origin}/marketplace/listing/${listingId}`,
+        success_url: `${origin}/payment-success?session_id={CHECKOUT_SESSION_ID}&listingId=${listingId}&sellerEmail=${encodeURIComponent(sellerEmail)}&amount=${amount}`,
+        cancel_url: `${origin}/marketplace/listing/${listingId}`,
       });
 
-      console.log("Session created:", session.id);
+      console.log("Checkout session created successfully:", session.id);
 
       return {
         url: session.url,
@@ -62,8 +73,8 @@ export const createStripePayment = functions.https.onCall(
       };
 
     } catch (error: any) {
-      console.error("Stripe session error:", error.message);
-      throw new functions.https.HttpsError("internal", error.message);
+      console.error("Stripe API Error:", error.message);
+      throw new functions.https.HttpsError("internal", error.message || "Stripe session creation failed.");
     }
   }
 );
@@ -108,11 +119,11 @@ export const confirmAndPayoutSeller = functions.https.onCall(
         totalAmount,
         sellerPayout,
         platformFee,
-        status: "pending_delivery", // Held in escrow
+        status: "pending_delivery", // Held in escrow until delivery confirmed by buyer
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
       });
 
-      console.log("Escrow recorded for session:", sessionId);
+      console.log("Escrow recorded successfully for session:", sessionId);
 
       return {
         success: true,
@@ -122,7 +133,7 @@ export const confirmAndPayoutSeller = functions.https.onCall(
 
     } catch (error: any) {
       console.error("Payout confirmation error:", error.message);
-      throw new functions.https.HttpsError("internal", error.message);
+      throw new functions.https.HttpsError("internal", error.message || "Failed to record transaction.");
     }
   }
 );

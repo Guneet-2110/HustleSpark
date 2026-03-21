@@ -1,12 +1,10 @@
-
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { getFunctions, httpsCallable } from "firebase/functions";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Lock, ShieldCheck, Loader2, AlertCircle, ArrowRight } from "lucide-react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Lock, ShieldCheck, Loader2, ArrowRight } from "lucide-react";
 
 interface StripeCheckoutProps {
     amount: number;
@@ -20,15 +18,6 @@ interface StripeCheckoutProps {
 export function StripeCheckout({ amount, listingId, sellerEmail, hustleName, buyerId, onSuccess }: StripeCheckoutProps) {
     const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(false);
-    const [isStripeError, setIsStripeError] = useState(false);
-
-    useEffect(() => {
-        if (!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) {
-            console.error("Missing NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY");
-            // Note: For hosted checkout sessions, we only need the backend secret key,
-            // but we use the publishable key logic as a guard for the demo.
-        }
-    }, []);
 
     const handlePayment = async () => {
         setIsLoading(true);
@@ -49,15 +38,20 @@ export function StripeCheckout({ amount, listingId, sellerEmail, hustleName, buy
                 // Redirect to Stripe's hosted checkout page
                 window.location.href = url;
             } else {
-                throw new Error("Failed to initialize checkout session.");
+                console.error("Checkout response missing URL:", result.data);
+                throw new Error("The payment system responded but didn't provide a checkout link.");
             }
 
         } catch (error: any) {
-            console.error("Payment error:", error);
+            console.error("Stripe Checkout Error:", error);
+            
+            // Extract the specific message from Firebase HttpsError if available
+            const errorMessage = error.message || "An unexpected error occurred during checkout initialization.";
+            
             toast({
                 variant: "destructive",
-                title: "Payment Process Failed",
-                description: error.message || "An unexpected error occurred during checkout.",
+                title: "Payment Error",
+                description: errorMessage,
             });
             setIsLoading(false);
         }
@@ -86,23 +80,26 @@ export function StripeCheckout({ amount, listingId, sellerEmail, hustleName, buy
                 disabled={isLoading}
             >
                 {isLoading ? (
-                    <><Loader2 className="animate-spin mr-2 h-6 w-6" /> Processing Securely...</>
+                    <>
+                        <Loader2 className="animate-spin mr-2 h-6 w-6" /> 
+                        Securing Session...
+                    </>
                 ) : (
                     <div className="flex items-center">
                         Proceed to Secure Checkout
-                        <ArrowRight className="ml-2 h-6 w-6" />
+                        <ArrowRight className="ml-2 h-6 w-6 transition-transform group-hover:translate-x-1" />
                     </div>
                 )}
             </Button>
 
-            <div className="flex items-center justify-center gap-3 text-muted-foreground">
+            <div className="flex items-center justify-center gap-4 text-muted-foreground">
                 <div className="flex items-center gap-1.5">
                     <Lock className="h-3 w-3" />
                     <p className="text-[10px] uppercase tracking-widest font-bold">Secure SSL</p>
                 </div>
                 <div className="flex items-center gap-1.5">
                     <ShieldCheck className="h-3 w-3" />
-                    <p className="text-[10px] uppercase tracking-widest font-bold">Escrow Verified</p>
+                    <p className="text-[10px] uppercase tracking-widest font-bold">Escrow Protected</p>
                 </div>
             </div>
         </div>
