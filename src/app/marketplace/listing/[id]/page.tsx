@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useDoc, useFirestore, useMemoFirebase, useUser } from '@/firebase';
@@ -105,12 +104,9 @@ export default function MarketplaceListingDetailPage() {
 
     if (isListingLoading || isUserLoading) {
         return (
-            <div className="container py-20 space-y-8">
-                <Skeleton className="h-10 w-1/3" />
-                <div className="grid lg:grid-cols-3 gap-8">
-                    <Skeleton className="lg:col-span-2 h-[400px]" />
-                    <Skeleton className="h-[400px]" />
-                </div>
+            <div className="container py-20 space-y-8 text-center">
+                <Loader2 className="animate-spin h-10 w-10 mx-auto text-primary" />
+                <p className="font-bold text-muted-foreground">Syncing venture data...</p>
             </div>
         );
     }

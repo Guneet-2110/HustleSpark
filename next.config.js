@@ -2,7 +2,7 @@
 const nextConfig = {
   // Forced refresh to resolve build chunk errors with a unique ID
   generateBuildId: async () => {
-    return 'hustlespark-stable-' + Date.now();
+    return 'hustlespark-v2-stable-' + Date.now();
   },
   typescript: {
     ignoreBuildErrors: true,
