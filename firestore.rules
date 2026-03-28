@@ -16,37 +16,33 @@ service cloud.firestore {
       );
     }
     match /users/{userId} {
-      allow get, list: if isOwner(userId);
+      allow get, list: if isOwner(userId) || isAdmin();
       allow create, update: if isOwner(userId);
-      allow delete: if false;
+      allow delete: if isAdmin();
       match /saved_hustles/{savedHustleId} {
-        allow read, write: if isOwner(userId);
+        allow read, write: if isOwner(userId) || isAdmin();
       }
     }
     match /marketplace_listings/{marketplaceListingId} {
-      // Users can only create listings as pending approval
       allow create: if isSignedIn() && request.resource.data.status == 'pending_approval';
-      // Approved listings are visible to everyone
-      allow list: if resource.data.status == 'approved' || isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
-      allow get: if resource.data.status == 'approved' || isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
-      // Only admin can approve (status change) or update any listing
-      // Owners can update their own data but not the status
+      allow list, get: if resource.data.status == 'approved' || isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
       allow update: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid && request.resource.data.status == resource.data.status);
-      // Admin and owner can delete
       allow delete: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
     }
     match /chats/{chatId} {
-      allow read, write: if isSignedIn() && (request.auth.uid == resource.data.buyerId || request.auth.uid == resource.data.sellerId);
+      allow read, write: if isAdmin() || (isSignedIn() && (request.auth.uid == resource.data.buyerId || request.auth.uid == resource.data.sellerId));
       allow create: if isSignedIn();
+      allow delete: if isAdmin();
       match /messages/{messageId} {
-        allow read: if isSignedIn() && (request.auth.uid == get(/databases/$(database)/documents/chats/$(chatId)).data.buyerId || request.auth.uid == get(/databases/$(database)/documents/chats/$(chatId)).data.sellerId);
-        allow create: if isSignedIn() && (request.auth.uid == get(/databases/$(database)/documents/chats/$(chatId)).data.buyerId || request.auth.uid == get(/databases/$(database)/documents/chats/$(chatId)).data.sellerId);
+        allow read, create: if isAdmin() || (isSignedIn() && (request.auth.uid == get(/databases/$(database)/documents/chats/$(chatId)).data.buyerId || request.auth.uid == get(/databases/$(database)/documents/chats/$(chatId)).data.sellerId));
+        allow delete: if isAdmin();
       }
     }
     match /transactions/{transactionId} {
-      allow read: if isSignedIn() && (request.auth.uid == resource.data.buyerId || request.auth.uid == resource.data.sellerId);
+      allow read: if isAdmin() || (isSignedIn() && (request.auth.uid == resource.data.buyerId || request.auth.uid == resource.data.sellerId));
       allow create: if isSignedIn();
-      allow update: if isSignedIn() && (request.auth.uid == resource.data.buyerId || request.auth.uid == resource.data.sellerId);
+      allow update: if isAdmin() || (isSignedIn() && (request.auth.uid == resource.data.buyerId || request.auth.uid == resource.data.sellerId));
+      allow delete: if isAdmin();
     }
   }
 }

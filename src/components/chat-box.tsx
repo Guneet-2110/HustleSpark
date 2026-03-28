@@ -22,13 +22,15 @@ export function ChatBox({ chatId, currentUserId }: ChatBoxProps) {
 
     const messagesQuery = useMemoFirebase(() => {
         if (!firestore || !chatId) return null;
-        return query(
-            collection(firestore, 'chats', chatId, 'messages'),
-            orderBy('createdAt', 'asc')
-        );
+        // Client-side sorting is safer for testing to avoid index errors
+        return query(collection(firestore, 'chats', chatId, 'messages'));
     }, [firestore, chatId]);
 
-    const { data: messages, isLoading } = useCollection(messagesQuery);
+    const { data: rawMessages, isLoading } = useCollection(messagesQuery);
+
+    const messages = (rawMessages || []).sort((a, b) => 
+        (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0)
+    );
 
     useEffect(() => {
         if (scrollRef.current) {
@@ -46,14 +48,12 @@ export function ChatBox({ chatId, currentUserId }: ChatBoxProps) {
         const messagesRef = collection(firestore, 'chats', chatId, 'messages');
         const chatRef = doc(firestore, 'chats', chatId);
 
-        // Add message
         addDoc(messagesRef, {
             text: messageText,
             senderId: currentUserId,
             createdAt: serverTimestamp()
         });
 
-        // Update last message in parent doc
         updateDoc(chatRef, {
             lastMessage: messageText,
             updatedAt: serverTimestamp()
@@ -82,7 +82,7 @@ export function ChatBox({ chatId, currentUserId }: ChatBoxProps) {
             <div className="flex-1 min-h-0 relative bg-background/50">
                 <ScrollArea className="h-full w-full">
                     <div className="p-6 space-y-4">
-                        {messages?.map((msg) => (
+                        {messages.map((msg) => (
                             <div
                                 key={msg.id}
                                 className={`flex ${msg.senderId === currentUserId ? 'justify-end' : 'justify-start'}`}

@@ -92,7 +92,6 @@ export default function MarketplacePage() {
                     );
                     await Promise.all(deletePromises);
                     
-                    // Also purge subcollections for chats
                     if (colName === 'chats') {
                         for (const chatDoc of snapshot.docs) {
                             const messages = await getDocs(collection(firestore, 'chats', chatDoc.id, 'messages'));

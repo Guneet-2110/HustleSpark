@@ -84,7 +84,7 @@ export default function ProfilePage() {
 
     startReset(async () => {
         try {
-            const collections = ['marketplace_listings', 'chats', 'transactions'];
+            const collections = ['marketplace_listings', 'chats', 'transactions', 'users'];
             for (const colName of collections) {
                 const snapshot = await getDocs(collection(firestore, colName));
                 const deletePromises = snapshot.docs.map(itemDoc => 
@@ -92,7 +92,6 @@ export default function ProfilePage() {
                 );
                 await Promise.all(deletePromises);
                 
-                // Also purge subcollections for chats
                 if (colName === 'chats') {
                     for (const chatDoc of snapshot.docs) {
                         const messages = await getDocs(collection(firestore, 'chats', chatDoc.id, 'messages'));
