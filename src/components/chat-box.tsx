@@ -71,7 +71,7 @@ export function ChatBox({ chatId, currentUserId }: ChatBoxProps) {
 
     return (
         <div className="flex flex-col h-full bg-card rounded-[2.5rem] border shadow-2xl overflow-hidden border-primary/20">
-            <div className="bg-primary/5 px-6 py-3 border-b border-primary/10 flex items-center justify-between">
+            <div className="flex-shrink-0 bg-primary/5 px-6 py-3 border-b border-primary/10 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                     <ShieldCheck className="h-4 w-4 text-primary" />
                     <span className="text-[10px] font-black uppercase tracking-widest text-primary">Escrow Protected Conversation</span>
@@ -79,7 +79,7 @@ export function ChatBox({ chatId, currentUserId }: ChatBoxProps) {
                 <Badge variant="outline" className="text-[8px] border-green-500/30 text-green-500 font-black">ENCRYPTED</Badge>
             </div>
             
-            <ScrollArea className="flex-1 p-6">
+            <ScrollArea className="flex-1 min-h-0 p-6">
                 <div className="space-y-4">
                     {messages?.map((msg) => (
                         <div
@@ -87,7 +87,7 @@ export function ChatBox({ chatId, currentUserId }: ChatBoxProps) {
                             className={`flex ${msg.senderId === currentUserId ? 'justify-end' : 'justify-start'}`}
                         >
                             <div
-                                className={`max-w-[80%] rounded-2xl p-4 text-sm shadow-sm ${
+                                className={`max-w-[85%] rounded-2xl p-4 text-sm shadow-sm ${
                                     msg.senderId === currentUserId
                                         ? 'bg-primary text-primary-foreground rounded-tr-none'
                                         : msg.senderId === 'system' 
@@ -95,7 +95,7 @@ export function ChatBox({ chatId, currentUserId }: ChatBoxProps) {
                                             : 'bg-muted rounded-tl-none'
                                 }`}
                             >
-                                <p className="leading-relaxed">{msg.text}</p>
+                                <p className="leading-relaxed break-words">{msg.text}</p>
                             </div>
                         </div>
                     ))}
@@ -103,14 +103,14 @@ export function ChatBox({ chatId, currentUserId }: ChatBoxProps) {
                 </div>
             </ScrollArea>
 
-            <form onSubmit={handleSendMessage} className="p-6 bg-muted/30 border-t flex gap-3">
+            <form onSubmit={handleSendMessage} className="flex-shrink-0 p-6 bg-muted/30 border-t flex gap-3">
                 <Input
                     placeholder="Ask a question or provide delivery info..."
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
                     className="h-14 rounded-2xl bg-background shadow-inner border-2 focus:ring-primary"
                 />
-                <Button type="submit" size="icon" className="h-14 w-14 rounded-2xl shadow-xl transition-all hover:scale-105 active:scale-95" disabled={!newMessage.trim()}>
+                <Button type="submit" size="icon" className="h-14 w-14 rounded-2xl shadow-xl transition-all hover:scale-105 active:scale-95 flex-shrink-0" disabled={!newMessage.trim()}>
                     <Send className="h-6 w-6" />
                 </Button>
             </form>

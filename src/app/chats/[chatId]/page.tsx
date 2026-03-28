@@ -52,15 +52,15 @@ export default function ChatPage() {
     }
 
     return (
-        <div className="container py-12 max-w-4xl h-[calc(100vh-140px)] flex flex-col">
-            <div className="flex items-center gap-4 mb-8">
+        <div className="container py-6 md:py-12 max-w-5xl h-[calc(100vh-80px)] md:h-[calc(100vh-120px)] flex flex-col">
+            <div className="flex flex-shrink-0 items-center gap-4 mb-6">
                 <Button variant="ghost" size="icon" onClick={() => router.push('/profile')} className="rounded-full hover:bg-primary/10">
                     <ArrowLeft className="h-5 w-5" />
                 </Button>
-                <div>
-                    <h1 className="text-2xl font-black flex items-center gap-2">
-                        <MessageCircle className="h-6 w-6 text-primary" />
-                        {chat.hustleName}
+                <div className="min-w-0">
+                    <h1 className="text-xl md:text-2xl font-black flex items-center gap-2 truncate">
+                        <MessageCircle className="h-6 w-6 text-primary flex-shrink-0" />
+                        <span className="truncate">{chat.hustleName}</span>
                     </h1>
                     <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest">
                         Escrow Protected Support
