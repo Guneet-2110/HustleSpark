@@ -46,7 +46,7 @@ export default function ChatPage() {
         return (
             <div className="container py-20 text-center">
                 <h2 className="text-2xl font-bold">Conversation not found</h2>
-                <Button variant="link" onClick={() => router.push('/profile')}>Back to Profile</Button>
+                <Button variant="link" onClick={() => router.push('/profile')}>Back to Dashboard</Button>
             </div>
         );
     }

@@ -13,7 +13,7 @@ import { Search, Filter, MapPin, DollarSign, Sparkles, Loader2, ShoppingBag, Tra
 import Link from 'next/link';
 import { MarketplaceListingCard } from '@/components/marketplace-listing-card';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, orderBy, query, getDocs, deleteDoc, doc, where } from 'firebase/firestore';
+import { collection, query, getDocs, deleteDoc, doc, where } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
@@ -31,7 +31,6 @@ export default function MarketplacePage() {
     const [location, setLocation] = useState('');
     const [showTrustModal, setShowTrustModal] = useState(false);
 
-    // Show the trust modal on mount
     useEffect(() => {
         if (typeof window !== 'undefined') {
             const hasSeenTrust = sessionStorage.getItem('hasSeenMarketplaceTrust');
@@ -42,42 +41,36 @@ export default function MarketplacePage() {
         }
     }, []);
 
-    const isDeveloper = user?.email === 'guneet.ar2010@gmail.com' || user?.email === 'tester@gmail.com';
+    const isAdmin = user?.email === 'guneet.ar2010@gmail.com' || user?.email === 'tester@gmail.com';
     const isOwner = user?.email === 'guneet.ar2010@gmail.com';
 
     const listingsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
-        
-        // Admin sees everything. Public sees only approved.
-        if (isDeveloper) {
-            return query(
-                collection(firestore, 'marketplace_listings'),
-                orderBy('createdAt', 'desc')
-            );
+        if (isAdmin) {
+            return collection(firestore, 'marketplace_listings');
         }
-
-        // Public query filtered by status='approved'
         return query(
             collection(firestore, 'marketplace_listings'),
-            where('status', '==', 'approved'),
-            orderBy('createdAt', 'desc')
+            where('status', '==', 'approved')
         );
-    }, [firestore, isDeveloper]);
+    }, [firestore, isAdmin]);
 
     const { data: rawListings, isLoading } = useCollection(listingsQuery);
 
     const filteredListings = useMemo(() => {
         if (!rawListings) return [];
-        return rawListings.filter(l => {
-            const name = l.hustleName || '';
-            const desc = l.description || '';
-            const matchesSearch = name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                                desc.toLowerCase().includes(searchQuery.toLowerCase());
-            const matchesPrice = (l.price || 0) >= priceRange[0] && (l.price || 0) <= priceRange[1];
-            const matchesCategory = category === 'all' || l.category === category;
-            const matchesLocation = !location || (l.location || '').toLowerCase().includes(location.toLowerCase());
-            return matchesSearch && matchesPrice && matchesCategory && matchesLocation;
-        });
+        return rawListings
+            .filter(l => {
+                const name = l.hustleName || '';
+                const desc = l.description || '';
+                const matchesSearch = name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                                    desc.toLowerCase().includes(searchQuery.toLowerCase());
+                const matchesPrice = (l.price || 0) >= priceRange[0] && (l.price || 0) <= priceRange[1];
+                const matchesCategory = category === 'all' || l.category === category;
+                const matchesLocation = !location || (l.location || '').toLowerCase().includes(location.toLowerCase());
+                return matchesSearch && matchesPrice && matchesCategory && matchesLocation;
+            })
+            .sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
     }, [rawListings, searchQuery, priceRange, category, location]);
 
     const handleResetSystem = () => {
@@ -91,14 +84,22 @@ export default function MarketplacePage() {
 
         startReset(async () => {
             try {
-                // Purge all test data for a fresh restart
                 const collections = ['marketplace_listings', 'chats', 'transactions'];
                 for (const colName of collections) {
                     const snapshot = await getDocs(collection(firestore, colName));
-                    const deletePromises = snapshot.docs.map(listingDoc => 
-                        deleteDoc(doc(firestore, colName, listingDoc.id))
+                    const deletePromises = snapshot.docs.map(itemDoc => 
+                        deleteDoc(doc(firestore, colName, itemDoc.id))
                     );
                     await Promise.all(deletePromises);
+                    
+                    // Also purge subcollections for chats
+                    if (colName === 'chats') {
+                        for (const chatDoc of snapshot.docs) {
+                            const messages = await getDocs(collection(firestore, 'chats', chatDoc.id, 'messages'));
+                            const msgDeletes = messages.docs.map(m => deleteDoc(doc(firestore, 'chats', chatDoc.id, 'messages', m.id)));
+                            await Promise.all(msgDeletes);
+                        }
+                    }
                 }
                 
                 toast({
@@ -125,20 +126,20 @@ export default function MarketplacePage() {
                     <p className="text-muted-foreground mt-2 text-lg">Acquire ready-to-launch side hustles from our global creator community.</p>
                 </div>
                 <div className="flex gap-3">
-                    {isDeveloper && (
+                    {isAdmin && (
                         <div className="flex gap-2">
                              <Badge variant="outline" className="h-10 px-4 rounded-xl border-primary/30 text-primary font-bold bg-primary/5 flex items-center gap-2">
-                                <ShieldCheck className="h-4 w-4" /> Admin Console Active
+                                <ShieldCheck className="h-4 w-4" /> Admin Console
                              </Badge>
                             {isOwner && (
                                 <Button 
                                     variant="destructive" 
                                     onClick={handleResetSystem} 
                                     disabled={isResetting}
-                                    className="shadow-lg active:scale-95 transition-transform h-10 rounded-xl"
+                                    className="shadow-lg active:scale-95 transition-transform h-10 rounded-xl font-black"
                                 >
                                     {isResetting ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <Trash2 className="mr-2 h-4 w-4" />}
-                                    System Purge
+                                    MASTER PURGE
                                 </Button>
                             )}
                         </div>
@@ -151,13 +152,11 @@ export default function MarketplacePage() {
                 </div>
             </div>
 
-            {isDeveloper && rawListings && rawListings.some(l => l.status === 'pending_approval') && (
+            {isAdmin && rawListings && rawListings.some(l => l.status === 'pending_approval') && (
                 <Alert className="mb-8 border-primary/50 bg-primary/5 rounded-[2rem]">
                     <Clock className="h-5 w-5 text-primary" />
                     <AlertTitle className="font-bold">Pending Approvals</AlertTitle>
-                    <AlertDescription>
-                        There are ventures awaiting your review. Check the listings below marked as "Pending Review".
-                    </AlertDescription>
+                    <AlertDescription>There are ventures awaiting review below.</AlertDescription>
                 </Alert>
             )}
 
@@ -168,25 +167,17 @@ export default function MarketplacePage() {
                     </CardHeader>
                     <CardContent className="space-y-6">
                         <div className="space-y-2">
-                            <Label htmlFor="search">Search Listings</Label>
+                            <Label htmlFor="search">Search</Label>
                             <div className="relative">
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                <Input 
-                                    id="search" 
-                                    placeholder="Keywords..." 
-                                    className="pl-9"
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                />
+                                <Input id="search" placeholder="Keywords..." className="pl-9" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
                             </div>
                         </div>
 
                         <div className="space-y-2">
                             <Label>Category</Label>
                             <Select value={category} onValueChange={setCategory}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select category" />
-                                </SelectTrigger>
+                                <SelectTrigger><SelectValue placeholder="All Categories" /></SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="all">All Categories</SelectItem>
                                     <SelectItem value="Food & Beverage">Food & Beverage</SelectItem>
@@ -203,28 +194,7 @@ export default function MarketplacePage() {
                                 <Label>Price Range</Label>
                                 <span className="text-xs font-mono font-bold text-primary">${priceRange[0]} - ${priceRange[1]}</span>
                             </div>
-                            <Slider 
-                                defaultValue={[0, 5000]} 
-                                max={5000} 
-                                step={50} 
-                                value={priceRange}
-                                onValueChange={setPriceRange}
-                                className="py-4"
-                            />
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label htmlFor="location">Location</Label>
-                            <div className="relative">
-                                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                <Input 
-                                    id="location" 
-                                    placeholder="City or Remote" 
-                                    className="pl-9"
-                                    value={location}
-                                    onChange={(e) => setLocation(e.target.value)}
-                                />
-                            </div>
+                            <Slider defaultValue={[0, 5000]} max={5000} step={50} value={priceRange} onValueChange={setPriceRange} className="py-4" />
                         </div>
 
                         <Button variant="outline" className="w-full active:scale-95 transition-transform" onClick={() => {
@@ -233,7 +203,7 @@ export default function MarketplacePage() {
                             setCategory('all');
                             setLocation('');
                         }}>
-                            Reset All Filters
+                            Reset Filters
                         </Button>
                     </CardContent>
                 </Card>
@@ -242,16 +212,14 @@ export default function MarketplacePage() {
                     {isLoading ? (
                         <div className="flex flex-col items-center justify-center py-32">
                             <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
-                            <p className="text-muted-foreground animate-pulse font-medium">Curating the finest ventures...</p>
+                            <p className="text-muted-foreground animate-pulse font-medium">Curating ventures...</p>
                         </div>
                     ) : filteredListings.length > 0 ? (
                         <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
                             {filteredListings.map(listing => (
                                 <div key={listing.id} className="relative group">
-                                    {isDeveloper && listing.status === 'pending_approval' && (
-                                        <Badge className="absolute top-2 left-2 z-10 bg-orange-500 text-white border-none shadow-xl animate-pulse">
-                                            Pending Review
-                                        </Badge>
+                                    {isAdmin && listing.status === 'pending_approval' && (
+                                        <Badge className="absolute top-2 left-2 z-10 bg-orange-500 text-white border-none shadow-xl animate-pulse">Pending</Badge>
                                     )}
                                     <MarketplaceListingCard listing={listing as any} />
                                 </div>
@@ -261,32 +229,11 @@ export default function MarketplacePage() {
                         <div className="text-center py-32 border-2 border-dashed rounded-3xl bg-muted/20 border-primary/10">
                             <Sparkles className="h-16 w-16 text-primary/30 mx-auto mb-6" />
                             <h3 className="text-2xl font-bold">No ventures found</h3>
-                            <p className="text-muted-foreground mt-2 max-w-xs mx-auto">Try adjusting your search filters or generate your own hustle to list it here!</p>
+                            <p className="text-muted-foreground mt-2">Try adjusting filters or generate your own hustle!</p>
                         </div>
                     )}
                 </div>
             </div>
-
-            <section className="mt-24 py-16 bg-gradient-to-br from-primary/10 to-accent/10 rounded-[3rem] border border-primary/10 overflow-hidden relative shadow-2xl">
-                <div className="container px-12 flex flex-col md:flex-row items-center justify-between gap-12 relative z-10">
-                    <div className="max-w-xl">
-                        <h2 className="text-4xl font-bold mb-6">Monetize Your Business Blueprints</h2>
-                        <p className="text-muted-foreground text-xl mb-8 leading-relaxed">
-                            Have you perfected a side hustle? List your strategy, branding, and action plans on our marketplace and keep 90% of every sale.
-                        </p>
-                        <Button size="lg" className="shadow-2xl h-14 px-10 text-lg active:scale-95 transition-transform" asChild>
-                            <Link href="/profile">Post Your Listing Now</Link>
-                        </Button>
-                    </div>
-                    <div className="hidden md:block">
-                        <div className="relative h-64 w-64">
-                             <DollarSign className="h-48 w-48 text-primary opacity-20 absolute top-0 left-0 animate-bounce" />
-                             <ShoppingBag className="h-32 w-32 text-accent opacity-20 absolute bottom-0 right-0 animate-pulse" />
-                        </div>
-                    </div>
-                </div>
-                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/20 blur-[120px] -z-0 rounded-full translate-x-1/2 -translate-y-1/2" />
-            </section>
         </div>
     );
 }
