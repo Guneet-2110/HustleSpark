@@ -8,12 +8,13 @@ import { Loader2, CheckCircle, XCircle, Rocket, ArrowRight, MessageCircle } from
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
-import { useFunctions } from "@/firebase";
+import { useFunctions, useUser } from "@/firebase";
 
 function PaymentSuccessContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
-    const { user, isUserLoading } = useAuth();
+    const { user: localUser, isLoggedIn } = useAuth();
+    const { user: firebaseUser, isUserLoading } = useUser();
     const { toast } = useToast();
     const functions = useFunctions();
     const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
@@ -29,7 +30,7 @@ function PaymentSuccessContent() {
             const sessionId = searchParams.get("session_id");
 
             if (!listingId || !sellerEmail || !amount || !sessionId || !functions) {
-                if (!functions && !isUserLoading) {
+                if (!functions && !isUserLoading && firebaseUser) {
                     console.error("Functions SDK not ready");
                     setStatus("error");
                 }
@@ -63,10 +64,10 @@ function PaymentSuccessContent() {
             }
         };
 
-        if (!isUserLoading && user && status === "loading") {
+        if (!isUserLoading && firebaseUser && status === "loading") {
             processSuccess();
         }
-    }, [user, isUserLoading, searchParams, status, toast, functions]);
+    }, [firebaseUser, isUserLoading, searchParams, status, toast, functions]);
 
     if (status === "loading") {
         return (

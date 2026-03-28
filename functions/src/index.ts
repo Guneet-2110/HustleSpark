@@ -1,86 +1,25 @@
-
 import * as functions from "firebase-functions/v2";
 import * as admin from "firebase-admin";
 import Stripe from "stripe";
-import * as nodemailer from "nodemailer";
+import { Resend } from "resend";
 
 admin.initializeApp();
 
-/**
- * Helper to send email notifications for new sales.
- */
-async function sendSaleEmail(data: {
-  hustleName: string;
-  totalAmount: number;
-  sellerEmail: string;
-  buyerEmail: string;
-  listingId: string;
-}) {
-  const gmailPass = process.env.GMAIL_APP_PASSWORD;
-  if (!gmailPass) {
-    console.error("GMAIL_APP_PASSWORD not set. Skipping notification.");
-    return;
-  }
-
-  const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-      user: "guneet.ar2010@gmail.com",
-      pass: gmailPass,
-    },
-  });
-
-  const sellerPayout = (data.totalAmount * 0.9).toFixed(2);
-  const platformFee = (data.totalAmount * 0.1).toFixed(2);
-
-  const mailOptions = {
-    from: "guneet.ar2010@gmail.com",
-    to: "guneet.ar2010@gmail.com",
-    subject: `🚀 HustleSpark Sale! ${data.hustleName} - $${data.totalAmount}`,
-    html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1a1a2e;">
-        <h1 style="color: #9D4EDD;">💰 New Sale on HustleSpark!</h1>
-        
-        <div style="background: #f8f8f8; padding: 20px; border-radius: 15px; margin: 20px 0; border: 1px solid #e0e0e0;">
-          <h2 style="margin: 0 0 10px 0;">${data.hustleName}</h2>
-          <p style="color: #666; font-size: 12px;">Listing ID: ${data.listingId}</p>
-        </div>
-
-        <div style="background: #f0fdf4; padding: 20px; border-radius: 15px; margin: 20px 0;">
-          <h3 style="color: #16a34a; margin: 0 0 15px 0;">💵 Payment Breakdown</h3>
-          <p><strong>Total Paid by Buyer:</strong> $${data.totalAmount}</p>
-          <p><strong>Platform Fee (10%):</strong> $${platformFee} ✅</p>
-          <p style="color: #dc2626; font-size: 18px;"><strong>To Payout (90%):</strong> $${sellerPayout}</p>
-        </div>
-
-        <div style="background: #fef2f2; padding: 20px; border-radius: 15px; margin: 20px 0; border: 2px solid #dc2626;">
-          <h3 style="color: #dc2626; margin: 0 0 15px 0;">📤 Send Payout To:</h3>
-          <p style="font-size: 20px; font-weight: bold; color: #dc2626; margin: 0;">${data.sellerEmail}</p>
-        </div>
-
-        <div style="background: #f0f9ff; padding: 20px; border-radius: 15px; margin: 20px 0;">
-          <h3 style="color: #0369a1; margin: 0 0 15px 0;">👤 Buyer Info</h3>
-          <p><strong>Buyer Email:</strong> ${data.buyerEmail}</p>
-        </div>
-
-        <p style="color: #666; font-size: 11px; text-align: center; margin-top: 30px;">
-          This is an automated administrative notification from HustleSpark.
-        </p>
-      </div>
-    `,
-  };
-
+async function sendEmail(to: string, subject: string, html: string) {
+  const resend = new Resend(process.env.RESEND_API_KEY);
   try {
-    await transporter.sendMail(mailOptions);
-    console.log("Sale notification email sent successfully!");
+    await resend.emails.send({
+      from: "HustleSpark <noreply@hustlespark.net>",
+      to,
+      subject,
+      html,
+    });
+    console.log(`Email sent to ${to}`);
   } catch (error: any) {
-    console.error("Failed to send sale email:", error.message);
+    console.error("Email failed:", error.message);
   }
 }
 
-/**
- * Creates a Stripe Checkout Session for a venture acquisition.
- */
 export const createStripePayment = functions.https.onCall(
   {
     secrets: ["STRIPE_SECRET_KEY"],
@@ -142,12 +81,9 @@ export const createStripePayment = functions.https.onCall(
   }
 );
 
-/**
- * Confirms the acquisition, sets up the escrow record, chat, and notifies admin.
- */
 export const confirmAndPayoutSeller = functions.https.onCall(
   {
-    secrets: ["STRIPE_SECRET_KEY", "GMAIL_APP_PASSWORD"],
+    secrets: ["STRIPE_SECRET_KEY", "RESEND_API_KEY"],
   },
   async (request) => {
     if (!request.auth) {
@@ -162,12 +98,12 @@ export const confirmAndPayoutSeller = functions.https.onCall(
 
     try {
       const db = admin.firestore();
-      
+
       const listingDoc = await db.collection("marketplace_listings").doc(listingId).get();
       if (!listingDoc.exists) {
         throw new functions.https.HttpsError("not-found", "Listing not found.");
       }
-      
+
       const listingData = listingDoc.data()!;
       const sellerId = listingData.userId;
       const hustleName = listingData.hustleName;
@@ -175,13 +111,13 @@ export const confirmAndPayoutSeller = functions.https.onCall(
       const transactionId = `txn_session_${sessionId}`;
       const txnRef = db.collection("transactions").doc(transactionId);
       const existingTxn = await txnRef.get();
-      
+
       if (existingTxn.exists) {
-          return { success: true, message: "Already processed." };
+        return { success: true, message: "Already processed." };
       }
 
-      const sellerPayout = totalAmount * 0.9;
-      const platformFee = totalAmount * 0.1;
+      const sellerPayout = (totalAmount * 0.9).toFixed(2);
+      const platformFee = (totalAmount * 0.1).toFixed(2);
       const buyerEmail = request.auth.token.email || "";
 
       // 1. Create Escrow Transaction
@@ -194,8 +130,8 @@ export const confirmAndPayoutSeller = functions.https.onCall(
         sellerId,
         sellerEmail,
         amount: totalAmount,
-        sellerAmount: sellerPayout,
-        platformFee,
+        sellerAmount: parseFloat(sellerPayout),
+        platformFee: parseFloat(platformFee),
         status: "pending_delivery",
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
       });
@@ -218,14 +154,48 @@ export const confirmAndPayoutSeller = functions.https.onCall(
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
       });
 
-      // 3. Notify Admin via Email
-      await sendSaleEmail({
-        hustleName,
-        totalAmount,
-        sellerEmail,
+      // 3. Email Admin
+      await sendEmail(
+        "guneet.ar2010@gmail.com",
+        `🚀 New Sale! ${hustleName} - $${totalAmount}`,
+        `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <h1 style="color: #9D4EDD;">💰 New Sale on HustleSpark!</h1>
+          <p><strong>Venture:</strong> ${hustleName}</p>
+          <p><strong>Buyer:</strong> ${buyerEmail}</p>
+          <p><strong>Seller PayPal:</strong> ${sellerEmail}</p>
+          <p><strong>Total Paid:</strong> $${totalAmount}</p>
+          <div style="background: #fef2f2; padding: 15px; border-radius: 10px; border: 2px solid #dc2626; margin: 20px 0;">
+            <p style="color: #dc2626; font-size: 18px; margin: 0;"><strong>ACTION REQUIRED: Send $${sellerPayout} to ${sellerEmail} via PayPal once buyer confirms receipt.</strong></p>
+          </div>
+        </div>`
+      );
+
+      // 4. Email Buyer
+      await sendEmail(
         buyerEmail,
-        listingId,
-      });
+        `✅ Acquisition Confirmed - ${hustleName}`,
+        `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <h1 style="color: #9D4EDD;">🎉 Purchase Confirmed!</h1>
+          <p>You have successfully acquired <strong>${hustleName}</strong> for $${totalAmount}.</p>
+          <p>Your payment is held securely in escrow. The seller has been notified and will deliver all assets within <strong>3 days</strong>.</p>
+          <p>Once you receive everything, please <strong>confirm receipt</strong> in your dashboard to release payment to the seller.</p>
+          <a href="https://hustlespark.net/profile" style="display: inline-block; background: #9D4EDD; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold; margin-top: 15px;">Go to Dashboard →</a>
+        </div>`
+      );
+
+      // 5. Email Seller
+      await sendEmail(
+        sellerEmail,
+        `💰 You made a sale! ${hustleName}`,
+        `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <h1 style="color: #9D4EDD;">🚀 Your Venture Was Acquired!</h1>
+          <p>Congratulations! <strong>${hustleName}</strong> has been purchased for $${totalAmount}.</p>
+          <p>Your payout: <strong>$${sellerPayout}</strong> (90%)</p>
+          <p>Please deliver all assets to the buyer within <strong>3 days</strong>, then mark as delivered in your dashboard.</p>
+          <p>Payment will be released once the buyer confirms receipt.</p>
+          <a href="https://hustlespark.net/profile" style="display: inline-block; background: #9D4EDD; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold; margin-top: 15px;">Go to Dashboard →</a>
+        </div>`
+      );
 
       return { success: true };
 

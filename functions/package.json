@@ -21,6 +21,7 @@
     "firebase-functions": "^7.0.0",
     "nodemailer": "^8.0.3",
     "paypal-rest-sdk": "^1.8.1",
+    "resend": "^6.9.4",
     "stripe": "^20.4.1"
   },
   "devDependencies": {

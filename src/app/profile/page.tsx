@@ -2,7 +2,7 @@
 "use client";
 
 import { useAuth } from "@/hooks/use-auth";
-import { useAuth as useFirebaseInstance, useFirestore, useCollection, useMemoFirebase } from "@/firebase";
+import { useAuth as useFirebaseInstance, useFirestore, useCollection, useMemoFirebase, useUser } from "@/firebase";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -18,7 +18,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function ProfilePage() {
   const { user: localUser, isLoggedIn, isPremium, savedHustles, upgradeToPremium } = useAuth();
-  const { user: firebaseUser } = useFirebaseInstance();
+  const { user: firebaseUser, isUserLoading: isAuthLoading } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
   const [mounted, setMounted] = useState(false);
@@ -27,7 +27,7 @@ export default function ProfilePage() {
     setMounted(true);
   }, []);
 
-  // standardized Queries for the Dashboard
+  // Standardized Queries for the Dashboard using verified Firebase UID
   const buyerChatsQuery = useMemoFirebase(() => {
     if (!firestore || !firebaseUser) return null;
     return query(
@@ -105,7 +105,7 @@ export default function ProfilePage() {
       }
   };
 
-  if (!mounted || !isLoggedIn || !localUser) {
+  if (!mounted || isAuthLoading || !isLoggedIn || !localUser) {
     return (
       <div className="container py-20 text-center">
         <Loader2 className="animate-spin h-10 w-10 mx-auto text-primary" />
