@@ -7,12 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useTransition } from "react";
 import { Trash2, MessageSquare, Briefcase, Package, ShieldCheck, Store, Loader2, ArrowRight, ShieldAlert, ShoppingBag, Eye, CheckCircle, AlertTriangle } from "lucide-react";
 import { slugify } from "@/lib/utils";
 import { HustleGenerator } from "@/components/hustle-generator";
 import { useToast } from "@/hooks/use-toast";
-import { collection, query, where, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { collection, query, where, doc, updateDoc, deleteDoc, getDocs } from 'firebase/firestore';
 import { Skeleton } from "@/components/ui/skeleton";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
@@ -22,6 +22,7 @@ export default function ProfilePage() {
   const firestore = useFirestore();
   const { toast } = useToast();
   const [mounted, setMounted] = useState(false);
+  const [isResetting, startReset] = useTransition();
 
   useEffect(() => {
     setMounted(true);
@@ -69,7 +70,51 @@ export default function ProfilePage() {
   const sales = useMemo(() => (rawSales || []).sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)), [rawSales]);
   const purchases = useMemo(() => (rawPurchases || []).sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)), [rawPurchases]);
 
-  const isDeveloper = localUser?.email === 'guneet.ar2010@gmail.com' || localUser?.email === 'tester@gmail.com';
+  const isOwner = firebaseUser?.email === 'guneet.ar2010@gmail.com';
+  const isDeveloper = isOwner || localUser?.email === 'tester@gmail.com';
+
+  const handleResetSystem = () => {
+    if (!firestore || !isOwner) return;
+    
+    const password = window.prompt("Enter Owner Password to PURGE ALL DATA (Fresh Restart):");
+    if (password !== '0wNERGun##t') {
+        toast({ variant: "destructive", title: "Access Denied", description: "Incorrect owner password." });
+        return;
+    }
+
+    startReset(async () => {
+        try {
+            const collections = ['marketplace_listings', 'chats', 'transactions'];
+            for (const colName of collections) {
+                const snapshot = await getDocs(collection(firestore, colName));
+                const deletePromises = snapshot.docs.map(itemDoc => 
+                    deleteDoc(doc(firestore, colName, itemDoc.id))
+                );
+                await Promise.all(deletePromises);
+                
+                // Also purge subcollections for chats
+                if (colName === 'chats') {
+                    for (const chatDoc of snapshot.docs) {
+                        const messages = await getDocs(collection(firestore, 'chats', chatDoc.id, 'messages'));
+                        const msgDeletes = messages.docs.map(m => deleteDoc(doc(firestore, 'chats', chatDoc.id, 'messages', m.id)));
+                        await Promise.all(msgDeletes);
+                    }
+                }
+            }
+            
+            toast({
+                title: "System Reset Successful",
+                description: "All ventures, chats, and records have been purged for testing."
+            });
+        } catch (error: any) {
+            toast({
+                variant: "destructive",
+                title: "Reset Failed",
+                description: error.message || "Could not purge system data."
+            });
+        }
+    });
+  };
 
   const handleMarkAsDelivered = async (transaction: any) => {
       if (!firestore) return;
@@ -128,8 +173,19 @@ export default function ProfilePage() {
                 <p className="text-muted-foreground mt-1">Manage your intellectual property and acquisitions.</p>
             </div>
             <div className="flex gap-3">
+                {isOwner && (
+                    <Button 
+                        variant="destructive" 
+                        onClick={handleResetSystem} 
+                        disabled={isResetting}
+                        className="rounded-2xl h-12 font-black shadow-xl px-6 active:scale-95 transition-all"
+                    >
+                        {isResetting ? <Loader2 className="animate-spin mr-2 h-5 w-5" /> : <Trash2 className="mr-2 h-5 w-5" />}
+                        MASTER RESET
+                    </Button>
+                )}
                 <Button variant="outline" asChild className="rounded-2xl h-12 font-bold"><Link href="/marketplace"><ShoppingBag className="mr-2 h-5 w-5"/> Explore</Link></Button>
-                {isDeveloper && (
+                {isDeveloper && !isOwner && (
                     <Button variant="outline" onClick={() => upgradeToPremium(365)} className="rounded-2xl h-12 font-black border-2 border-primary/20">
                         <ShieldAlert className="mr-2 h-5 w-5 text-primary" /> Activate Dev Premium
                     </Button>
