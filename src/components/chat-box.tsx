@@ -7,6 +7,7 @@ import { collection, addDoc, serverTimestamp, query, orderBy, doc, updateDoc } f
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
 import { Send, User as UserIcon, Loader2, ShieldCheck } from 'lucide-react';
 
 interface ChatBoxProps {
