@@ -79,10 +79,10 @@ export default function MarketplacePage() {
         });
     }, [rawListings, searchQuery, priceRange, category, location]);
 
-    const handleResetMarketplace = () => {
+    const handleResetSystem = () => {
         if (!firestore || !isOwner) return;
         
-        const password = window.prompt("Enter Owner Password to Purge Marketplace:");
+        const password = window.prompt("Enter Owner Password to PURGE ALL DATA (Listings, Chats, Txns):");
         if (password !== '0wNERGun##t') {
             toast({ variant: "destructive", title: "Access Denied", description: "Incorrect owner password." });
             return;
@@ -90,24 +90,25 @@ export default function MarketplacePage() {
 
         startReset(async () => {
             try {
-                const listingsRef = collection(firestore, 'marketplace_listings');
-                const snapshot = await getDocs(listingsRef);
-                
-                const deletePromises = snapshot.docs.map(listingDoc => 
-                    deleteDoc(doc(firestore, 'marketplace_listings', listingDoc.id))
-                );
-                
-                await Promise.all(deletePromises);
+                // Purge all test data for a fresh restart
+                const collections = ['marketplace_listings', 'chats', 'transactions'];
+                for (const colName of collections) {
+                    const snapshot = await getDocs(collection(firestore, colName));
+                    const deletePromises = snapshot.docs.map(listingDoc => 
+                        deleteDoc(doc(firestore, colName, listingDoc.id))
+                    );
+                    await Promise.all(deletePromises);
+                }
                 
                 toast({
-                    title: "Marketplace Purged",
-                    description: "All ventures have been successfully removed."
+                    title: "System Purged",
+                    description: "All test listings, chats, and transactions have been successfully removed."
                 });
             } catch (error: any) {
                 toast({
                     variant: "destructive",
                     title: "Reset Failed",
-                    description: error.message || "Could not delete listings."
+                    description: error.message || "Could not purge system data."
                 });
             }
         });
@@ -131,12 +132,12 @@ export default function MarketplacePage() {
                             {isOwner && (
                                 <Button 
                                     variant="destructive" 
-                                    onClick={handleResetMarketplace} 
+                                    onClick={handleResetSystem} 
                                     disabled={isResetting}
                                     className="shadow-lg active:scale-95 transition-transform h-10 rounded-xl"
                                 >
                                     {isResetting ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <Trash2 className="mr-2 h-4 w-4" />}
-                                    Reset
+                                    System Purge
                                 </Button>
                             )}
                         </div>

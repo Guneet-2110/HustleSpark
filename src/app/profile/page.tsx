@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useAuth } from "@/hooks/use-auth";
@@ -9,12 +8,13 @@ import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useMemo } from "react";
-import { Trash2, MessageSquare, Briefcase, Package, ShieldCheck, Store, Loader2, ArrowRight, ShieldAlert, ShoppingBag, Send, Eye, CheckCircle } from "lucide-react";
+import { Trash2, MessageSquare, Briefcase, Package, ShieldCheck, Store, Loader2, ArrowRight, ShieldAlert, ShoppingBag, Send, Eye, CheckCircle, AlertTriangle, AlertCircle } from "lucide-react";
 import { slugify } from "@/lib/utils";
 import { HustleGenerator } from "@/components/hustle-generator";
 import { useToast } from "@/hooks/use-toast";
 import { collection, query, where, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { Skeleton } from "@/components/ui/skeleton";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 export default function ProfilePage() {
   const { user: localUser, isLoggedIn, isPremium, savedHustles, upgradeToPremium } = useAuth();
@@ -28,7 +28,6 @@ export default function ProfilePage() {
   }, []);
 
   // Standardized Queries for the Dashboard
-  // Note: Removed orderBy to avoid requiring composite indexes in Firestore for the MVP
   const buyerChatsQuery = useMemoFirebase(() => {
     if (!firestore || !firebaseUser) return null;
     return query(
@@ -94,6 +93,20 @@ export default function ProfilePage() {
       try {
           await updateDoc(doc(firestore, 'transactions', transaction.id), { status: 'completed' });
           toast({ title: "Acquisition Confirmed!", description: "Funds will be released to the creator shortly." });
+      } catch (e) {
+          toast({ variant: 'destructive', title: "Update Failed" });
+      }
+  };
+
+  const handleDispute = async (transaction: any) => {
+      if (!firestore) return;
+      try {
+          await updateDoc(doc(firestore, 'transactions', transaction.id), { status: 'disputed' });
+          toast({ 
+              variant: 'destructive', 
+              title: "Dispute Opened", 
+              description: "Admin has been notified. Please discuss the issues in the support chat." 
+          });
       } catch (e) {
           toast({ variant: 'destructive', title: "Update Failed" });
       }
@@ -192,9 +205,25 @@ export default function ProfilePage() {
                                                 </Button>
                                             )}
                                             {t.status === 'pending_delivery' && (
-                                                <Button onClick={() => handleMarkAsDelivered(t)} size="sm" className="rounded-xl font-bold bg-primary text-primary-foreground">
-                                                    Mark as Delivered
-                                                </Button>
+                                                <AlertDialog>
+                                                    <AlertDialogTrigger asChild>
+                                                        <Button size="sm" className="rounded-xl font-bold bg-primary text-primary-foreground shadow-lg">
+                                                            Mark as Delivered
+                                                        </Button>
+                                                    </AlertDialogTrigger>
+                                                    <AlertDialogContent className="rounded-[2rem]">
+                                                        <AlertDialogHeader>
+                                                            <AlertDialogTitle>Venture Assets Double Check</AlertDialogTitle>
+                                                            <AlertDialogDescription>
+                                                                Have you provided all assets, logos, and strategies to the buyer via the support chat? Once you mark this as delivered, the buyer will be asked to confirm receipt.
+                                                            </AlertDialogDescription>
+                                                        </AlertDialogHeader>
+                                                        <AlertDialogFooter>
+                                                            <AlertDialogCancel className="rounded-xl">Wait, Not Yet</AlertDialogCancel>
+                                                            <AlertDialogAction onClick={() => handleMarkAsDelivered(t)} className="rounded-xl bg-primary">Yes, Everything Sent</AlertDialogAction>
+                                                        </AlertDialogFooter>
+                                                    </AlertDialogContent>
+                                                </AlertDialog>
                                             )}
                                         </div>
                                     </div>
@@ -221,7 +250,7 @@ export default function ProfilePage() {
                                         <div>
                                             <p className="font-black text-lg">{t.hustleName}</p>
                                             <div className="flex items-center gap-2 mt-1">
-                                                <Badge variant="outline" className="text-[10px] border-accent/30 text-accent font-bold uppercase">{t.status.replace('_', ' ')}</Badge>
+                                                <Badge variant="outline" className={`text-[10px] font-bold uppercase ${t.status === 'disputed' ? 'border-destructive text-destructive' : 'border-accent/30 text-accent'}`}>{t.status.replace('_', ' ')}</Badge>
                                                 <span className="text-[10px] text-muted-foreground font-bold tracking-tight">${t.amount.toLocaleString()} Invested</span>
                                             </div>
                                         </div>
@@ -232,9 +261,47 @@ export default function ProfilePage() {
                                                 </Button>
                                             )}
                                             {t.status === 'pending_confirmation' && (
-                                                <Button onClick={() => handleConfirmReceipt(t)} size="sm" className="bg-accent hover:bg-accent/90 text-white rounded-xl font-bold">
-                                                    Confirm Receipt
-                                                </Button>
+                                                <div className="flex gap-2">
+                                                    <AlertDialog>
+                                                        <AlertDialogTrigger asChild>
+                                                            <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold shadow-lg">
+                                                                Confirm Receipt
+                                                            </Button>
+                                                        </AlertDialogTrigger>
+                                                        <AlertDialogContent className="rounded-[2rem]">
+                                                            <AlertDialogHeader>
+                                                                <AlertDialogTitle>Approve Acquisition?</AlertDialogTitle>
+                                                                <AlertDialogDescription>
+                                                                    By confirming receipt, you acknowledge that you have received all intellectual property and assets for this venture. This will release the escrow funds to the creator.
+                                                                </AlertDialogDescription>
+                                                            </AlertDialogHeader>
+                                                            <AlertDialogFooter>
+                                                                <AlertDialogCancel className="rounded-xl">Not Ready Yet</AlertDialogCancel>
+                                                                <AlertDialogAction onClick={() => handleConfirmReceipt(t)} className="rounded-xl bg-green-600">Yes, Approve & Release</AlertDialogAction>
+                                                            </AlertDialogFooter>
+                                                        </AlertDialogContent>
+                                                    </AlertDialog>
+
+                                                    <AlertDialog>
+                                                        <AlertDialogTrigger asChild>
+                                                            <Button variant="outline" size="sm" className="border-destructive text-destructive hover:bg-destructive/10 rounded-xl font-bold">
+                                                                Report Issue
+                                                            </Button>
+                                                        </AlertDialogTrigger>
+                                                        <AlertDialogContent className="rounded-[2rem]">
+                                                            <AlertDialogHeader>
+                                                                <AlertDialogTitle className="text-destructive flex items-center gap-2"><AlertTriangle className="h-5 w-5"/> Open a Dispute?</AlertDialogTitle>
+                                                                <AlertDialogDescription>
+                                                                    Are you sure you want to disapprove this delivery? An admin will review the support chat to mediate. Please ensure you have clearly stated what is missing to the creator first.
+                                                                </AlertDialogDescription>
+                                                            </AlertDialogHeader>
+                                                            <AlertDialogFooter>
+                                                                <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
+                                                                <AlertDialogAction onClick={() => handleDispute(t)} className="rounded-xl bg-destructive">Yes, Open Dispute</AlertDialogAction>
+                                                            </AlertDialogFooter>
+                                                        </AlertDialogContent>
+                                                    </AlertDialog>
+                                                </div>
                                             )}
                                             <Button variant="outline" size="sm" className="rounded-xl font-bold" asChild>
                                                 <Link href={`/marketplace/listing/${t.listingId}`}><Eye className="h-4 w-4 mr-2" /> View Assets</Link>
