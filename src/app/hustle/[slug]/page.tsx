@@ -14,6 +14,7 @@ import {
     Globe, Heart, Briefcase
 } from 'lucide-react';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import type { HustleIdea } from '@/ai/flows/generate-hustle-ideas';
 import type { GenerateHustleScheduleOutput } from '@/ai/flows/generate-hustle-schedule';
 import { generateFlyerAction, generateLogoAction, generateHustleBlueprintAction, generateHustleScheduleAction, generateCoachResponseAction } from '@/lib/actions';
@@ -29,7 +30,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { useFirestore, useAuth as useFirebaseInstance, uploadBase64Image } from '@/firebase';
+import { useFirestore, useUser, uploadBase64Image } from '@/firebase';
 import { collection, serverTimestamp, addDoc } from 'firebase/firestore';
 
 type Message = {
@@ -46,9 +47,10 @@ type HustleIdeaWithExtras = HustleIdea & {
 };
 
 function HustleDetailContent() {
-    const { user: localUser, isPremium, setPaymentModalOpen, saveHustle, unsaveHustle, isHustleSaved, getHustleByName } = useAuth();
+    const { user: localUser, isLoggedIn, isPremium, setPaymentModalOpen, saveHustle, unsaveHustle, isHustleSaved, getHustleByName } = useAuth();
+    const { user: firebaseUser, isUserLoading } = useUser();
     const firestore = useFirestore();
-    const auth = useFirebaseInstance();
+    const router = useRouter();
     const [hustle, setHustle] = useState<HustleIdeaWithExtras | null>(null);
     const { toast } = useToast();
     const initialLoadDone = useRef(false);
@@ -87,6 +89,12 @@ function HustleDetailContent() {
     const isSaved = hustle ? isHustleSaved(hustle.name) : false;
     const missingAssets = hustle ? (!hustle.logoUrl || !hustle.flyerUrl) : true;
     
+    useEffect(() => {
+        if (!isUserLoading && !firebaseUser) {
+            router.push('/login');
+        }
+    }, [firebaseUser, isUserLoading, router]);
+
     // Initialize Data
     useEffect(() => {
         if (typeof window !== 'undefined' && !initialLoadDone.current) {
@@ -114,15 +122,15 @@ function HustleDetailContent() {
             if (!sellAboutUs) setSellAboutUs(hustle.aboutUs || hustle.description || '');
             if (!sellWhatWeDo) setSellWhatWeDo(hustle.whatWeDo || `Expertise in ${hustle.name}. Generated via HustleSpark AI Blueprint.`);
             if (!sellOurGoal) setSellOurGoal(hustle.ourGoal || hustle.marketingIdea || 'To become the premier provider of creative excellence.');
-            if (!sellPaypal && localUser?.email) setSellPaypal(localUser.email);
+            if (!sellPaypal && firebaseUser?.email) setSellPaypal(firebaseUser.email);
         }
-    }, [showSellModal, hustle, localUser, sellAboutUs, sellWhatWeDo, sellOurGoal, sellPaypal]);
+    }, [showSellModal, hustle, firebaseUser, sellAboutUs, sellWhatWeDo, sellOurGoal, sellPaypal]);
 
     useEffect(() => {
-        if (localUser?.email) {
-            setFlyerEmail(localUser.email);
+        if (firebaseUser?.email) {
+            setFlyerEmail(firebaseUser.email);
         }
-    }, [localUser]);
+    }, [firebaseUser]);
 
     // Tracker Logic
     const toggleTask = (weekKey: string, taskIndex: number) => {
@@ -278,9 +286,7 @@ function HustleDetailContent() {
     }
 
     const handleSellHustle = () => {
-        const currentUser = auth.currentUser;
-
-        if (!hustle || !currentUser || !firestore) {
+        if (!hustle || !firebaseUser || !firestore) {
             toast({ variant: 'destructive', title: 'Action Denied', description: 'You must be logged in to publish a venture.' });
             return;
         }
@@ -298,14 +304,14 @@ function HustleDetailContent() {
                 if (flyerUrl.startsWith('data:')) {
                     flyerUrl = await uploadBase64Image(
                         flyerUrl,
-                        `listings/${currentUser.uid}/flyer_${Date.now()}.png`
+                        `listings/${firebaseUser.uid}/flyer_${Date.now()}.png`
                     );
                 }
 
                 if (logoUrl.startsWith('data:')) {
                     logoUrl = await uploadBase64Image(
                         logoUrl,
-                        `listings/${currentUser.uid}/logo_${Date.now()}.png`
+                        `listings/${firebaseUser.uid}/logo_${Date.now()}.png`
                     );
                 }
 
@@ -325,7 +331,7 @@ function HustleDetailContent() {
                     paypalEmail: sellPaypal,
                     flyerUrl: flyerUrl,
                     logoUrl: logoUrl,
-                    userId: currentUser.uid,
+                    userId: firebaseUser.uid,
                     status: 'pending_approval',
                     createdAt: serverTimestamp(),
                 };
@@ -350,7 +356,7 @@ function HustleDetailContent() {
         });
     }
 
-    if (!hustle) return null;
+    if (isUserLoading || !firebaseUser || !hustle) return null;
 
   return (
     <TooltipProvider delayDuration={0}>

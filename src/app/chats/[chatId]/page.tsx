@@ -2,19 +2,25 @@
 "use client";
 
 import { useParams, useRouter } from 'next/navigation';
-import { useAuth } from '@/firebase';
+import { useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { ChatBox } from '@/components/chat-box';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, MessageCircle } from 'lucide-react';
-import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { ArrowLeft, MessageCircle, Loader2 } from 'lucide-react';
 import { doc } from 'firebase/firestore';
+import { useEffect } from 'react';
 
 export default function ChatPage() {
     const params = useParams();
     const router = useRouter();
-    const { user, isUserLoading } = useAuth();
+    const { user, isUserLoading } = useUser();
     const firestore = useFirestore();
     const chatId = params.chatId as string;
+
+    useEffect(() => {
+        if (!isUserLoading && !user) {
+            router.push('/login');
+        }
+    }, [user, isUserLoading, router]);
 
     const chatDocRef = useMemoFirebase(() => {
         if (!firestore || !chatId) return null;
@@ -24,11 +30,15 @@ export default function ChatPage() {
     const { data: chat, isLoading: isChatLoading } = useDoc(chatDocRef);
 
     if (isUserLoading || isChatLoading) {
-        return <div className="container py-20 text-center">Loading conversation...</div>;
+        return (
+            <div className="container py-32 text-center space-y-4">
+                <Loader2 className="animate-spin h-10 w-10 mx-auto text-primary" />
+                <p className="font-black text-muted-foreground uppercase tracking-widest text-xs">Opening Secure Channel...</p>
+            </div>
+        );
     }
 
     if (!user) {
-        router.push('/login');
         return null;
     }
 
@@ -44,7 +54,7 @@ export default function ChatPage() {
     return (
         <div className="container py-12 max-w-4xl h-[calc(100vh-140px)] flex flex-col">
             <div className="flex items-center gap-4 mb-8">
-                <Button variant="ghost" size="icon" onClick={() => router.push('/profile')} className="rounded-full">
+                <Button variant="ghost" size="icon" onClick={() => router.push('/profile')} className="rounded-full hover:bg-primary/10">
                     <ArrowLeft className="h-5 w-5" />
                 </Button>
                 <div>
@@ -52,8 +62,8 @@ export default function ChatPage() {
                         <MessageCircle className="h-6 w-6 text-primary" />
                         {chat.hustleName}
                     </h1>
-                    <p className="text-xs text-muted-foreground font-bold uppercase tracking-wider">
-                        Live Venture Support
+                    <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest">
+                        Escrow Protected Support
                     </p>
                 </div>
             </div>
