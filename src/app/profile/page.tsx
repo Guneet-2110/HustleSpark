@@ -8,12 +8,12 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { Trash2, MessageSquare, Briefcase, Package, ShieldCheck, Store, Loader2, ArrowRight, ShieldAlert, ShoppingBag, Send, Eye } from "lucide-react";
+import { useEffect, useState, useMemo } from "react";
+import { Trash2, MessageSquare, Briefcase, Package, ShieldCheck, Store, Loader2, ArrowRight, ShieldAlert, ShoppingBag, Send, Eye, CheckCircle } from "lucide-react";
 import { slugify } from "@/lib/utils";
 import { HustleGenerator } from "@/components/hustle-generator";
 import { useToast } from "@/hooks/use-toast";
-import { collection, query, where, orderBy, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { collection, query, where, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function ProfilePage() {
@@ -27,13 +27,13 @@ export default function ProfilePage() {
     setMounted(true);
   }, []);
 
-  // Standardized Queries for the Dashboard using verified Firebase UID
+  // Standardized Queries for the Dashboard
+  // Note: Removed orderBy to avoid requiring composite indexes in Firestore for the MVP
   const buyerChatsQuery = useMemoFirebase(() => {
     if (!firestore || !firebaseUser) return null;
     return query(
       collection(firestore, 'chats'), 
-      where('buyerId', '==', firebaseUser.uid),
-      orderBy('updatedAt', 'desc')
+      where('buyerId', '==', firebaseUser.uid)
     );
   }, [firestore, firebaseUser]);
 
@@ -41,37 +41,41 @@ export default function ProfilePage() {
     if (!firestore || !firebaseUser) return null;
     return query(
       collection(firestore, 'chats'), 
-      where('sellerId', '==', firebaseUser.uid),
-      orderBy('updatedAt', 'desc')
+      where('sellerId', '==', firebaseUser.uid)
     );
   }, [firestore, firebaseUser]);
 
-  const { data: buyerChats, isLoading: isBuyerChatsLoading } = useCollection(buyerChatsQuery);
-  const { data: sellerChats, isLoading: isSellerChatsLoading } = useCollection(sellerChatsQuery);
+  const { data: rawBuyerChats, isLoading: isBuyerChatsLoading } = useCollection(buyerChatsQuery);
+  const { data: rawSellerChats, isLoading: isSellerChatsLoading } = useCollection(sellerChatsQuery);
   
-  const allChats = [...(buyerChats || []), ...(sellerChats || [])].sort((a, b) => 
-    (b.updatedAt?.seconds || 0) - (a.updatedAt?.seconds || 0)
-  );
+  const allChats = useMemo(() => {
+    return [...(rawBuyerChats || []), ...(rawSellerChats || [])].sort((a, b) => 
+      (b.updatedAt?.seconds || 0) - (a.updatedAt?.seconds || 0)
+    );
+  }, [rawBuyerChats, rawSellerChats]);
 
   const myListingsQuery = useMemoFirebase(() => {
       if (!firestore || !firebaseUser) return null;
-      return query(collection(firestore, 'marketplace_listings'), where('userId', '==', firebaseUser.uid), orderBy('createdAt', 'desc'));
+      return query(collection(firestore, 'marketplace_listings'), where('userId', '==', firebaseUser.uid));
   }, [firestore, firebaseUser]);
 
   const { data: myListings, isLoading: isMyListingsLoading } = useCollection(myListingsQuery);
 
   const salesQuery = useMemoFirebase(() => {
       if (!firestore || !firebaseUser) return null;
-      return query(collection(firestore, 'transactions'), where('sellerId', '==', firebaseUser.uid), orderBy('createdAt', 'desc'));
+      return query(collection(firestore, 'transactions'), where('sellerId', '==', firebaseUser.uid));
   }, [firestore, firebaseUser]);
 
   const purchasesQuery = useMemoFirebase(() => {
       if (!firestore || !firebaseUser) return null;
-      return query(collection(firestore, 'transactions'), where('buyerId', '==', firebaseUser.uid), orderBy('createdAt', 'desc'));
+      return query(collection(firestore, 'transactions'), where('buyerId', '==', firebaseUser.uid));
   }, [firestore, firebaseUser]);
 
-  const { data: sales, isLoading: isSalesLoading } = useCollection(salesQuery);
-  const { data: purchases, isLoading: isPurchasesLoading } = useCollection(purchasesQuery);
+  const { data: rawSales, isLoading: isSalesLoading } = useCollection(salesQuery);
+  const { data: rawPurchases, isLoading: isPurchasesLoading } = useCollection(purchasesQuery);
+
+  const sales = useMemo(() => (rawSales || []).sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)), [rawSales]);
+  const purchases = useMemo(() => (rawPurchases || []).sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)), [rawPurchases]);
 
   const isDeveloper = localUser?.email === 'guneet.ar2010@gmail.com' || localUser?.email === 'tester@gmail.com';
 
@@ -197,7 +201,7 @@ export default function ProfilePage() {
                                 );
                             })}
                         </div>
-                    ) : <div className="text-center py-10 italic text-muted-foreground border-2 border-dashed rounded-3xl font-medium">No sales recorded.</div>}
+                    ) : <div className="text-center py-10 italic text-muted-foreground border-2 border-dashed rounded-3xl font-medium">No sales recorded yet.</div>}
                 </CardContent>
             </Card>
 
@@ -218,7 +222,7 @@ export default function ProfilePage() {
                                             <p className="font-black text-lg">{t.hustleName}</p>
                                             <div className="flex items-center gap-2 mt-1">
                                                 <Badge variant="outline" className="text-[10px] border-accent/30 text-accent font-bold uppercase">{t.status.replace('_', ' ')}</Badge>
-                                                <span className="text-[10px] text-muted-foreground font-bold">${t.amount.toLocaleString()} Invested</span>
+                                                <span className="text-[10px] text-muted-foreground font-bold tracking-tight">${t.amount.toLocaleString()} Invested</span>
                                             </div>
                                         </div>
                                         <div className="flex gap-2">
@@ -267,7 +271,7 @@ export default function ProfilePage() {
             </Card>
 
             <Card className="shadow-xl rounded-[2.5rem] border-accent/10 overflow-hidden">
-                <CardHeader className="bg-muted/30"><CardTitle className="text-lg flex items-center gap-2 text-accent font-black"><MessageSquare className="h-5 w-5"/>Support Channels</CardTitle></CardHeader>
+                <CardHeader className="bg-muted/30"><CardTitle className="text-lg flex items-center gap-2 text-accent font-black"><MessageSquare className="h-5 w-5"/>Active Conversations</CardTitle></CardHeader>
                 <CardContent className="p-4 pt-4">
                     {(isBuyerChatsLoading || isSellerChatsLoading) ? <Skeleton className="h-10 w-full rounded-xl" /> : allChats.length > 0 ? (
                         <div className="space-y-3">
