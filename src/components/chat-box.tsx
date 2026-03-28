@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useRef, useEffect } from 'react';
@@ -76,32 +75,34 @@ export function ChatBox({ chatId, currentUserId }: ChatBoxProps) {
                     <ShieldCheck className="h-4 w-4 text-primary" />
                     <span className="text-[10px] font-black uppercase tracking-widest text-primary">Escrow Protected Conversation</span>
                 </div>
-                <Badge variant="outline" className="text-[8px] border-green-500/30 text-green-500 font-black">ENCRYPTED</Badge>
+                <Badge variant="outline" className="text-[8px] border-green-500/30 text-green-500 font-black uppercase">Encrypted</Badge>
             </div>
             
-            <ScrollArea className="flex-1 min-h-0 p-6">
-                <div className="space-y-4">
-                    {messages?.map((msg) => (
-                        <div
-                            key={msg.id}
-                            className={`flex ${msg.senderId === currentUserId ? 'justify-end' : 'justify-start'}`}
-                        >
+            <div className="flex-1 min-h-0 overflow-hidden relative">
+                <ScrollArea className="h-full w-full">
+                    <div className="p-6 space-y-4">
+                        {messages?.map((msg) => (
                             <div
-                                className={`max-w-[85%] rounded-2xl p-4 text-sm shadow-sm ${
-                                    msg.senderId === currentUserId
-                                        ? 'bg-primary text-primary-foreground rounded-tr-none'
-                                        : msg.senderId === 'system' 
-                                            ? 'bg-accent/10 border border-accent/20 text-accent font-bold italic text-center w-full max-w-none'
-                                            : 'bg-muted rounded-tl-none'
-                                }`}
+                                key={msg.id}
+                                className={`flex ${msg.senderId === currentUserId ? 'justify-end' : 'justify-start'}`}
                             >
-                                <p className="leading-relaxed break-words">{msg.text}</p>
+                                <div
+                                    className={`max-w-[85%] rounded-2xl p-4 text-sm shadow-sm ${
+                                        msg.senderId === currentUserId
+                                            ? 'bg-primary text-primary-foreground rounded-tr-none'
+                                            : msg.senderId === 'system' 
+                                                ? 'bg-accent/10 border border-accent/20 text-accent font-bold italic text-center w-full max-w-none'
+                                                : 'bg-muted rounded-tl-none'
+                                    }`}
+                                >
+                                    <p className="leading-relaxed break-words">{msg.text}</p>
+                                </div>
                             </div>
-                        </div>
-                    ))}
-                    <div ref={scrollRef} />
-                </div>
-            </ScrollArea>
+                        ))}
+                        <div ref={scrollRef} />
+                    </div>
+                </ScrollArea>
+            </div>
 
             <form onSubmit={handleSendMessage} className="flex-shrink-0 p-6 bg-muted/30 border-t flex gap-3">
                 <Input
