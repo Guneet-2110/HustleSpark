@@ -32,7 +32,7 @@ function SubmitButton() {
 }
 
 export function HustleGenerator() {
-  const { setGeneratedHustles, generatedHustles, isPremium, upgradeToPremium } = useAuth();
+  const { setGeneratedHustles, generatedHustles, isPremium, setPaymentModalOpen } = useAuth();
 
   const initialState = { message: null, data: null, errors: {} };
   const [state, dispatch] = useActionState(generateHustleIdeasAction, initialState);
@@ -58,7 +58,7 @@ export function HustleGenerator() {
                 <AlertDescription className="mt-2">
                     Upgrade to premium to generate unlimited hustle ideas and unlock your full marketing kit, hustle blueprint, and live tracker.
                 </AlertDescription>
-                <Button className="mt-4 active:scale-95 transition-transform" onClick={() => upgradeToPremium(false)}>
+                <Button className="mt-4 active:scale-95 transition-transform" onClick={() => setPaymentModalOpen(true)}>
                     <Star className="mr-2 h-4 w-4"/>
                     Upgrade Now
                 </Button>

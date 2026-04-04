@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { useEffect, useState, useMemo, useTransition } from "react";
-import { Trash2, MessageSquare, Briefcase, Package, ShieldCheck, Store, Loader2, ArrowRight, ShieldAlert, ShoppingBag, Eye, CheckCircle, AlertTriangle } from "lucide-react";
+import { Trash2, MessageSquare, Briefcase, Package, ShieldCheck, Store, Loader2, ArrowRight, ShieldAlert, ShoppingBag, Eye, CheckCircle, AlertTriangle, Sparkles, TrendingUp } from "lucide-react";
 import { slugify } from "@/lib/utils";
 import { HustleGenerator } from "@/components/hustle-generator";
 import { useToast } from "@/hooks/use-toast";
@@ -17,7 +17,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 export default function ProfilePage() {
-  const { user: localUser, isLoggedIn, upgradeToPremium, savedHustles } = useAuth();
+  const { user: localUser, isLoggedIn, upgradeToPremium, savedHustles, isPremium, setPaymentModalOpen } = useAuth();
   const { user: firebaseUser, isUserLoading: isAuthLoading } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
@@ -171,7 +171,25 @@ export default function ProfilePage() {
                 <h1 className="text-4xl font-black tracking-tight">Venture Dashboard</h1>
                 <p className="text-muted-foreground mt-1">Manage your intellectual property and acquisitions.</p>
             </div>
-            <div className="flex gap-3">
+            <div className="flex flex-wrap gap-3">
+                {isPremium ? (
+                    <Button 
+                        onClick={() => setPaymentModalOpen(true)}
+                        className="rounded-2xl h-12 font-black shadow-xl px-6 bg-gradient-to-r from-primary to-accent border-none"
+                    >
+                        <Sparkles className="mr-2 h-5 w-5" />
+                        Extend Premium
+                    </Button>
+                ) : (
+                    <Button 
+                        onClick={() => setPaymentModalOpen(true)}
+                        className="rounded-2xl h-12 font-black shadow-xl px-6"
+                    >
+                        <TrendingUp className="mr-2 h-5 w-5" />
+                        Upgrade to Premium
+                    </Button>
+                )}
+                
                 {isOwner && (
                     <Button 
                         variant="destructive" 
@@ -184,11 +202,6 @@ export default function ProfilePage() {
                     </Button>
                 )}
                 <Button variant="outline" asChild className="rounded-2xl h-12 font-bold"><Link href="/marketplace"><ShoppingBag className="mr-2 h-5 w-5"/> Explore</Link></Button>
-                {isDeveloper && !isOwner && (
-                    <Button variant="outline" onClick={() => upgradeToPremium(365)} className="rounded-2xl h-12 font-black border-2 border-primary/20">
-                        <ShieldAlert className="mr-2 h-5 w-5 text-primary" /> Activate Dev Premium
-                    </Button>
-                )}
             </div>
         </div>
 

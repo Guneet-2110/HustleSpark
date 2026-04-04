@@ -1,3 +1,4 @@
+
 "use client";
 
 import {
@@ -10,22 +11,25 @@ import {
 } from '@/components/ui/dialog';
 import { useAuth } from '@/hooks/use-auth';
 import { Button } from './ui/button';
-import { Star, CheckCircle2 } from 'lucide-react';
+import { Star, CheckCircle2, CreditCard } from 'lucide-react';
 import React, { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { PaypalButton } from './paypal-button';
+import { StripeUpgradeButton } from './stripe-upgrade-button';
 
 export function PaymentModal() {
   const { isPaymentModalOpen, setPaymentModalOpen, upgradeToPremium } = useAuth();
   const { toast } = useToast();
   const [isSuccess, setIsSuccess] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<'selection' | 'stripe' | 'paypal'>('selection');
 
   const handlePaymentSuccess = () => {
     setIsSuccess(true);
     setTimeout(() => {
-        upgradeToPremium(false);
+        upgradeToPremium(30);
         setPaymentModalOpen(false);
         setIsSuccess(false);
+        setPaymentMethod('selection');
         toast({
             title: 'Premium Activated!',
             description: 'Welcome to HustleSpark Premium! You have full access for 30 days.',
@@ -34,16 +38,19 @@ export function PaymentModal() {
   }
 
   return (
-    <Dialog open={isPaymentModalOpen} onOpenChange={setPaymentModalOpen}>
-      <DialogContent className="sm:max-w-md">
+    <Dialog open={isPaymentModalOpen} onOpenChange={(open) => {
+        setPaymentModalOpen(open);
+        if (!open) setPaymentMethod('selection');
+    }}>
+      <DialogContent className="sm:max-w-md rounded-[2.5rem]">
         <DialogHeader>
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 mb-4">
             <Star className="h-6 w-6 text-primary" />
           </div>
-          <DialogTitle className="text-2xl text-center font-bold">
-            {isSuccess ? "Payment Confirmed!" : "Upgrade to Premium"}
+          <DialogTitle className="text-2xl text-center font-black">
+            {isSuccess ? "Payment Confirmed!" : "Unlock Premium Growth"}
           </DialogTitle>
-          <DialogDescription className="text-center pt-2">
+          <DialogDescription className="text-center pt-2 font-medium">
             {isSuccess 
                 ? "Redirecting to your premium dashboard..." 
                 : "Unlock full marketing kits, AI coaching, blueprints, and more for just $15/month."}
@@ -56,30 +63,59 @@ export function PaymentModal() {
                 <p className="font-semibold text-lg">Thank you for your purchase!</p>
             </div>
         ) : (
-            <>
-                <div className="space-y-4 py-4">
-                    <div className="bg-muted/50 p-4 rounded-lg space-y-2">
-                        <div className="flex justify-between items-center">
-                            <span className="font-medium">Monthly Plan</span>
-                            <span className="font-bold">$15.00</span>
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                            Includes 30 days of unlimited generations and tools.
-                        </div>
+            <div className="space-y-6 py-4">
+                <div className="bg-muted/50 p-6 rounded-[2rem] border border-primary/10 space-y-2">
+                    <div className="flex justify-between items-center">
+                        <span className="font-black text-lg">Monthly Plan</span>
+                        <span className="font-black text-2xl text-primary">$15.00</span>
                     </div>
+                    <p className="text-xs text-muted-foreground font-bold uppercase tracking-widest">
+                        30 Days of Unlimited Access
+                    </p>
                 </div>
-                <div className="pt-2">
-                    <PaypalButton 
-                        amount={15} 
-                        onSuccess={handlePaymentSuccess} 
-                    />
-                </div>
-            </>
+
+                {paymentMethod === 'selection' && (
+                    <div className="grid gap-3">
+                        <Button 
+                            className="h-14 rounded-2xl font-black text-lg shadow-xl" 
+                            onClick={() => setPaymentMethod('stripe')}
+                        >
+                            <CreditCard className="mr-2 h-5 w-5" />
+                            Pay with Card (Stripe)
+                        </Button>
+                        <Button 
+                            variant="secondary" 
+                            className="h-14 rounded-2xl font-black text-lg border-2" 
+                            onClick={() => setPaymentMethod('paypal')}
+                        >
+                            Pay with PayPal
+                        </Button>
+                    </div>
+                )}
+
+                {paymentMethod === 'stripe' && (
+                    <div className="space-y-4 animate-in fade-in zoom-in-95">
+                        <StripeUpgradeButton amount={15} onSuccess={handlePaymentSuccess} />
+                        <Button variant="ghost" className="w-full text-xs" onClick={() => setPaymentMethod('selection')}>
+                            Go Back
+                        </Button>
+                    </div>
+                )}
+
+                {paymentMethod === 'paypal' && (
+                    <div className="space-y-4 animate-in fade-in zoom-in-95">
+                        <PaypalButton amount={15} onSuccess={handlePaymentSuccess} />
+                        <Button variant="ghost" className="w-full text-xs" onClick={() => setPaymentMethod('selection')}>
+                            Go Back
+                        </Button>
+                    </div>
+                )}
+            </div>
         )}
         
-        <DialogFooter className="mt-4 flex flex-col items-center">
-             <p className="text-[10px] text-muted-foreground text-center">
-                Secure checkout powered by PayPal. No recurring billing in this demo.
+        <DialogFooter className="flex flex-col items-center">
+             <p className="text-[10px] text-muted-foreground text-center font-bold uppercase tracking-widest opacity-60">
+                Secure SSL Protected Checkout
              </p>
         </DialogFooter>
       </DialogContent>

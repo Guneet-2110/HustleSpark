@@ -158,9 +158,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (currentUser) {
         const emailKey = currentUser.email.toLowerCase();
         const users = getUsersFromStorage();
+        
         const now = new Date();
-        const expiry = new Date(now.getTime() + (days * 24 * 60 * 60 * 1000));
+        const currentExpiry = currentUser.premiumExpiresAt ? new Date(currentUser.premiumExpiresAt) : now;
+        const baseDate = currentExpiry > now ? currentExpiry : now;
+        
+        const expiry = new Date(baseDate.getTime() + (days * 24 * 60 * 60 * 1000));
         const updatedUser = { ...currentUser, premiumExpiresAt: expiry.toISOString(), isPremium: true };
+        
         if (users[emailKey]) {
             users[emailKey].user = updatedUser;
             saveUsersToStorage(users);
