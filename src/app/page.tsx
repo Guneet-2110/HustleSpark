@@ -312,21 +312,61 @@ export default function Home() {
           </div>
         </section>
       </main>
-      <footer className="flex flex-col gap-6 py-12 w-full shrink-0 items-center px-4 md:px-6 border-t bg-muted/20">
-        <div className="container flex flex-col md:flex-row justify-between items-center gap-6">
-            <div className="flex items-center gap-2">
-               <Sparkles className="h-5 w-5 text-primary" />
-               <span className="font-black">HustleSpark</span>
+      
+      <footer className="border-t bg-card/50 backdrop-blur-xl">
+        <div className="container px-4 py-16">
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-12 mb-16">
+                <div className="col-span-2 space-y-6">
+                    <Link href="/" className="flex items-center gap-2">
+                        <Sparkles className="h-6 w-6 text-primary" />
+                        <span className="text-xl font-black tracking-tighter">HustleSpark</span>
+                    </Link>
+                    <p className="text-sm text-muted-foreground leading-relaxed max-w-xs">
+                        Empowering creators to launch, track, and sell their ventures using state-of-the-art AI coaching and secure marketplace tools.
+                    </p>
+                    <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 w-fit text-[10px] font-black text-primary uppercase tracking-widest">
+                        <ShieldCheck className="h-3 w-3" />
+                        Escrow Protected Platform
+                    </div>
+                </div>
+                
+                <div className="space-y-4">
+                    <h4 className="text-xs font-black uppercase tracking-widest text-primary">Platform</h4>
+                    <nav className="flex flex-col gap-2">
+                        <Link href="/marketplace" className="text-sm text-muted-foreground hover:text-foreground transition-colors font-medium">Marketplace</Link>
+                        <Link href="/login?tab=signup" className="text-sm text-muted-foreground hover:text-foreground transition-colors font-medium">Start Building</Link>
+                        <Link href="/profile" className="text-sm text-muted-foreground hover:text-foreground transition-colors font-medium">Dashboard</Link>
+                    </nav>
+                </div>
+
+                <div className="space-y-4">
+                    <h4 className="text-xs font-black uppercase tracking-widest text-primary">Legal</h4>
+                    <nav className="flex flex-col gap-2">
+                        <Link href="/legal/privacy" className="text-sm text-muted-foreground hover:text-foreground transition-colors font-medium">Privacy Policy</Link>
+                        <Link href="/legal/terms" className="text-sm text-muted-foreground hover:text-foreground transition-colors font-medium">Terms of Service</Link>
+                        <Link href="/legal/refunds" className="text-sm text-muted-foreground hover:text-foreground transition-colors font-medium">Refund Policy</Link>
+                        <Link href="/legal/acceptable-use" className="text-sm text-muted-foreground hover:text-foreground transition-colors font-medium">Acceptable Use</Link>
+                    </nav>
+                </div>
+
+                <div className="space-y-4">
+                    <h4 className="text-xs font-black uppercase tracking-widest text-primary">Governance</h4>
+                    <nav className="flex flex-col gap-2">
+                        <Link href="/legal/marketplace" className="text-sm text-muted-foreground hover:text-foreground transition-colors font-medium">Marketplace Policy</Link>
+                        <Link href="/legal/earnings" className="text-sm text-muted-foreground hover:text-foreground transition-colors font-medium">Earnings Disclaimer</Link>
+                        <Link href="/legal/intellectual-property" className="text-sm text-muted-foreground hover:text-foreground transition-colors font-medium">IP Policy</Link>
+                        <Link href="/legal/dmca" className="text-sm text-muted-foreground hover:text-foreground transition-colors font-medium">DMCA Notice</Link>
+                    </nav>
+                </div>
             </div>
-            <p className="text-xs text-muted-foreground font-bold">&copy; 2025 HustleSpark. All rights reserved.</p>
-            <div className="flex gap-4">
-               <Link href="/legal/privacy" className="text-xs text-muted-foreground hover:text-primary transition-colors font-bold uppercase tracking-widest">Privacy</Link>
-               <Link href="/legal/terms" className="text-xs text-muted-foreground hover:text-primary transition-colors font-bold uppercase tracking-widest">Terms</Link>
+
+            <div className="pt-8 border-t border-primary/10 flex flex-col md:flex-row justify-between items-center gap-6">
+                <p className="text-xs text-muted-foreground font-bold">&copy; 2025 HustleSpark. Built with ❤️ by real hustlers.</p>
+                <p className="text-[10px] text-muted-foreground/40 max-w-lg text-center md:text-right font-medium leading-relaxed italic">
+                    Testimonials represent potential results. Success requires dedicated effort. Every purchase on our marketplace is escrow-protected for buyer security.
+                </p>
             </div>
         </div>
-        <p className="text-[10px] text-muted-foreground/40 max-w-2xl text-center font-medium">
-           Testimonials are representative of potential results. Success requires dedicated effort and strategy. Every purchase on our marketplace is escrow-protected for buyer security.
-        </p>
       </footer>
     </div>
   );
