@@ -136,13 +136,15 @@ export const confirmAndPayoutSeller = functions.https.onCall(
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
       });
 
-      // 2. Initialize Chat
+      // 2. Initialize Chat with email identifiers for dashboard differentiation
       const chatRef = db.collection("chats").doc();
       await chatRef.set({
         listingId,
         hustleName,
         buyerId: request.auth.uid,
+        buyerEmail,
         sellerId,
+        sellerEmail,
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         lastMessage: "System: Acquisition successful. Conversation started.",
         createdAt: admin.firestore.FieldValue.serverTimestamp(),

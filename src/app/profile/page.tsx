@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { useEffect, useState, useMemo, useTransition } from "react";
-import { Trash2, MessageSquare, Briefcase, Package, ShieldCheck, Store, Loader2, ArrowRight, ShieldAlert, ShoppingBag, Eye, CheckCircle, AlertTriangle, Sparkles, TrendingUp } from "lucide-react";
+import { Trash2, MessageSquare, Briefcase, Package, ShieldCheck, Store, Loader2, ArrowRight, ShieldAlert, ShoppingBag, Eye, CheckCircle, AlertTriangle, Sparkles, TrendingUp, User } from "lucide-react";
 import { slugify } from "@/lib/utils";
 import { HustleGenerator } from "@/components/hustle-generator";
 import { useToast } from "@/hooks/use-toast";
@@ -42,7 +42,10 @@ export default function ProfilePage() {
   const { data: rawSellerChats, isLoading: isSchatsLoading } = useCollection(sellerChatsQuery);
   
   const allChats = useMemo(() => {
-    return [...(rawBuyerChats || []), ...(rawSellerChats || [])].sort((a, b) => 
+    // Deduplicate and sort chats by most recent message
+    const combined = [...(rawBuyerChats || []), ...(rawSellerChats || [])];
+    const unique = Array.from(new Map(combined.map(item => [item.id, item])).values());
+    return unique.sort((a, b) => 
       (b.updatedAt?.seconds || 0) - (a.updatedAt?.seconds || 0)
     );
   }, [rawBuyerChats, rawSellerChats]);
@@ -71,7 +74,6 @@ export default function ProfilePage() {
   const purchases = useMemo(() => (rawPurchases || []).sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)), [rawPurchases]);
 
   const isOwner = firebaseUser?.email === 'guneet.ar2010@gmail.com';
-  const isDeveloper = isOwner || localUser?.email === 'tester@gmail.com';
 
   const handleResetSystem = () => {
     if (!firestore || !isOwner) return;
@@ -239,12 +241,17 @@ export default function ProfilePage() {
                     {isSalesLoading ? <Skeleton className="h-20 w-full" /> : sales && sales.length > 0 ? (
                         <div className="space-y-4">
                             {sales.map((t) => {
-                                const chat = allChats.find(c => c.listingId === t.listingId);
+                                const chat = allChats.find(c => c.listingId === t.listingId && c.buyerId === t.buyerId);
                                 return (
                                     <div key={t.id} className="p-4 border rounded-2xl bg-background/50 flex flex-col sm:flex-row justify-between sm:items-center gap-4">
-                                        <div>
+                                        <div className="space-y-1">
                                             <p className="font-black text-lg">{t.hustleName}</p>
-                                            <Badge variant="outline" className="text-[10px] font-bold uppercase">{t.status.replace('_', ' ')}</Badge>
+                                            <div className="flex items-center gap-2">
+                                                <Badge variant="outline" className="text-[10px] font-bold uppercase">{t.status.replace('_', ' ')}</Badge>
+                                                <span className="text-[10px] font-medium text-muted-foreground flex items-center gap-1">
+                                                    <User className="h-3 w-3" /> {t.buyerEmail}
+                                                </span>
+                                            </div>
                                         </div>
                                         <div className="flex gap-2">
                                             {chat && (
@@ -278,12 +285,17 @@ export default function ProfilePage() {
                     {isPurchasesLoading ? <Skeleton className="h-20 w-full" /> : purchases && purchases.length > 0 ? (
                         <div className="space-y-4">
                             {purchases.map((t) => {
-                                const chat = allChats.find(c => c.listingId === t.listingId);
+                                const chat = allChats.find(c => c.listingId === t.listingId && c.buyerId === t.buyerId);
                                 return (
                                     <div key={t.id} className="p-4 border rounded-2xl bg-background/50 flex flex-col sm:flex-row justify-between sm:items-center gap-4">
-                                        <div>
+                                        <div className="space-y-1">
                                             <p className="font-black text-lg">{t.hustleName}</p>
-                                            <Badge variant="outline" className="text-[10px] uppercase">{t.status.replace('_', ' ')}</Badge>
+                                            <div className="flex items-center gap-2">
+                                                <Badge variant="outline" className="text-[10px] uppercase">{t.status.replace('_', ' ')}</Badge>
+                                                <span className="text-[10px] font-medium text-muted-foreground flex items-center gap-1">
+                                                    <User className="h-3 w-3" /> From: {t.sellerEmail}
+                                                </span>
+                                            </div>
                                         </div>
                                         <div className="flex gap-2">
                                             {chat && (
@@ -344,12 +356,21 @@ export default function ProfilePage() {
                 <CardContent className="p-4 pt-4">
                     {(isBchatsLoading || isSchatsLoading) ? <Skeleton className="h-10 w-full" /> : allChats.length > 0 ? (
                         <div className="space-y-3">
-                            {allChats.map(c => (
-                                <Link key={c.id} href={`/chats/${c.id}`} className="block border p-4 rounded-2xl hover:bg-accent/5 transition-all">
-                                    <p className="font-bold text-sm">{c.hustleName}</p>
-                                    <p className="text-[10px] text-muted-foreground line-clamp-1 mt-1 italic">{c.lastMessage}</p>
-                                </Link>
-                            ))}
+                            {allChats.map(c => {
+                                const isUserSeller = c.sellerId === firebaseUser.uid;
+                                const otherParty = isUserSeller ? c.buyerEmail : c.sellerEmail;
+                                return (
+                                    <Link key={c.id} href={`/chats/${c.id}`} className="block border p-4 rounded-2xl hover:bg-accent/5 transition-all">
+                                        <div className="flex justify-between items-start mb-1">
+                                            <p className="font-bold text-sm truncate">{c.hustleName}</p>
+                                        </div>
+                                        <p className="text-[9px] font-black uppercase tracking-widest text-primary/60 mb-1">
+                                            Chat with: {otherParty || 'Venture Partner'}
+                                        </p>
+                                        <p className="text-[10px] text-muted-foreground line-clamp-1 italic">{c.lastMessage}</p>
+                                    </Link>
+                                );
+                            })}
                         </div>
                     ) : <p className="text-center text-xs text-muted-foreground py-8 italic font-medium">No active support channels.</p>}
                 </CardContent>
