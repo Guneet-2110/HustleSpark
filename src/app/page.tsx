@@ -1,4 +1,3 @@
-
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { CheckCircle, Lightbulb, Rocket, Sparkles, Check, Star, TrendingUp, Users, Bot, ShieldCheck, Zap, Package, Store } from 'lucide-react';
@@ -321,8 +320,8 @@ export default function Home() {
             </div>
             <p className="text-xs text-muted-foreground font-bold">&copy; 2025 HustleSpark. All rights reserved.</p>
             <div className="flex gap-4">
-               <Link href="#" className="text-xs text-muted-foreground hover:text-primary transition-colors font-bold uppercase tracking-widest">Privacy</Link>
-               <Link href="#" className="text-xs text-muted-foreground hover:text-primary transition-colors font-bold uppercase tracking-widest">Terms</Link>
+               <Link href="/legal/privacy" className="text-xs text-muted-foreground hover:text-primary transition-colors font-bold uppercase tracking-widest">Privacy</Link>
+               <Link href="/legal/terms" className="text-xs text-muted-foreground hover:text-primary transition-colors font-bold uppercase tracking-widest">Terms</Link>
             </div>
         </div>
         <p className="text-[10px] text-muted-foreground/40 max-w-2xl text-center font-medium">
