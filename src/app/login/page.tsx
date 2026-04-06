@@ -30,13 +30,12 @@ const signupSchema = z.object({
 
 
 function LoginPageContent() {
-  const { login, signup, doesUserExist } = useAuth();
+  const { login, signup, isLoggedIn } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [authError, setAuthError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [isUserNotFound, setIsUserNotFound] = useState(false);
   
   const initialForm = searchParams.get('tab') === 'signup' ? 'signup' : 'login';
   const [activeForm, setActiveForm] = useState<'login' | 'signup'>(initialForm);
@@ -51,9 +50,15 @@ function LoginPageContent() {
     defaultValues: { email: '', password: '', confirmPassword: '' },
   });
 
+  // Global observer to redirect on successful auth
+  useEffect(() => {
+    if (isLoggedIn) {
+        router.push('/profile');
+    }
+  }, [isLoggedIn, router]);
+
   const switchForm = (form: 'login' | 'signup') => {
     setAuthError(null);
-    setIsUserNotFound(false);
     loginForm.reset();
     signupForm.reset();
     setActiveForm(form);
@@ -61,37 +66,19 @@ function LoginPageContent() {
 
   async function onLogin(values: z.infer<typeof loginSchema>) {
     setAuthError(null);
-    setIsUserNotFound(false);
-
     const error = await login(values.email, values.password);
-
     if (error) {
-        if (error === 'USER_NOT_FOUND') {
-            setIsUserNotFound(true);
-            setAuthError(`No account found for ${values.email}.`);
-        } else {
-            setAuthError(error);
-        }
-    } else {
-      router.push('/profile');
+        setAuthError(error);
     }
   }
 
   async function onSignup(values: z.infer<typeof signupSchema>) {
     setAuthError(null);
-    setIsUserNotFound(false);
-    if (doesUserExist(values.email)) {
-        setAuthError("An account with this email already exists.");
-        loginForm.setValue('email', values.email);
-        switchForm('login');
-        return;
+    const result = await signup(values.email, values.password);
+    if (result) {
+        setAuthError(result);
     }
-    const error = await signup(values.email, values.password);
-    if (error) {
-        setAuthError(error);
-    } else {
-        router.push('/profile');
-    }
+    // Redirect is handled by the useEffect isLoggedIn observer
   }
 
   return (
@@ -108,22 +95,8 @@ function LoginPageContent() {
                              {authError && activeForm === 'login' && (
                                 <Alert variant="destructive" className="mb-4">
                                     <Terminal className="h-4 w-4" />
-                                    <AlertTitle>{isUserNotFound ? "Create an Account?" : "Authentication Failed"}</AlertTitle>
-                                    <AlertDescription>
-                                        {authError}
-                                        {isUserNotFound && (
-                                            <Button 
-                                                variant="secondary" 
-                                                className="mt-2 w-full"
-                                                onClick={() => {
-                                                    signupForm.setValue('email', loginForm.getValues('email'));
-                                                    switchForm('signup');
-                                                }}
-                                            >
-                                                Sign Up Instead
-                                            </Button>
-                                        )}
-                                    </AlertDescription>
+                                    <AlertTitle>Authentication Failed</AlertTitle>
+                                    <AlertDescription>{authError}</AlertDescription>
                                 </Alert>
                             )}
                             <Form {...loginForm}>

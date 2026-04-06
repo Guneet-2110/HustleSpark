@@ -744,6 +744,24 @@ function HustleDetailContent() {
                             <Textarea className="rounded-xl min-h-[100px]" placeholder="What is the mission of this venture?" value={sellOurGoal} onChange={(e) => setSellOurGoal(e.target.value)} />
                         </div>
                         
+
+
+
+                        <div className="space-y-2 bg-primary/5 p-4 rounded-2xl border border-primary/20">
+            <Label className="font-bold flex items-center gap-2">
+                <CircleDollarSign className="h-4 w-4 text-primary" /> 
+                Payout Email (PayPal) *
+            </Label>
+            <Input 
+                className="h-12 rounded-xl" 
+                placeholder="your-paypal@email.com" 
+                value={sellPaypal} 
+                onChange={(e) => setSellPaypal(e.target.value)} 
+            />
+            <p className="text-[10px] text-muted-foreground font-medium">
+                ⚠️ This must be your real PayPal email. When your venture sells, 90% of the sale price will be sent here manually within 3 business days after buyer confirms receipt.
+            </p>
+        </div>
                         <div className="pt-4 border-t space-y-4">
                              <Label className="font-bold flex items-center gap-2"><Eye className="h-4 w-4 text-muted-foreground" /> Asset Preview</Label>
                              <div className="grid grid-cols-2 gap-4">

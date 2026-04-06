@@ -2,25 +2,22 @@
 'use client';
 
 import type { HustleIdea } from '@/ai/flows/generate-hustle-ideas';
-import React, { createContext, useState, useEffect, ReactNode, useCallback, useRef } from 'react';
+import React, { createContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth as useFirebaseInstance } from '@/firebase';
+import { useAuth as useFirebaseInstance, useFirestore } from '@/firebase';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth';
+import { doc, getDoc, setDoc, onSnapshot, serverTimestamp } from 'firebase/firestore';
 
-interface User {
+interface UserData {
     email: string;
     isPremium: boolean;
     savedHustles: HustleIdea[];
     premiumExpiresAt?: string | null;
-}
-
-interface UserRecord {
-    passwordHash: string;
-    user: User;
+    subscriptionStatus?: string;
 }
 
 interface AuthContextType {
-  user: User | null;
+  user: UserData | null;
   isLoggedIn: boolean;
   isPremium: boolean;
   generatedHustles: HustleIdea[];
@@ -36,89 +33,73 @@ interface AuthContextType {
   unsaveHustle: (hustleName: string) => void;
   setPaymentModalOpen: (isOpen: boolean) => void;
   isHustleSaved: (hustleName: string) => boolean;
-  doesUserExist: (email: string) => boolean;
   getHustleByName: (hustleName: string) => HustleIdea | undefined;
   setHasUnsavedChanges: (hasChanges: boolean) => void;
 }
 
 export const AuthContext = createContext<AuthContextType | null>(null);
 
-const USERS_STORAGE_KEY = 'hustleSparkUsers_v3';
-
-const getUsersFromStorage = (): Record<string, UserRecord> => {
-    try {
-        if (typeof window === 'undefined') return {};
-        const storedData = localStorage.getItem(USERS_STORAGE_KEY);
-        return storedData ? JSON.parse(storedData) : {};
-    } catch (error) {
-        return {};
-    }
-}
-
-const saveUsersToStorage = (users: Record<string, UserRecord>) => {
-    try {
-        if (typeof window === 'undefined') return;
-        localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
-    } catch (error) {}
-}
-
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [userData, setUserData] = useState<UserData | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isPremium, setIsPremium] = useState(false);
   const [generatedHustles, setGeneratedHustlesState] = useState<HustleIdea[]>([]);
-  const [savedHustles, setSavedHustles] = useState<HustleIdea[]>([]);
   const [isPaymentModalOpen, setPaymentModalOpen] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const router = useRouter();
   const firebaseAuth = useFirebaseInstance();
-  
-  const userRef = useRef<User | null>(null);
-
-  const syncStateFromUser = useCallback((userData: User | null) => {
-    if (!userData) {
-      setUser(null);
-      setIsLoggedIn(false);
-      setIsPremium(false);
-      setSavedHustles([]);
-      userRef.current = null;
-      return;
-    }
-
-    const now = new Date();
-    const expiryDate = userData.premiumExpiresAt ? new Date(userData.premiumExpiresAt) : null;
-    const premiumStatus = expiryDate ? expiryDate > now : false;
-
-    const mergedUser = { ...userData, isPremium: premiumStatus };
-    setUser(mergedUser);
-    setIsLoggedIn(true);
-    setIsPremium(premiumStatus);
-    setSavedHustles(userData.savedHustles || []);
-    userRef.current = mergedUser;
-  }, []);
+  const firestore = useFirestore();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(firebaseAuth, (fbUser) => {
-        if (fbUser && fbUser.email) {
-            const emailKey = fbUser.email.toLowerCase();
-            const users = getUsersFromStorage();
-            const userRecord = users[emailKey];
-            if (userRecord) {
-                syncStateFromUser(userRecord.user);
-            } else {
-                const newUser: User = { email: fbUser.email, isPremium: false, savedHustles: [] };
-                users[emailKey] = { passwordHash: '', user: newUser };
-                saveUsersToStorage(users);
-                syncStateFromUser(newUser);
-            }
-        } else {
-            syncStateFromUser(null);
-        }
-        setIsInitialized(true);
+    let unsubscribeDoc: (() => void) | undefined;
+
+    const unsubscribeAuth = onAuthStateChanged(firebaseAuth, (fbUser) => {
+      if (fbUser && fbUser.email) {
+        const userRef = doc(firestore, 'users', fbUser.uid);
+        
+        // Listen to Firestore for real-time user profile sync
+        unsubscribeDoc = onSnapshot(userRef, (snap) => {
+          if (snap.exists()) {
+            const data = snap.data() as UserData;
+            const now = new Date();
+            const expiryDate = data.premiumExpiresAt ? new Date(data.premiumExpiresAt) : null;
+            const premiumStatus = expiryDate ? expiryDate > now : false;
+
+            setUserData({ ...data, isPremium: premiumStatus });
+            setIsLoggedIn(true);
+            setIsPremium(premiumStatus);
+          } else {
+            // Create profile record if it doesn't exist yet
+            const defaultUser: UserData = {
+              email: fbUser.email!,
+              isPremium: false,
+              savedHustles: []
+            };
+            setDoc(userRef, {
+                ...defaultUser,
+                createdAt: serverTimestamp()
+            }, { merge: true });
+            
+            setUserData(defaultUser);
+            setIsLoggedIn(true);
+            setIsPremium(false);
+          }
+        });
+      } else {
+        if (unsubscribeDoc) unsubscribeDoc();
+        setUserData(null);
+        setIsLoggedIn(false);
+        setIsPremium(false);
+      }
+      setIsInitialized(true);
     });
-    return () => unsubscribe();
-  }, [firebaseAuth, syncStateFromUser]);
+
+    return () => {
+        unsubscribeAuth();
+        if (unsubscribeDoc) unsubscribeDoc();
+    };
+  }, [firebaseAuth, firestore]);
 
   const login = useCallback(async (email: string, password?: string): Promise<string | null> => {
     try {
@@ -134,6 +115,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await createUserWithEmailAndPassword(firebaseAuth, email, password || 'default_pass');
         return null;
     } catch (e: any) {
+        if (e.code === 'auth/email-already-in-use') {
+            return "An account with this email already exists. Please log in.";
+        }
         return e.message || "Signup failed.";
     }
   }, [firebaseAuth]);
@@ -143,95 +127,80 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await signOut(firebaseAuth);
     } catch (e) {}
     sessionStorage.clear();
-    setUser(null);
+    localStorage.clear();
+    setUserData(null);
     setIsLoggedIn(false);
     setIsPremium(false);
-    setSavedHustles([]);
     setGeneratedHustlesState([]);
     setHasUnsavedChanges(false);
-    userRef.current = null;
     router.push('/');
   }, [router, firebaseAuth]);
 
-  const upgradeToPremium = useCallback((days = 30) => {
-    const currentUser = userRef.current;
-    if (currentUser) {
-        const emailKey = currentUser.email.toLowerCase();
-        const users = getUsersFromStorage();
-        
-        const now = new Date();
-        const currentExpiry = currentUser.premiumExpiresAt ? new Date(currentUser.premiumExpiresAt) : now;
-        const baseDate = currentExpiry > now ? currentExpiry : now;
-        
-        const expiry = new Date(baseDate.getTime() + (days * 24 * 60 * 60 * 1000));
-        const updatedUser = { ...currentUser, premiumExpiresAt: expiry.toISOString(), isPremium: true };
-        
-        if (users[emailKey]) {
-            users[emailKey].user = updatedUser;
-            saveUsersToStorage(users);
-        }
-        syncStateFromUser(updatedUser);
-    }
-  }, [syncStateFromUser]);
+  const upgradeToPremium = useCallback(async (days = 30) => {
+    if (!firebaseAuth.currentUser) return;
+    const userRef = doc(firestore, 'users', firebaseAuth.currentUser.uid);
+    const snap = await getDoc(userRef);
+    const data = snap.data() as UserData;
+
+    const now = new Date();
+    const currentExpiry = data?.premiumExpiresAt ? new Date(data.premiumExpiresAt) : now;
+    const baseDate = currentExpiry > now ? currentExpiry : now;
+    
+    const expiry = new Date(baseDate.getTime() + (days * 24 * 60 * 60 * 1000));
+    
+    await setDoc(userRef, { 
+        premiumExpiresAt: expiry.toISOString(),
+        subscriptionStatus: 'active'
+    }, { merge: true });
+  }, [firebaseAuth, firestore]);
 
   const setGeneratedHustles = useCallback((hustles: HustleIdea[]) => {
     setGeneratedHustlesState(hustles);
   }, []);
 
-  const isHustleSaved = useCallback((name: string) => {
-    return savedHustles.some(h => h.name === name);
-  }, [savedHustles]);
-
-  const saveHustle = useCallback((hustle: any) => {
-    const currentUser = userRef.current;
-    if (!currentUser) return;
-    const emailKey = currentUser.email.toLowerCase();
-    const users = getUsersFromStorage();
-    if (!users[emailKey]) return;
-
-    const currentSaved = users[emailKey].user.savedHustles || [];
-    const exists = currentSaved.some((h: any) => h.name === hustle.name);
+  const saveHustle = useCallback(async (hustle: any) => {
+    if (!firebaseAuth.currentUser) return;
+    const userRef = doc(firestore, 'users', firebaseAuth.currentUser.uid);
+    const snap = await getDoc(userRef);
+    const data = snap.data();
+    const currentSaved = (data?.savedHustles || []) as HustleIdea[];
     
+    const exists = currentSaved.some((h: any) => h.name === hustle.name);
     const newSaved = exists
       ? currentSaved.map((h: any) => h.name === hustle.name ? { ...h, ...hustle } : h)
       : [...currentSaved, hustle];
     
-    const updatedUser = { ...users[emailKey].user, savedHustles: newSaved };
-    users[emailKey].user = updatedUser;
-    saveUsersToStorage(users);
-    syncStateFromUser(updatedUser);
-  }, [syncStateFromUser]);
+    await setDoc(userRef, { savedHustles: newSaved }, { merge: true });
+  }, [firebaseAuth, firestore]);
 
-  const unsaveHustle = useCallback((hustleName: string) => {
-    const currentUser = userRef.current;
-    if (!currentUser) return;
-    const emailKey = currentUser.email.toLowerCase();
-    const users = getUsersFromStorage();
-    if (!users[emailKey]) return;
+  const unsaveHustle = useCallback(async (hustleName: string) => {
+    if (!firebaseAuth.currentUser) return;
+    const userRef = doc(firestore, 'users', firebaseAuth.currentUser.uid);
+    const snap = await getDoc(userRef);
+    const data = snap.data();
+    const currentSaved = (data?.savedHustles || []) as HustleIdea[];
 
-    const newSaved = (users[emailKey].user.savedHustles || []).filter((h: any) => h.name !== hustleName);
-    const updatedUser = { ...users[emailKey].user, savedHustles: newSaved };
-    users[emailKey].user = updatedUser;
-    saveUsersToStorage(users);
-    syncStateFromUser(updatedUser);
-  }, [syncStateFromUser]);
+    const newSaved = currentSaved.filter((h: any) => h.name !== hustleName);
+    await setDoc(userRef, { savedHustles: newSaved }, { merge: true });
+  }, [firebaseAuth, firestore]);
+
+  const isHustleSaved = useCallback((name: string) => {
+    return (userData?.savedHustles || []).some(h => h.name === name);
+  }, [userData]);
 
   const getHustleByName = useCallback((name: string) => {
-    return savedHustles.find(h => h.name === name);
-  }, [savedHustles]);
-
-  const doesUserExist = useCallback((email: string) => {
-    return !!getUsersFromStorage()[email.toLowerCase()];
-  }, []);
+    return (userData?.savedHustles || []).find(h => h.name === name);
+  }, [userData]);
 
   if (!isInitialized) return null;
 
   return (
     <AuthContext.Provider value={{
-      user, isLoggedIn, isPremium, generatedHustles, savedHustles, 
+      user: userData, isLoggedIn, isPremium, generatedHustles, 
+      savedHustles: userData?.savedHustles || [], 
       isPaymentModalOpen, hasUnsavedChanges, login, logout, signup, 
       upgradeToPremium, setGeneratedHustles, saveHustle, unsaveHustle, 
-      setPaymentModalOpen, isHustleSaved, doesUserExist, getHustleByName, 
+      setPaymentModalOpen, isHustleSaved, getHustleByName, 
       setHasUnsavedChanges
     }}>
       {children}

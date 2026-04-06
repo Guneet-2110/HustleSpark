@@ -4,22 +4,24 @@
 import { useAuth } from "@/hooks/use-auth";
 import { useFirestore, useCollection, useMemoFirebase, useUser } from "@/firebase";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { useEffect, useState, useMemo, useTransition } from "react";
-import { Trash2, MessageSquare, Briefcase, Package, ShieldCheck, Store, Loader2, ArrowRight, ShieldAlert, ShoppingBag, Eye, CheckCircle, AlertTriangle, Sparkles, TrendingUp, User } from "lucide-react";
+import { Trash2, MessageSquare, Briefcase, Package, ShieldCheck, Store, Loader2, ArrowRight, ShoppingBag, CheckCircle, AlertTriangle, Sparkles, TrendingUp, User } from "lucide-react";
 import { slugify } from "@/lib/utils";
 import { HustleGenerator } from "@/components/hustle-generator";
 import { useToast } from "@/hooks/use-toast";
 import { collection, query, where, doc, updateDoc, deleteDoc, getDocs } from 'firebase/firestore';
 import { Skeleton } from "@/components/ui/skeleton";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { useRouter } from "next/navigation";
 
 export default function ProfilePage() {
-  const { user: localUser, isLoggedIn, upgradeToPremium, savedHustles, isPremium, setPaymentModalOpen } = useAuth();
+  const { user: localUser, isLoggedIn, savedHustles, isPremium, setPaymentModalOpen } = useAuth();
   const { user: firebaseUser, isUserLoading: isAuthLoading } = useUser();
   const firestore = useFirestore();
+  const router = useRouter();
   const { toast } = useToast();
   const [mounted, setMounted] = useState(false);
   const [isResetting, startReset] = useTransition();
@@ -42,7 +44,6 @@ export default function ProfilePage() {
   const { data: rawSellerChats, isLoading: isSchatsLoading } = useCollection(sellerChatsQuery);
   
   const allChats = useMemo(() => {
-    // Deduplicate and sort chats by most recent message
     const combined = [...(rawBuyerChats || []), ...(rawSellerChats || [])];
     const unique = Array.from(new Map(combined.map(item => [item.id, item])).values());
     return unique.sort((a, b) => 
@@ -103,10 +104,20 @@ export default function ProfilePage() {
                 }
             }
             
+            // Clear all local browser traces
+            localStorage.clear();
+            sessionStorage.clear();
+            
             toast({
                 title: "System Reset Successful",
-                description: "All ventures, chats, and records have been purged for testing."
+                description: "All ventures, users, and records have been purged. Redirecting home..."
             });
+            
+            setTimeout(() => {
+                router.push('/');
+                window.location.reload();
+            }, 1500);
+
         } catch (error: any) {
             toast({
                 variant: "destructive",
