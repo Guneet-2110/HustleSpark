@@ -203,10 +203,10 @@ export default function Home() {
             <div className="container px-4 md:px-6 animate-fade-in-down">
                 <div className="flex flex-col items-center justify-center space-y-4 text-center">
                     <div className="space-y-2">
-                        <div className="inline-block rounded-full bg-primary text-primary-foreground px-4 py-1.5 text-xs font-black uppercase tracking-widest">Scale to Zero</div>
-                        <h2 className="text-4xl font-black tracking-tighter sm:text-6xl">Unlock Full Growth Potential</h2>
+                        <div className="inline-block rounded-full bg-primary text-primary-foreground px-4 py-1.5 text-xs font-black uppercase tracking-widest">Unlock Your Full Potential</div>
+                        <h2 className="text-4xl font-black tracking-tighter sm:text-6xl">Go From Zero to Revenue</h2>
                         <p className="max-w-[900px] text-muted-foreground md:text-xl font-medium">
-                            Premium access gives you the complete arsenal to go from interest to exit.
+                            Premium access gives you the complete arsenal to go from initial interest to a successful market exit.
                         </p>
                     </div>
                 </div>
@@ -220,7 +220,7 @@ export default function Home() {
                                 <div className="space-y-1">
                                     <h3 className="text-xl font-black">Strategic Hustle Blueprints</h3>
                                     <p className="text-muted-foreground text-sm leading-relaxed">
-                                        Go beyond basic descriptions with expert pricing strategies, branding origin stories, and creative marketing ideas to land your first 5 customers.
+                                        Go beyond basic ideas with elite pricing strategies, professional branding origins, and high-impact marketing tactics tailored for your first 5 customers.
                                     </p>
                                 </div>
                             </li>
@@ -231,7 +231,7 @@ export default function Home() {
                                 <div className="space-y-1">
                                     <h3 className="text-xl font-black">Sparky: Personal AI Coach</h3>
                                     <p className="text-muted-foreground text-sm leading-relaxed">
-                                        Chat with your dedicated mentor. Get actionable advice, copywriting help, and expert feedback on your specific venture growth.
+                                        Chat with your dedicated AI mentor 24/7. Get real-time advice, expert copywriting help, and actionable growth feedback on your specific venture.
                                     </p>
                                 </div>
                             </li>
@@ -240,20 +240,20 @@ export default function Home() {
                                    <TrendingUp className="h-5 w-5 text-primary" />
                                 </div>
                                 <div className="space-y-1">
-                                    <h3 className="text-xl font-black">Live Performance Tracker</h3>
+                                    <h3 className="text-xl font-black">4-Week Launch Roadmap</h3>
                                     <p className="text-muted-foreground text-sm leading-relaxed">
-                                        Manage your entire hustle in one dashboard. Track progress with interactive roadmaps, set earnings goals, and monitor your path to profit.
+                                        Don't guess what's next. Follow an interactive day-by-day roadmap that guides you from setup to launch, with live progress tracking and goals.
                                     </p>
                                 </div>
                             </li>
                              <li className="flex gap-4">
                                 <div className="h-10 w-10 shrink-0 rounded-full bg-primary/10 flex items-center justify-center">
-                                   <Store className="h-5 w-5 text-primary" />
+                                   <ShieldCheck className="h-5 w-5 text-primary" />
                                 </div>
                                 <div className="space-y-1">
-                                    <h3 className="text-xl font-black">Marketplace Launchpad</h3>
+                                    <h3 className="text-xl font-black">Escrow-Protected Exit</h3>
                                     <p className="text-muted-foreground text-sm leading-relaxed">
-                                        Ready to move on? List your venture for sale on our marketplace. We handle the escrow and transfer so you get paid safely.
+                                        Ready to move on? List your venture for sale. We handle secure escrow payments and asset transfers so you get paid safely and instantly.
                                     </p>
                                 </div>
                             </li>
@@ -262,14 +262,14 @@ export default function Home() {
                      <div className="flex flex-col items-center">
                         <Card className="w-full max-w-sm border-primary/20 border-2 shadow-2xl shadow-primary/20 transform hover:scale-105 transition-all duration-500 rounded-[3rem] overflow-hidden">
                             <CardHeader className="text-center bg-primary/5 py-12">
-                                <CardTitle className="text-2xl font-black mb-2">Monthly Access</CardTitle>
+                                <CardTitle className="text-2xl font-black mb-2">Growth Access</CardTitle>
                                 <div className="flex items-center justify-center gap-1">
                                    <span className="text-5xl font-black">$15</span>
                                    <span className="text-lg font-bold text-muted-foreground">/mo</span>
                                 </div>
                             </CardHeader>
                             <CardContent className="pt-8 px-8 text-center">
-                                <p className="text-sm font-medium text-muted-foreground leading-relaxed">A small investment for a lifetime of potential paychecks. Invest in your growth today.</p>
+                                <p className="text-sm font-medium text-muted-foreground leading-relaxed">Join thousands of entrepreneurs building the future. Your small investment today is the seed for your next big paycheck.</p>
                             </CardContent>
                             <CardFooter className="p-8">
                                 <Button asChild className="w-full h-14 rounded-2xl font-black text-xl shadow-xl group">
@@ -292,10 +292,10 @@ export default function Home() {
           <div className="container grid items-center justify-center gap-4 px-4 text-center md:px-6 animate-fade-in-down">
             <div className="space-y-4">
               <h2 className="text-4xl font-black tracking-tighter md:text-6xl">
-                Ready to Start Your Hustle?
+                Ready to Spark Your Future?
               </h2>
               <p className="mx-auto max-w-[600px] text-muted-foreground text-lg font-medium">
-                Stop dreaming and start doing. Join thousands of entrepreneurs building the future.
+                Stop dreaming and start doing. Access the AI engine that turns interests into high-margin ventures.
               </p>
             </div>
             <div className="mx-auto w-full max-w-md space-y-4 mt-8">

@@ -65,7 +65,7 @@ export function ChatBox({ chatId, currentUserId }: ChatBoxProps) {
         return (
             <div className="flex flex-col items-center justify-center h-full space-y-4">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Loading secure channel...</p>
+                <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Synchronizing Records...</p>
             </div>
         );
     }
@@ -108,7 +108,7 @@ export function ChatBox({ chatId, currentUserId }: ChatBoxProps) {
 
             <form onSubmit={handleSendMessage} className="flex-shrink-0 p-6 bg-muted/30 border-t flex gap-3">
                 <Input
-                    placeholder="Ask a question or provide delivery info..."
+                    placeholder="Provide delivery info or ask a question..."
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
                     className="h-14 rounded-2xl bg-background shadow-inner border-2 focus:ring-primary"
