@@ -1,4 +1,3 @@
-
 'use client';
 
 import type { HustleIdea } from '@/ai/flows/generate-hustle-ideas';
@@ -45,7 +44,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isPremium, setIsPremium] = useState(false);
   const [generatedHustles, setGeneratedHustlesState] = useState<HustleIdea[]>([]);
   const [isPaymentModalOpen, setPaymentModalOpen] = useState(false);
-  const [isInitialized, setIsInitialized] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const router = useRouter();
   const firebaseAuth = useFirebaseInstance();
@@ -83,17 +81,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setIsLoggedIn(true);
             setIsPremium(false);
           }
-          setIsInitialized(true);
         }, (error) => {
           console.error("User document subscription error:", error);
-          setIsInitialized(true);
         });
       } else {
         if (unsubscribeDoc) unsubscribeDoc();
         setUserData(null);
         setIsLoggedIn(false);
         setIsPremium(false);
-        setIsInitialized(true);
       }
     });
 
@@ -193,15 +188,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const getHustleByName = useCallback((name: string) => {
     return (userData?.savedHustles || []).find(h => h.name === name);
   }, [userData]);
-
-  // Don't render until Firebase Auth has initialized
-  if (!isInitialized) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
-      </div>
-    );
-  }
 
   return (
     <AuthContext.Provider value={{
