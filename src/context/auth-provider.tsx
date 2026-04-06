@@ -58,7 +58,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (fbUser && fbUser.email) {
         const userRef = doc(firestore, 'users', fbUser.uid);
         
-        // Listen to Firestore for real-time user profile sync
         unsubscribeDoc = onSnapshot(userRef, (snap) => {
           if (snap.exists()) {
             const data = snap.data() as UserData;
@@ -70,7 +69,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setIsLoggedIn(true);
             setIsPremium(premiumStatus);
           } else {
-            // Create profile record if it doesn't exist yet
             const defaultUser: UserData = {
               email: fbUser.email!,
               isPremium: false,
@@ -85,14 +83,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setIsLoggedIn(true);
             setIsPremium(false);
           }
+          setIsInitialized(true);
+        }, (error) => {
+          console.error("User document subscription error:", error);
+          setIsInitialized(true);
         });
       } else {
         if (unsubscribeDoc) unsubscribeDoc();
         setUserData(null);
         setIsLoggedIn(false);
         setIsPremium(false);
+        setIsInitialized(true);
       }
-      setIsInitialized(true);
     });
 
     return () => {
@@ -192,7 +194,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return (userData?.savedHustles || []).find(h => h.name === name);
   }, [userData]);
 
-  if (!isInitialized) return null;
+  // Don't render until Firebase Auth has initialized
+  if (!isInitialized) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+      </div>
+    );
+  }
 
   return (
     <AuthContext.Provider value={{
