@@ -1,7 +1,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { CheckCircle, Lightbulb, Rocket, Sparkles, Check, Star, TrendingUp, Users, Bot, ShieldCheck, Zap, Package } from 'lucide-react';
+import { CheckCircle, Lightbulb, Rocket, Sparkles, Check, Star, TrendingUp, Users, Bot, ShieldCheck, Zap, Package, Store } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -34,7 +34,6 @@ function Avatar3() {
         </svg>
     )
 }
-
 
 export default function Home() {
   return (
@@ -333,4 +332,3 @@ export default function Home() {
     </div>
   );
 }
-

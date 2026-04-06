@@ -120,4 +120,3 @@ export function ChatBox({ chatId, currentUserId }: ChatBoxProps) {
         </div>
     );
 }
-
