@@ -1,7 +1,7 @@
+
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { CheckCircle, Lightbulb, Rocket, Sparkles, Check, Star, TrendingUp, Users, Bot, ShieldCheck, Zap, Package, Store } from 'lucide-react';
-import Image from 'next/image';
+import { CheckCircle, Lightbulb, Rocket, Sparkles, Check, Star, TrendingUp, Bot, ShieldCheck, Zap, Store } from 'lucide-react';
 import Link from 'next/link';
 
 function Avatar1() {

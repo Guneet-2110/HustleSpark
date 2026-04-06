@@ -1,22 +1,19 @@
 
 'use client';
 
-import { useEffect, useState, ReactNode } from 'react';
+import { useEffect, useState, ReactNode, Suspense } from 'react';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
 import { PayPalClientProvider } from '@/components/providers/paypal-client-provider';
 import { AuthProvider } from '@/context/auth-provider';
 import { Header } from '@/components/header';
 import { Toaster } from '@/components/ui/toaster';
 import { PaymentModal } from '@/components/payment-modal';
+import { Loader2 } from 'lucide-react';
 
 interface ClientProvidersProps {
   children: ReactNode;
 }
 
-/**
- * A client-side wrapper that handles hydration safety and initializes all context providers.
- * This prevents Next.js hydration mismatches by ensuring client-only code runs after mount.
- */
 export function ClientProviders({ children }: ClientProvidersProps) {
   const [mounted, setMounted] = useState(false);
 
@@ -26,8 +23,9 @@ export function ClientProviders({ children }: ClientProvidersProps) {
 
   if (!mounted) {
     return (
-      <div className="min-h-screen bg-[#1A1A2E] flex items-center justify-center">
-        <div className="h-10 w-10 animate-spin rounded-full border-4 border-[#9D4EDD] border-t-transparent"></div>
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center space-y-4">
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground animate-pulse">Initializing Systems...</p>
       </div>
     );
   }
@@ -39,7 +37,13 @@ export function ClientProviders({ children }: ClientProvidersProps) {
           <div className="relative flex min-h-screen flex-col">
             <Header />
             <main className="flex-1">
-              {children}
+              <Suspense fallback={
+                <div className="container py-20 text-center">
+                  <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+                </div>
+              }>
+                {children}
+              </Suspense>
             </main>
           </div>
           <Toaster />
