@@ -45,7 +45,7 @@ export default function ChatPage() {
     if (!chat) {
         return (
             <div className="container py-20 text-center">
-                <h2 className="text-2xl font-bold">Conversation not found</h2>
+                <h2 className="text-2xl font-black">Conversation not found</h2>
                 <Button variant="link" onClick={() => router.push('/profile')}>Back to Dashboard</Button>
             </div>
         );
@@ -74,3 +74,4 @@ export default function ChatPage() {
         </div>
     );
 }
+

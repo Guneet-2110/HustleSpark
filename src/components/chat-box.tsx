@@ -1,14 +1,14 @@
 
 "use client";
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, addDoc, serverTimestamp, query, orderBy, doc, updateDoc } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, query, doc, updateDoc } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { Send, User as UserIcon, Loader2, ShieldCheck } from 'lucide-react';
+import { Send, Loader2, ShieldCheck } from 'lucide-react';
 
 interface ChatBoxProps {
     chatId: string;
@@ -22,13 +22,11 @@ export function ChatBox({ chatId, currentUserId }: ChatBoxProps) {
 
     const messagesQuery = useMemoFirebase(() => {
         if (!firestore || !chatId) return null;
-        // Fetch all messages for the subcollection
         return query(collection(firestore, 'chats', chatId, 'messages'));
     }, [firestore, chatId]);
 
     const { data: rawMessages, isLoading } = useCollection(messagesQuery);
 
-    // Client-side sorting for immediate availability without indexes
     const messages = useMemo(() => {
         return (rawMessages || []).sort((a, b) => 
             (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0)
@@ -51,7 +49,6 @@ export function ChatBox({ chatId, currentUserId }: ChatBoxProps) {
         const messagesRef = collection(firestore, 'chats', chatId, 'messages');
         const chatRef = doc(firestore, 'chats', chatId);
 
-        // Non-blocking writes for optimistic UI
         addDoc(messagesRef, {
             text: messageText,
             senderId: currentUserId,
@@ -75,7 +72,7 @@ export function ChatBox({ chatId, currentUserId }: ChatBoxProps) {
 
     return (
         <div className="flex flex-col h-full bg-card rounded-[2.5rem] border shadow-2xl overflow-hidden border-primary/20">
-            <div className="flex-shrink-0 bg-primary/5 px-6 py-3 border-b border-primary/10 flex items-center justify-between">
+            <div className="flex-shrink-0 bg-primary/5 px-6 py-4 border-b border-primary/10 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                     <ShieldCheck className="h-4 w-4 text-primary" />
                     <span className="text-[10px] font-black uppercase tracking-widest text-primary">Escrow Protected Conversation</span>
@@ -111,7 +108,7 @@ export function ChatBox({ chatId, currentUserId }: ChatBoxProps) {
 
             <form onSubmit={handleSendMessage} className="flex-shrink-0 p-6 bg-muted/30 border-t flex gap-3">
                 <Input
-                    placeholder="Provide delivery info or ask a question..."
+                    placeholder="Ask a question or provide delivery info..."
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
                     className="h-14 rounded-2xl bg-background shadow-inner border-2 focus:ring-primary"
@@ -123,4 +120,4 @@ export function ChatBox({ chatId, currentUserId }: ChatBoxProps) {
         </div>
     );
 }
-import { useMemo } from 'react';
+
