@@ -364,7 +364,7 @@ export default function Home() {
             </div>
 
             <div className="pt-8 border-t border-primary/10 flex flex-col md:flex-row justify-between items-center gap-6">
-                <p className="text-xs text-muted-foreground font-bold">&copy; 2025 HustleSpark. Built with ❤️ by real hustlers.</p>
+                <p className="text-xs text-muted-foreground font-bold">&copy; 2026 HustleSpark. Built with ❤️ by real hustlers.</p>
                 <p className="text-[10px] text-muted-foreground/40 max-w-lg text-center md:text-right font-medium leading-relaxed italic">
                     Testimonials represent potential results. Success requires dedicated effort. Every purchase on our marketplace is escrow-protected for buyer security.
                 </p>
