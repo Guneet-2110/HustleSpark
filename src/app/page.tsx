@@ -344,6 +344,7 @@ export default function Home() {
                     <nav className="flex flex-col gap-2">
                         <Link href="/legal/privacy" className="text-sm text-muted-foreground hover:text-foreground transition-colors font-medium">Privacy Policy</Link>
                         <Link href="/legal/terms" className="text-sm text-muted-foreground hover:text-foreground transition-colors font-medium">Terms of Service</Link>
+                        <Link href="/legal/cookies" className="text-sm text-muted-foreground hover:text-foreground transition-colors font-medium">Cookie Policy</Link>
                         <Link href="/legal/refunds" className="text-sm text-muted-foreground hover:text-foreground transition-colors font-medium">Refund Policy</Link>
                         <Link href="/legal/acceptable-use" className="text-sm text-muted-foreground hover:text-foreground transition-colors font-medium">Acceptable Use</Link>
                     </nav>
