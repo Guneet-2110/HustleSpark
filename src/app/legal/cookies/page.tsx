@@ -44,29 +44,29 @@ export default function CookiePolicyPage() {
                                 </h2>
                                 <p className="text-muted-foreground leading-relaxed text-base">HustleSpark uses cookies and similar technologies through our third-party service providers for the following purposes:</p>
                                 
-                                <div className="grid gap-4 mt-6">
-                                    <div className="bg-muted/30 p-6 rounded-2xl border border-primary/5">
-                                        <h3 className="text-lg font-black text-foreground mb-2">Essential Cookies</h3>
-                                        <p className="text-sm text-muted-foreground leading-relaxed mb-4">These are required for the Platform to function. They keep you logged in and maintain your session security. These cannot be disabled.</p>
-                                        <ul className="text-xs space-y-2 text-primary font-bold uppercase tracking-wider">
-                                            <li className="flex items-center gap-2">• Firebase Authentication</li>
-                                            <li className="flex items-center gap-2">• Session Management</li>
+                                <div className="space-y-6">
+                                    <div>
+                                        <h3 className="text-xl font-bold text-foreground mb-2">Essential Cookies</h3>
+                                        <p className="text-muted-foreground leading-relaxed text-base">These are required for the Platform to function. They keep you logged in and maintain your session security. These cannot be disabled.</p>
+                                        <ul className="list-disc list-inside text-muted-foreground space-y-1 ml-4 text-base">
+                                            <li>Firebase Authentication — keeps you logged into your account</li>
+                                            <li>Session management — maintains your active session</li>
                                         </ul>
                                     </div>
 
-                                    <div className="bg-muted/30 p-6 rounded-2xl border border-primary/5">
-                                        <h3 className="text-lg font-black text-foreground mb-2">Analytics Cookies</h3>
-                                        <p className="text-sm text-muted-foreground leading-relaxed mb-4">These help us understand how users interact with the Platform so we can improve it.</p>
-                                        <ul className="text-xs space-y-2 text-primary font-bold uppercase tracking-wider">
-                                            <li className="flex items-center gap-2">• Google Firebase Analytics</li>
+                                    <div>
+                                        <h3 className="text-xl font-bold text-foreground mb-2">Analytics Cookies</h3>
+                                        <p className="text-muted-foreground leading-relaxed text-base">These help us understand how users interact with the Platform so we can improve it.</p>
+                                        <ul className="list-disc list-inside text-muted-foreground space-y-1 ml-4 text-base">
+                                            <li>Google Firebase Analytics — tracks page views and feature usage anonymously</li>
                                         </ul>
                                     </div>
 
-                                    <div className="bg-muted/30 p-6 rounded-2xl border border-primary/5">
-                                        <h3 className="text-lg font-black text-foreground mb-2">Payment Cookies</h3>
-                                        <p className="text-sm text-muted-foreground leading-relaxed mb-4">These are set by our payment processors when you make or receive payments.</p>
-                                        <ul className="text-xs space-y-2 text-primary font-bold uppercase tracking-wider">
-                                            <li className="flex items-center gap-2">• Stripe Fraud Prevention</li>
+                                    <div>
+                                        <h3 className="text-xl font-bold text-foreground mb-2">Payment Cookies</h3>
+                                        <p className="text-muted-foreground leading-relaxed text-base">These are set by our payment processors when you make or receive payments.</p>
+                                        <ul className="list-disc list-inside text-muted-foreground space-y-1 ml-4 text-base">
+                                            <li>Stripe — used during payment processing for fraud prevention and security</li>
                                         </ul>
                                     </div>
                                 </div>
@@ -78,9 +78,9 @@ export default function CookiePolicyPage() {
                                     Third-Party Cookies
                                 </h2>
                                 <p className="text-muted-foreground leading-relaxed text-base">We use the following third-party services that may set their own cookies:</p>
-                                <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4 text-base">
-                                    <li><span className="font-bold text-foreground">Google Firebase</span> — authentication and analytics</li>
-                                    <li><span className="font-bold text-foreground">Stripe</span> — payment processing</li>
+                                <ul className="list-disc list-inside text-muted-foreground space-y-1 ml-4 text-base">
+                                    <li>Google Firebase — authentication and analytics</li>
+                                    <li>Stripe — payment processing</li>
                                 </ul>
                                 <p className="text-muted-foreground leading-relaxed text-base italic">Each of these services has their own cookie and privacy policies which govern their use of cookies.</p>
                             </section>
