@@ -336,6 +336,7 @@ export default function Home() {
                         <Link href="/marketplace" className="text-sm text-muted-foreground hover:text-foreground transition-colors font-medium">Marketplace</Link>
                         <Link href="/login?tab=signup" className="text-sm text-muted-foreground hover:text-foreground transition-colors font-medium">Start Building</Link>
                         <Link href="/profile" className="text-sm text-muted-foreground hover:text-foreground transition-colors font-medium">Dashboard</Link>
+                        <Link href="/contact" className="text-sm text-muted-foreground hover:text-foreground transition-colors font-medium">Contact & Support</Link>
                     </nav>
                 </div>
 
