@@ -9,7 +9,7 @@ async function sendEmail(to: string, subject: string, html: string) {
   const resend = new Resend(process.env.RESEND_API_KEY);
   try {
     await resend.emails.send({
-      from: "HustleSpark <noreply@hustlespark.net>",
+      from: "HustleSpark <onboarding@resend.dev>",
       to,
       subject,
       html,

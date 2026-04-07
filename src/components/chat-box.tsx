@@ -1,8 +1,9 @@
+
 "use client";
 
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, addDoc, serverTimestamp, query, doc, updateDoc } from 'firebase/firestore';
+import { useFirestore, useCollection, useMemoFirebase, updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
+import { collection, serverTimestamp, query, doc } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -38,7 +39,7 @@ export function ChatBox({ chatId, currentUserId }: ChatBoxProps) {
         }
     }, [messages]);
 
-    const handleSendMessage = async (e?: React.FormEvent) => {
+    const handleSendMessage = (e?: React.FormEvent) => {
         e?.preventDefault();
         if (!newMessage.trim() || !firestore) return;
 
@@ -48,13 +49,13 @@ export function ChatBox({ chatId, currentUserId }: ChatBoxProps) {
         const messagesRef = collection(firestore, 'chats', chatId, 'messages');
         const chatRef = doc(firestore, 'chats', chatId);
 
-        addDoc(messagesRef, {
+        addDocumentNonBlocking(messagesRef, {
             text: messageText,
             senderId: currentUserId,
             createdAt: serverTimestamp()
         });
 
-        updateDoc(chatRef, {
+        updateDocumentNonBlocking(chatRef, {
             lastMessage: messageText,
             updatedAt: serverTimestamp()
         });

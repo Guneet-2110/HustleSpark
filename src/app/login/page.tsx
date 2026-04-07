@@ -52,10 +52,10 @@ function LoginPageContent() {
 
   // Global observer to redirect on successful auth
   useEffect(() => {
-    if (isLoggedIn) {
+    if (isLoggedIn && activeForm === 'login') {
         router.push('/profile');
     }
-  }, [isLoggedIn, router]);
+}, [isLoggedIn, router, activeForm]);
 
   const switchForm = (form: 'login' | 'signup') => {
     setAuthError(null);
@@ -67,18 +67,24 @@ function LoginPageContent() {
   async function onLogin(values: z.infer<typeof loginSchema>) {
     setAuthError(null);
     const error = await login(values.email, values.password);
-    if (error) {
+    if (error === "EMAIL_NOT_VERIFIED") {
+        setAuthError("VERIFICATION REQUIRED: Your email has not been verified. Please check your inbox and spam folder for the verification link.");
+    } else if (error) {
         setAuthError("AUTHENTICATION FAILED: ACCESS DENIED. PLEASE VERIFY CREDENTIALS AND RETRY.");
     }
-  }
+}
 
   async function onSignup(values: z.infer<typeof signupSchema>) {
     setAuthError(null);
     const result = await signup(values.email, values.password);
-    if (result) {
+    if (result === "VERIFY_EMAIL") {
+        setActiveForm('login');
+        loginForm.setValue('email', values.email);
+        setAuthError("VERIFICATION REQUIRED: A confirmation link has been sent to your email. Please verify before logging in. Check your spam folder if you don't see it.");
+    } else if (result) {
         setAuthError("ENROLLMENT FAILED: SYSTEM REJECTED REGISTRATION. PLEASE VERIFY DETAILS.");
     }
-  }
+}
 
   return (
     <div className="container flex min-h-[calc(100vh-theme(spacing.14))] items-center justify-center py-12">

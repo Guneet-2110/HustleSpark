@@ -1,6 +1,7 @@
+
 'use client';
 
-import { ReactNode, Suspense } from 'react';
+import { ReactNode, Suspense, useState, useEffect } from 'react';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
 import { PayPalClientProvider } from '@/components/providers/paypal-client-provider';
 import { AuthProvider } from '@/context/auth-provider';
@@ -14,6 +15,24 @@ interface ClientProvidersProps {
 }
 
 export function ClientProviders({ children }: ClientProvidersProps) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Use a mounting guard to ensure stable hydration across all providers
+  if (!mounted) {
+    return (
+      <div className="relative flex min-h-screen flex-col bg-background">
+        <div className="h-14 border-b bg-background/95" />
+        <main className="flex-1 flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary/20" />
+        </main>
+      </div>
+    );
+  }
+
   return (
     <FirebaseClientProvider>
       <PayPalClientProvider>

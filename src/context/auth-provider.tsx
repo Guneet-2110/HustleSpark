@@ -53,7 +53,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let unsubscribeDoc: (() => void) | undefined;
 
     const unsubscribeAuth = onAuthStateChanged(firebaseAuth, (fbUser) => {
-      if (fbUser && fbUser.email) {
+      if (fbUser && fbUser.email && fbUser.emailVerified) {
         const userRef = doc(firestore, 'users', fbUser.uid);
         
         unsubscribeDoc = onSnapshot(userRef, (snap) => {
@@ -100,7 +100,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(async (email: string, password?: string): Promise<string | null> => {
     try {
-        await signInWithEmailAndPassword(firebaseAuth, email, password || 'default_pass');
+        const userCredential = await signInWithEmailAndPassword(firebaseAuth, email, password || 'default_pass');
+        if (!userCredential.user.emailVerified) {
+            await signOut(firebaseAuth);
+            return "EMAIL_NOT_VERIFIED";
+        }
         return null;
     } catch (e: any) {
         return e.message || "Invalid credentials.";
@@ -109,15 +113,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signup = useCallback(async (email: string, password?: string): Promise<string | null> => {
     try {
-        await createUserWithEmailAndPassword(firebaseAuth, email, password || 'default_pass');
-        return null;
+        const { sendEmailVerification } = await import('firebase/auth');
+        const userCredential = await createUserWithEmailAndPassword(firebaseAuth, email, password || 'default_pass');
+        
+        // Create user document before signing out
+        const userRef = doc(firestore, 'users', userCredential.user.uid);
+        await setDoc(userRef, {
+            email: email,
+            isPremium: false,
+            savedHustles: [],
+            createdAt: serverTimestamp()
+        }, { merge: true });
+
+        await sendEmailVerification(userCredential.user);
+        await signOut(firebaseAuth);
+        return "VERIFY_EMAIL";
     } catch (e: any) {
         if (e.code === 'auth/email-already-in-use') {
             return "An account with this email already exists. Please log in.";
         }
         return e.message || "Signup failed.";
     }
-  }, [firebaseAuth]);
+  }, [firebaseAuth, firestore]);
 
   const logout = useCallback(async () => {
     try {
