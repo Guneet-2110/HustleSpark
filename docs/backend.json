@@ -20,6 +20,17 @@
           "type": "string",
           "description": "The subscription status of the user (e.g., 'active', 'inactive', 'trial')."
         },
+        "hasGenerated": {
+          "type": "boolean",
+          "description": "Whether the user has used their free generation allotment."
+        },
+        "lastGeneratedHustles": {
+          "type": "array",
+          "description": "The most recently generated hustle ideas for this user.",
+          "items": {
+            "type": "object"
+          }
+        },
         "savedHustleIds": {
           "type": "array",
           "description": "References to Saved Hustles. (Relationship: User 1:N SavedHustle)",

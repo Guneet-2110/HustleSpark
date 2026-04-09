@@ -1,9 +1,10 @@
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Hard refresh Build ID to resolve chunk errors and stale modules in the Studio environment
+  // Use a unique, stable build ID to prevent "TypeError: Cannot read properties of undefined (reading 'call')" 
+  // which occurs during client-side hydration mismatches in the Studio environment.
   generateBuildId: async () => {
-    return 'hustlespark-v6-stable-' + Date.now();
+    return 'hustlespark-v10-prod-' + Date.now();
   },
   typescript: {
     ignoreBuildErrors: true,

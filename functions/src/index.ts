@@ -165,6 +165,7 @@ export const confirmAndPayoutSeller = functions.https.onCall(
           <p><strong>Venture:</strong> ${hustleName}</p>
           <p><strong>Buyer:</strong> ${buyerEmail}</p>
           <p><strong>Seller PayPal:</strong> ${sellerEmail}</p>
+          <p><strong>Transaction Status:</strong> ${status || 'Sale Completed'}</p>
           <p><strong>Total Paid:</strong> $${totalAmount}</p>
           <div style="background: #fef2f2; padding: 15px; border-radius: 10px; border: 2px solid #dc2626; margin: 20px 0;">
             <p style="color: #dc2626; font-size: 18px; margin: 0;"><strong>ACTION REQUIRED: Send $${sellerPayout} to ${sellerEmail} via PayPal once buyer confirms receipt.</strong></p>
@@ -205,5 +206,42 @@ export const confirmAndPayoutSeller = functions.https.onCall(
       console.error("Payout confirmation error:", error.message);
       throw new functions.https.HttpsError("internal", error.message);
     }
+  }
+);
+export const sendSaleNotification = functions.https.onCall(
+  {
+    secrets: ["RESEND_API_KEY"],
+  },
+  async (request) => {
+    if (!request.auth) {
+      throw new functions.https.HttpsError("unauthenticated", "You must be logged in.");
+    }
+
+    const { hustleName, totalAmount, sellerEmail, buyerEmail, listingId, status } = request.data;
+
+    const sellerPayout = (totalAmount * 0.9).toFixed(2);
+    const platformFee = (totalAmount * 0.1).toFixed(2);
+
+    await sendEmail(
+      "guneet.ar2010@gmail.com",
+      `🔔 HustleSpark Update: ${hustleName} - ${status}`,
+      `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h1 style="color: #9D4EDD;">🔔 Transaction Update</h1>
+        <div style="background: #f8f8f8; padding: 15px; border-radius: 10px; margin: 20px 0;">
+          <p><strong>Venture:</strong> ${hustleName}</p>
+          <p><strong>Listing ID:</strong> ${listingId}</p>
+          <p><strong>Buyer:</strong> ${buyerEmail}</p>
+          <p><strong>Seller PayPal:</strong> ${sellerEmail}</p>
+          <p><strong>Total Paid:</strong> $${totalAmount}</p>
+          <p><strong>Your Platform Fee (10%):</strong> $${platformFee}</p>
+        </div>
+        <div style="background: #fef2f2; padding: 15px; border-radius: 10px; border: 2px solid #dc2626; margin: 20px 0;">
+          <p style="color: #dc2626; font-size: 18px; margin: 0;"><strong>${status}</strong></p>
+          <p style="color: #dc2626; margin-top: 10px;">Amount to send seller: <strong>$${sellerPayout}</strong> to <strong>${sellerEmail}</strong> via PayPal</p>
+        </div>
+      </div>`
+    );
+
+    return { success: true };
   }
 );

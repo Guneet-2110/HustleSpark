@@ -139,24 +139,52 @@ export default function ProfilePage() {
   };
 
   const handleConfirmReceipt = async (transaction: any) => {
-      if (!firestore) return;
-      try {
-          await updateDoc(doc(firestore, 'transactions', transaction.id), { status: 'completed' });
-          toast({ title: "Venture Acquired!", description: "Funds released to creator." });
-      } catch (e) {
-          toast({ variant: 'destructive', title: "Update Failed" });
-      }
-  };
+    if (!firestore) return;
+    try {
+        await updateDoc(doc(firestore, 'transactions', transaction.id), { status: 'completed' });
+        
+        const { getFunctions, httpsCallable } = await import('firebase/functions');
+        const functions = getFunctions();
+        const notify = httpsCallable(functions, 'sendSaleNotification');
+        await notify({
+            hustleName: transaction.hustleName,
+            totalAmount: transaction.amount,
+            sellerEmail: transaction.sellerEmail,
+            buyerEmail: transaction.buyerEmail,
+            listingId: transaction.listingId,
+            status: 'BUYER CONFIRMED DELIVERY ✅ - RELEASE FUNDS TO SELLER NOW',
+        });
+
+        toast({ title: "Venture Acquired!", description: "Funds released to creator." });
+    } catch (e) {
+        console.error("Confirm receipt error:", e);
+        toast({ variant: 'destructive', title: "Update Failed" });
+    }
+};
 
   const handleDispute = async (transaction: any) => {
-      if (!firestore) return;
-      try {
-          await updateDoc(doc(firestore, 'transactions', transaction.id), { status: 'disputed' });
-          toast({ variant: 'destructive', title: "Dispute Opened", description: "Admin notified." });
-      } catch (e) {
-          toast({ variant: 'destructive', title: "Update Failed" });
-      }
-  };
+    if (!firestore) return;
+    try {
+        await updateDoc(doc(firestore, 'transactions', transaction.id), { status: 'disputed' });
+        
+        // Notify admin via Cloud Function
+        const { getFunctions, httpsCallable } = await import('firebase/functions');
+        const functions = getFunctions();
+        const notify = httpsCallable(functions, 'sendSaleNotification');
+        await notify({
+            hustleName: transaction.hustleName,
+            totalAmount: transaction.amount,
+            sellerEmail: transaction.sellerEmail,
+            buyerEmail: transaction.buyerEmail,
+            listingId: transaction.listingId,
+            status: 'BUYER DISPUTED DELIVERY ❌ - DO NOT RELEASE FUNDS YET',
+        });
+
+        toast({ variant: 'destructive', title: "Dispute Opened", description: "Admin notified." });
+    } catch (e) {
+        toast({ variant: 'destructive', title: "Update Failed" });
+    }
+};
 
   const handleDeleteListing = async (listingId: string) => {
       if (!firestore) return;
@@ -368,7 +396,7 @@ export default function ProfilePage() {
                     {(isBchatsLoading || isSchatsLoading) ? <Skeleton className="h-10 w-full" /> : allChats.length > 0 ? (
                         <div className="space-y-3">
                             {allChats.map(c => {
-                                const isUserSeller = c.sellerId === firebaseUser.uid;
+                                const isUserSeller = c.sellerId === firebaseUser?.uid;
                                 const otherParty = isUserSeller ? c.buyerEmail : c.sellerEmail;
                                 return (
                                     <Link key={c.id} href={`/chats/${c.id}`} className="block border p-4 rounded-2xl hover:bg-accent/5 transition-all">

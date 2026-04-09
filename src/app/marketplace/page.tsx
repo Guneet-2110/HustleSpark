@@ -196,6 +196,20 @@ export default function MarketplacePage() {
                             <Slider defaultValue={[0, 5000]} max={5000} step={50} value={priceRange} onValueChange={setPriceRange} className="py-4" />
                         </div>
 
+                        <div className="space-y-2">
+                            <Label htmlFor="location">Location</Label>
+                            <div className="relative">
+                                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                <Input 
+                                    id="location" 
+                                    placeholder="City, State or Country..." 
+                                    className="pl-9" 
+                                    value={location} 
+                                    onChange={(e) => setLocation(e.target.value)} 
+                                />
+                            </div>
+                        </div>
+
                         <Button variant="outline" className="w-full active:scale-95 transition-transform" onClick={() => {
                             setSearchQuery('');
                             setPriceRange([0, 5000]);
