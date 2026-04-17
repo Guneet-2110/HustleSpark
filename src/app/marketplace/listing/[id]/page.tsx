@@ -6,8 +6,9 @@ import { useParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, ArrowLeft, Rocket, Check, MessageSquare, ArrowRight, Briefcase, Target, Globe, Heart, ShieldCheck, Loader2, Trash2 } from 'lucide-react';
-import Image from 'next/image';
+import { MapPin, ArrowLeft, Rocket, Check, MessageSquare, ArrowRight, Briefcase, Target, Globe, Heart, ShieldCheck, Loader2, Trash2, Flag } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';import Image from 'next/image';
 import { useState, useTransition } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -26,6 +27,9 @@ export default function MarketplaceListingDetailPage() {
     const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
     const [isApproving, startApproving] = useTransition();
     const [isDeleting, startDeleting] = useTransition();
+    const [isReporting, startReporting] = useTransition();
+const [showReportDialog, setShowReportDialog] = useState(false);
+const [reportReason, setReportReason] = useState('');
 
     const listingId = params.id as string;
     
@@ -69,6 +73,33 @@ export default function MarketplaceListingDetailPage() {
         });
     }
 
+    const handleReport = () => {
+        if (!reportReason.trim()) {
+            toast({ variant: 'destructive', title: 'Reason Required', description: 'Please describe the issue.' });
+            return;
+        }
+        startReporting(async () => {
+            try {
+                const { getFunctions, httpsCallable } = await import('firebase/functions');
+                const functions = getFunctions();
+                const notify = httpsCallable(functions, 'sendSaleNotification');
+                await notify({
+                    hustleName: listing.hustleName,
+                    totalAmount: listing.price,
+                    sellerEmail: listing.paypalEmail,
+                    buyerEmail: user?.email || 'Anonymous',
+                    listingId: listingId,
+                    status: `🚨 LISTING REPORTED BY USER - REASON: ${reportReason}`,
+                });
+                setShowReportDialog(false);
+                setReportReason('');
+                toast({ title: "Report Submitted", description: "Our team will review this listing within 24 hours." });
+            } catch (error: any) {
+                toast({ variant: 'destructive', title: "Report Failed", description: error.message });
+            }
+        });
+    };
+
     if (isListingLoading || isUserLoading) {
         return (
             <div className="container py-20 text-center space-y-4">
@@ -90,6 +121,7 @@ export default function MarketplaceListingDetailPage() {
     const total = listing.price || 0;
     const flyerUrl = listing.flyerUrl || placeholders.listings.default.url;
     const isOwner = listing.userId === user?.uid;
+    const isBuyer = !isOwner && !isAdmin;
 
     return (
         <div className="container py-12 max-w-6xl">
@@ -213,6 +245,14 @@ export default function MarketplaceListingDetailPage() {
                                     <li className="flex items-center gap-3"><MessageSquare className="h-5 w-5 text-accent bg-accent/10 p-1 rounded-full" /> Post-Sale Chat Support</li>
                                 </ul>
                             </div>
+                            {isBuyer && listing.status === 'approved' && (
+    <button 
+        onClick={() => setShowReportDialog(true)}
+        className="w-full text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-destructive transition-colors flex items-center justify-center gap-1 py-2"
+    >
+        <Flag className="h-3 w-3" /> Report This Listing
+    </button>
+)}
                             <Dialog open={isCheckoutOpen} onOpenChange={setIsCheckoutOpen}>
                                 <DialogTrigger asChild>
                                     <Button disabled={listing.status !== 'approved'} className="w-full h-16 text-xl font-black rounded-2xl shadow-xl transition-all hover:scale-[1.02] active:scale-95 group">
@@ -250,6 +290,36 @@ export default function MarketplaceListingDetailPage() {
                     </Card>
                 </div>
             </div>
+            <AlertDialog open={showReportDialog} onOpenChange={setShowReportDialog}>
+    <AlertDialogContent className="rounded-[2.5rem]">
+        <AlertDialogHeader>
+            <AlertDialogTitle className="text-xl font-black">Report This Listing</AlertDialogTitle>
+            <AlertDialogDescription>
+                Describe why this listing violates HustleSpark policies. Our team will review within 24 hours.
+            </AlertDialogDescription>
+        </AlertDialogHeader>
+        <div className="space-y-3 py-2">
+            <Label className="font-bold text-sm">Reason for Report</Label>
+            <Textarea 
+                placeholder="e.g. This listing is fraudulent, misleading, or contains stolen content..."
+                className="rounded-xl min-h-[100px]"
+                value={reportReason}
+                onChange={(e) => setReportReason(e.target.value)}
+            />
+        </div>
+        <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+                onClick={handleReport} 
+                disabled={isReporting}
+                className="rounded-xl bg-destructive text-white"
+            >
+                {isReporting ? <Loader2 className="animate-spin h-4 w-4 mr-2" /> : null}
+                Submit Report
+            </AlertDialogAction>
+        </AlertDialogFooter>
+    </AlertDialogContent>
+</AlertDialog>
         </div>
     );
 }

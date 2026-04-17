@@ -153,12 +153,12 @@ export async function generateHustleBlueprintAction(input: {hustleName: string, 
 /**
  * Action to generate the 4-week launch schedule.
  */
-export async function generateHustleScheduleAction(input: {hustleName: string, hustleDescription: string}) {
+export async function generateHustleScheduleAction(input: {hustleName: string, hustleDescription: string, weeksToGenerate?: number}) {
     try {
         const output = await generateHustleSchedule(input);
         return { message: "success", data: output };
     } catch (error) {
-        return { message: "Failed to generate hustle schedule.", data: null };
+        return { message: "Failed to generate schedule.", data: null };
     }
 }
 
@@ -171,5 +171,18 @@ export async function generateCoachResponseAction(input: {hustle: any, userInput
         return { message: "success", data: output };
     } catch (error) {
         return { message: "Failed to get coach response.", data: null };
+    }
+}
+
+/**
+ * Action to generate compelling marketplace listing copy.
+ */
+export async function generateMarketplaceCopyAction(input: {hustleName: string, hustleDescription: string, pricingTip?: string, marketingIdea?: string}) {
+    try {
+        const { generateMarketplaceCopy } = await import('@/ai/flows/generate-marketplace-copy');
+        const output = await generateMarketplaceCopy(input);
+        return { message: "success", data: output };
+    } catch (error) {
+        return { message: "Failed to generate marketplace copy.", data: null };
     }
 }

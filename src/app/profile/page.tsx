@@ -8,8 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { useEffect, useState, useMemo, useTransition } from "react";
-import { Trash2, MessageSquare, Briefcase, Package, ShieldCheck, Store, Loader2, ArrowRight, ShoppingBag, CheckCircle, AlertTriangle, Sparkles, TrendingUp, User } from "lucide-react";
-import { slugify } from "@/lib/utils";
+import { Trash2, MessageSquare, Briefcase, Package, ShieldCheck, Store, Loader2, ArrowRight, ShoppingBag, CheckCircle, AlertTriangle, Sparkles, TrendingUp, User, Star } from "lucide-react";import { slugify } from "@/lib/utils";
 import { HustleGenerator } from "@/components/hustle-generator";
 import { useToast } from "@/hooks/use-toast";
 import { collection, query, where, doc, updateDoc, deleteDoc, getDocs } from 'firebase/firestore';
@@ -104,7 +103,6 @@ export default function ProfilePage() {
                 }
             }
             
-            // Clear all local browser traces
             localStorage.clear();
             sessionStorage.clear();
             
@@ -167,7 +165,6 @@ export default function ProfilePage() {
     try {
         await updateDoc(doc(firestore, 'transactions', transaction.id), { status: 'disputed' });
         
-        // Notify admin via Cloud Function
         const { getFunctions, httpsCallable } = await import('firebase/functions');
         const functions = getFunctions();
         const notify = httpsCallable(functions, 'sendSaleNotification');
@@ -222,13 +219,21 @@ export default function ProfilePage() {
                         Extend Premium
                     </Button>
                 ) : (
-                    <Button 
-                        onClick={() => setPaymentModalOpen(true)}
-                        className="rounded-2xl h-12 font-black shadow-xl px-6"
-                    >
-                        <TrendingUp className="mr-2 h-5 w-5" />
-                        Upgrade to Premium
-                    </Button>
+                    <>
+                        <Button 
+                            onClick={() => setPaymentModalOpen(true)}
+                            className="rounded-2xl h-12 font-black shadow-xl px-6"
+                        >
+                            <TrendingUp className="mr-2 h-5 w-5" />
+                            Upgrade to Premium
+                        </Button>
+                        <Button variant="outline" asChild className="rounded-2xl h-12 font-bold px-6">
+                            <Link href="/pricing">
+                                <Star className="mr-2 h-4 w-4" />
+                                Compare Plans
+                            </Link>
+                        </Button>
+                    </>
                 )}
                 
                 {isOwner && (
@@ -381,7 +386,16 @@ export default function ProfilePage() {
                 <CardContent className="p-4 pt-4">
                     <div className="space-y-3">
                     {savedHustles.length > 0 ? savedHustles.map((h) => (
-                        <Link key={h.name} href={`/hustle/${slugify(h.name)}`} className="block group border p-4 rounded-2xl hover:bg-primary/5 transition-all flex justify-between items-center">
+                        <Link 
+                            key={h.name} 
+                            href={`/hustle/${slugify(h.name)}`} 
+                            onClick={() => {
+                                if (typeof window !== 'undefined') {
+                                    sessionStorage.setItem('currentHustle', JSON.stringify(h));
+                                }
+                            }}
+                            className="block group border p-4 rounded-2xl hover:bg-primary/5 transition-all flex justify-between items-center"
+                        >
                             <p className="font-bold text-sm">{h.name}</p>
                             <ArrowRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-all transform translate-x-[-10px] group-hover:translate-x-0" />
                         </Link>

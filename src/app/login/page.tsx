@@ -1,6 +1,8 @@
 
 "use client";
 
+import { sendPasswordResetEmail } from 'firebase/auth';
+import { useAuth as useFirebaseAuth } from '@/firebase';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -10,8 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Mail, Key, Sparkles, Terminal, Eye, EyeOff, ArrowRight, ShieldAlert } from 'lucide-react';
-import { useState, useEffect, Suspense } from 'react';
+import { Mail, Key, Sparkles, Terminal, Eye, EyeOff, ArrowRight, ShieldAlert, KeyRound } from 'lucide-react';import { useState, useEffect, Suspense } from 'react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const loginSchema = z.object({
@@ -30,7 +31,11 @@ const signupSchema = z.object({
 
 
 function LoginPageContent() {
-  const { login, signup, isLoggedIn } = useAuth();
+    const { login, signup, isLoggedIn } = useAuth();
+    const firebaseAuth = useFirebaseAuth();
+    const [showForgotPassword, setShowForgotPassword] = useState(false);
+    const [forgotEmail, setForgotEmail] = useState('');
+    const [forgotStatus, setForgotStatus] = useState<string | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
   const [authError, setAuthError] = useState<string | null>(null);
@@ -73,6 +78,20 @@ function LoginPageContent() {
         setAuthError("AUTHENTICATION FAILED: ACCESS DENIED. PLEASE VERIFY CREDENTIALS AND RETRY.");
     }
 }
+
+async function onForgotPassword() {
+    if (!forgotEmail) {
+        setForgotStatus('ERROR: Please enter your email address.');
+        return;
+    }
+    try {
+        await sendPasswordResetEmail(firebaseAuth, forgotEmail);
+        setForgotStatus('SUCCESS: Password reset link sent! Check your inbox and spam folder.');
+    } catch (e: any) {
+        setForgotStatus('ERROR: Could not send reset email. Please verify your email address.');
+    }
+}
+
 
   async function onSignup(values: z.infer<typeof signupSchema>) {
     setAuthError(null);
@@ -145,12 +164,48 @@ function LoginPageContent() {
                                 </Button>
                             </form>
                             </Form>
-                             <div className="mt-6 text-center text-sm">
-                                No profile detected?{' '}
-                                <button onClick={() => switchForm('signup')} className="font-black text-primary hover:underline uppercase tracking-widest text-[10px]">
-                                    Initialize Enrollment
-                                </button>
-                            </div>
+                            <div className="mt-4 text-center">
+    <button 
+        onClick={() => { setShowForgotPassword(true); setForgotStatus(null); setForgotEmail(loginForm.getValues('email')); }}
+        className="text-[10px] font-black text-muted-foreground hover:text-primary uppercase tracking-widest transition-colors"
+    >
+        Forgot Security Key?
+    </button>
+</div>
+<div className="mt-4 text-center text-sm">
+    No profile detected?{' '}
+    <button onClick={() => switchForm('signup')} className="font-black text-primary hover:underline uppercase tracking-widest text-[10px]">
+        Initialize Enrollment
+    </button>
+</div>
+
+{showForgotPassword && (
+    <div className="mt-6 p-4 bg-muted/50 rounded-2xl border space-y-3">
+        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Reset Security Key</p>
+        <div className="relative">
+            <Input 
+                placeholder="Enter your email..." 
+                value={forgotEmail}
+                onChange={(e) => setForgotEmail(e.target.value)}
+                className="h-12 rounded-xl bg-background/50 pr-10"
+            />
+            <Mail className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        </div>
+        {forgotStatus && (
+            <p className={`text-[10px] font-mono leading-tight ${forgotStatus.startsWith('SUCCESS') ? 'text-green-500' : 'text-destructive'}`}>
+                {forgotStatus}
+            </p>
+        )}
+        <div className="flex gap-2">
+            <Button variant="outline" size="sm" className="flex-1 rounded-xl" onClick={() => { setShowForgotPassword(false); setForgotStatus(null); }}>
+                Cancel
+            </Button>
+            <Button size="sm" className="flex-1 rounded-xl font-black" onClick={onForgotPassword}>
+                Send Reset Link
+            </Button>
+        </div>
+    </div>
+)}
                         </CardContent>
                    </div>
                 </div>

@@ -69,7 +69,9 @@ export const createStripePayment = functions.https.onCall(
           buyerEmail: request.auth.token.email || "",
         },
         success_url: `${origin}/payment-success?session_id={CHECKOUT_SESSION_ID}&listingId=${listingId}&sellerEmail=${encodeURIComponent(sellerEmail)}&amount=${amount}`,
-        cancel_url: `${origin}/marketplace/listing/${listingId}`,
+        cancel_url: listingId === 'premium_upgrade' 
+    ? `${origin}/profile` 
+    : `${origin}/marketplace/listing/${listingId}`,
       });
 
       return { url: session.url };
@@ -165,7 +167,7 @@ export const confirmAndPayoutSeller = functions.https.onCall(
           <p><strong>Venture:</strong> ${hustleName}</p>
           <p><strong>Buyer:</strong> ${buyerEmail}</p>
           <p><strong>Seller PayPal:</strong> ${sellerEmail}</p>
-          <p><strong>Transaction Status:</strong> ${status || 'Sale Completed'}</p>
+          <p><strong>Transaction Status:</strong> Pending Delivery - Escrow Active</p>
           <p><strong>Total Paid:</strong> $${totalAmount}</p>
           <div style="background: #fef2f2; padding: 15px; border-radius: 10px; border: 2px solid #dc2626; margin: 20px 0;">
             <p style="color: #dc2626; font-size: 18px; margin: 0;"><strong>ACTION REQUIRED: Send $${sellerPayout} to ${sellerEmail} via PayPal once buyer confirms receipt.</strong></p>
@@ -218,30 +220,49 @@ export const sendSaleNotification = functions.https.onCall(
     }
 
     const { hustleName, totalAmount, sellerEmail, buyerEmail, listingId, status } = request.data;
+    const isReport = status?.includes('REPORTED');
+    const isDispute = status?.includes('DISPUTED');
 
     const sellerPayout = (totalAmount * 0.9).toFixed(2);
     const platformFee = (totalAmount * 0.1).toFixed(2);
 
-    await sendEmail(
-      "guneet.ar2010@gmail.com",
-      `🔔 HustleSpark Update: ${hustleName} - ${status}`,
-      `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <h1 style="color: #9D4EDD;">🔔 Transaction Update</h1>
-        <div style="background: #f8f8f8; padding: 15px; border-radius: 10px; margin: 20px 0;">
-          <p><strong>Venture:</strong> ${hustleName}</p>
-          <p><strong>Listing ID:</strong> ${listingId}</p>
-          <p><strong>Buyer:</strong> ${buyerEmail}</p>
-          <p><strong>Seller PayPal:</strong> ${sellerEmail}</p>
-          <p><strong>Total Paid:</strong> $${totalAmount}</p>
-          <p><strong>Your Platform Fee (10%):</strong> $${platformFee}</p>
-        </div>
-        <div style="background: #fef2f2; padding: 15px; border-radius: 10px; border: 2px solid #dc2626; margin: 20px 0;">
-          <p style="color: #dc2626; font-size: 18px; margin: 0;"><strong>${status}</strong></p>
-          <p style="color: #dc2626; margin-top: 10px;">Amount to send seller: <strong>$${sellerPayout}</strong> to <strong>${sellerEmail}</strong> via PayPal</p>
-        </div>
-      </div>`
-    );
+    const subject = isReport 
+        ? `🚨 Listing Reported: ${hustleName}`
+        : isDispute
+        ? `⚠️ Dispute Opened: ${hustleName}`
+        : `✅ Buyer Confirmed Delivery: ${hustleName}`;
 
+    const html = isReport ? `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <h1 style="color: #dc2626;">🚨 Listing Reported</h1>
+            <div style="background: #fef2f2; padding: 15px; border-radius: 10px; border: 2px solid #dc2626; margin: 20px 0;">
+                <p><strong>Listing:</strong> ${hustleName}</p>
+                <p><strong>Listing ID:</strong> ${listingId}</p>
+                <p><strong>Reported by:</strong> ${buyerEmail}</p>
+                <p><strong>Seller PayPal:</strong> ${sellerEmail}</p>
+                <p><strong>Reason:</strong> ${status.replace('🚨 LISTING REPORTED BY USER - REASON: ', '')}</p>
+            </div>
+            <p style="color: #dc2626;"><strong>Action Required:</strong> Review this listing and remove it if it violates HustleSpark policies.</p>
+            <a href="https://hustlespark.net/marketplace/listing/${listingId}" style="display: inline-block; background: #dc2626; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold; margin-top: 15px;">View Listing →</a>
+        </div>
+    ` : `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <h1 style="color: #9D4EDD;">${isDispute ? '⚠️ Dispute Opened' : '✅ Delivery Confirmed'}</h1>
+            <div style="background: #f8f8f8; padding: 15px; border-radius: 10px; margin: 20px 0;">
+                <p><strong>Venture:</strong> ${hustleName}</p>
+                <p><strong>Buyer:</strong> ${buyerEmail}</p>
+                <p><strong>Seller PayPal:</strong> ${sellerEmail}</p>
+                <p><strong>Total Paid:</strong> $${totalAmount}</p>
+                <p><strong>Your Platform Fee (10%):</strong> $${platformFee}</p>
+            </div>
+            <div style="background: #fef2f2; padding: 15px; border-radius: 10px; border: 2px solid #dc2626; margin: 20px 0;">
+                <p style="color: #dc2626; font-size: 18px; margin: 0;"><strong>${status}</strong></p>
+                ${!isDispute ? `<p style="color: #dc2626; margin-top: 10px;">Send <strong>$${sellerPayout}</strong> to <strong>${sellerEmail}</strong> via PayPal</p>` : ''}
+            </div>
+        </div>
+    `;
+
+    await sendEmail("guneet.ar2010@gmail.com", subject, html);
     return { success: true };
   }
 );

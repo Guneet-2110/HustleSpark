@@ -4,13 +4,13 @@ import Link from 'next/link';
 import { Button } from './ui/button';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
-import { Sparkles, User, LogOut, Rocket, Store, Clock, ShieldCheck } from 'lucide-react';
-import React, { useState, useEffect } from 'react';
+import { Sparkles, User, LogOut, Rocket, Store, Clock, ShieldCheck, LayoutDashboard, Star } from 'lucide-react';import React, { useState, useEffect } from 'react';
 import { EscrowTrustDialog } from './escrow-trust-dialog';
 
 export function Header() {
   const { isLoggedIn, logout, user, isPremium, hasUnsavedChanges, setHasUnsavedChanges } = useAuth();
-  const router = useRouter();
+  const ADMIN_EMAILS = ["guneet.ar2010@gmail.com", "tester@gmail.com"];
+  const isAdmin = ADMIN_EMAILS.includes(user?.email ?? "");  const router = useRouter();
   const [timeLeft, setTimeLeft] = useState<{days:number, hours:number, minutes:number, seconds:number, total:number} | null>(null);
   const [isEscrowModalOpen, setIsEscrowModalOpen] = useState(false);
 
@@ -62,10 +62,20 @@ export function Header() {
             <span className="font-bold">HustleSpark</span>
         </Link>
         <nav className="flex flex-1 items-center space-x-4">
-          <Link href="/marketplace" onClick={(e) => handleLinkClick(e, '/marketplace')} className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary flex items-center gap-1">
+        <Link href="/marketplace" onClick={(e) => handleLinkClick(e, '/marketplace')} className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary flex items-center gap-1">
             <Store className="h-4 w-4" />
             Marketplace
           </Link>
+          <Link href="/pricing" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary flex items-center gap-1">
+            <Star className="h-4 w-4" />
+            Pricing
+          </Link>
+          {isAdmin && (
+  <Link href="/admin" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary flex items-center gap-1">
+    <LayoutDashboard className="h-4 w-4" />
+    Admin
+  </Link>
+)}
           {isPremium && timeLeft && timeLeft.total > 0 && (
             <div className="hidden md:flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-[10px] font-bold text-primary animate-pulse">
                 <Clock className="h-3 w-3" />

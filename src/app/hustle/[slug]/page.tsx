@@ -1,6 +1,7 @@
 
 "use client";
 
+import { PhoneVerificationModal } from '@/components/phone-verification-modal';
 import { useAuth } from '@/hooks/use-auth';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,14 +12,13 @@ import {
     Image as ImageIcon, Rocket, Printer, Calendar as CalendarIcon, 
     Target, TrendingUp, CircleDollarSign, Bot, Send, ShoppingBag, 
     AlertCircle, LayoutDashboard, LineChart, CheckSquare, Settings2, Download, Eye,
-    Globe, Heart, Briefcase
+    Globe, Heart, Briefcase, Lock
 } from 'lucide-react';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import type { HustleIdea } from '@/ai/flows/generate-hustle-ideas';
 import type { GenerateHustleScheduleOutput } from '@/ai/flows/generate-hustle-schedule';
-import { generateFlyerAction, generateLogoAction, generateHustleBlueprintAction, generateHustleScheduleAction, generateCoachResponseAction } from '@/lib/actions';
-import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogHeader, DialogFooter } from '@/components/ui/dialog';
+import { generateFlyerAction, generateLogoAction, generateHustleBlueprintAction, generateHustleScheduleAction, generateCoachResponseAction, generateMarketplaceCopyAction } from '@/lib/actions';import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogHeader, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -29,9 +29,9 @@ import { Progress } from '@/components/ui/progress';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
-import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { useFirestore, useUser, uploadBase64Image } from '@/firebase';
-import { collection, serverTimestamp, addDoc } from 'firebase/firestore';
+import { collection, serverTimestamp, addDoc, doc, setDoc } from 'firebase/firestore';
+import { slugify } from '@/lib/utils';
 
 type Message = {
     role: 'user' | 'model';
@@ -47,10 +47,22 @@ type HustleIdeaWithExtras = HustleIdea & {
 };
 
 function HustleDetailContent() {
-    const { user: localUser, isLoggedIn, isPremium, setPaymentModalOpen, saveHustle, unsaveHustle, isHustleSaved, getHustleByName } = useAuth();
+    const { 
+        user: localUser, 
+        isLoggedIn, 
+        isPremium, 
+        setPaymentModalOpen, 
+        saveHustle, 
+        unsaveHustle, 
+        isHustleSaved, 
+        getHustleByName,
+        savedHustles,
+        generatedHustles
+    } = useAuth();
     const { user: firebaseUser, isUserLoading } = useUser();
     const firestore = useFirestore();
     const router = useRouter();
+    const params = useParams();
     const [hustle, setHustle] = useState<HustleIdeaWithExtras | null>(null);
     const { toast } = useToast();
     const initialLoadDone = useRef(false);
@@ -66,6 +78,8 @@ function HustleDetailContent() {
     // Modals
     const [showFlyerContactModal, setShowFlyerContactModal] = useState(false);
     const [showSellModal, setShowSellModal] = useState(false);
+    const [showPhoneVerification, setShowPhoneVerification] = useState(false);
+const [isPhoneVerified, setIsPhoneVerified] = useState(false);
     const [showTrackerSettings, setShowTrackerSettings] = useState(false);
     
     // Inputs
@@ -73,6 +87,9 @@ function HustleDetailContent() {
     const [flyerPhone, setFlyerPhone] = useState('');
     const [coachInput, setCoachInput] = useState('');
     const [targetEarnings, setTargetEarnings] = useState('1000');
+    const [newEarningsEntry, setNewEarningsEntry] = useState('');
+const [newWinEntry, setNewWinEntry] = useState('');
+const [showEarningsInput, setShowEarningsInput] = useState(false);
 
     // Sell Form
     const [sellPrice, setSellPrice] = useState('100');
@@ -87,6 +104,15 @@ function HustleDetailContent() {
     const [sellWorkFrom, setSellWorkFrom] = useState('Remote');
     
     const isSaved = hustle ? isHustleSaved(hustle.name) : false;
+    const weeksAllowed = (() => {
+        if (!isPremium) return 2;
+        if (!localUser?.premiumExpiresAt) return 4;
+        const daysLeft = Math.ceil((new Date(localUser.premiumExpiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+        if (daysLeft >= 120) return 16;
+        if (daysLeft >= 90) return 12;
+        if (daysLeft >= 60) return 8;
+        return 4;
+    })();
     const missingAssets = hustle ? (!hustle.logoUrl || !hustle.flyerUrl) : true;
     
     useEffect(() => {
@@ -95,34 +121,63 @@ function HustleDetailContent() {
         }
     }, [firebaseUser, isUserLoading, router]);
 
-    // Initialize Data
+    // Initialize Data - Slug matching for reliable loading
     useEffect(() => {
-        if (typeof window !== 'undefined' && !initialLoadDone.current) {
-            const hustleDataStr = sessionStorage.getItem('currentHustle');
-            if (hustleDataStr) {
-                try {
-                    const parsedHustle: HustleIdeaWithExtras = JSON.parse(hustleDataStr);
-                    const savedVersion = getHustleByName(parsedHustle.name) as HustleIdeaWithExtras;
-                    const initialData = savedVersion || parsedHustle;
-                    setHustle({ ...initialData });
-                    if (initialData.trackerData?.earningsGoal) {
-                        setTargetEarnings(initialData.trackerData.earningsGoal.toString());
-                    }
-                    initialLoadDone.current = true;
-                } catch (error) {
-                    console.error("Failed to parse hustle data", error);
+        if (!isUserLoading && firebaseUser && !initialLoadDone.current) {
+            const paramsSlug = params?.slug as string;
+            if (!paramsSlug) return;
+
+            const findHustleInSources = () => {
+                // Check saved first
+                let found = savedHustles.find(h => slugify(h.name) === paramsSlug);
+                // Then generated
+                if (!found) {
+                    found = generatedHustles.find(h => slugify(h.name) === paramsSlug);
                 }
+                // Then session fallback
+                if (!found) {
+                    const hustleDataStr = sessionStorage.getItem('currentHustle');
+                    if (hustleDataStr) {
+                        try {
+                            const parsed = JSON.parse(hustleDataStr);
+                            if (slugify(parsed.name) === paramsSlug) found = parsed;
+                        } catch (e) {}
+                    }
+                }
+                return found;
+            };
+
+            const found = findHustleInSources();
+            if (found) {
+                setHustle({ ...found });
+                if (found.trackerData?.earningsGoal) {
+                    setTargetEarnings(found.trackerData.earningsGoal.toString());
+                }
+                initialLoadDone.current = true;
             }
         }
-    }, [getHustleByName]); 
+    }, [firebaseUser, isUserLoading, params?.slug, savedHustles, generatedHustles]);
 
     // Auto-fill form fields when sell modal opens
     useEffect(() => {
         if (showSellModal && hustle) {
-            if (!sellAboutUs) setSellAboutUs(hustle.aboutUs || hustle.description || '');
-            if (!sellWhatWeDo) setSellWhatWeDo(hustle.whatWeDo || `Expertise in ${hustle.name}. Generated via HustleSpark AI Blueprint.`);
-            if (!sellOurGoal) setSellOurGoal(hustle.ourGoal || hustle.marketingIdea || 'To become the premier provider of creative excellence.');
             if (!sellPaypal && firebaseUser?.email) setSellPaypal(firebaseUser.email);
+            
+            // Auto-generate AI marketplace copy if not already filled
+            if (!sellAboutUs && !sellWhatWeDo && !sellOurGoal) {
+                generateMarketplaceCopyAction({
+                    hustleName: hustle.name,
+                    hustleDescription: hustle.description,
+                    pricingTip: hustle.pricingTip,
+                    marketingIdea: hustle.marketingIdea,
+                }).then((result) => {
+                    if (result.message === 'success' && result.data) {
+                        setSellAboutUs(result.data.aboutUs);
+                        setSellWhatWeDo(result.data.whatWeDo);
+                        setSellOurGoal(result.data.ourGoal);
+                    }
+                });
+            }
         }
     }, [showSellModal, hustle, firebaseUser, sellAboutUs, sellWhatWeDo, sellOurGoal, sellPaypal]);
 
@@ -143,7 +198,7 @@ function HustleDetailContent() {
             ? currentChecked.filter(id => id !== taskId)
             : [...currentChecked, taskId];
 
-        const totalTasks = 28; // 4 weeks * 7 tasks
+            const totalTasks = weeksAllowed * 7;
         const progressPercent = Math.round((newChecked.length / totalTasks) * 100);
 
         const updatedHustle = {
@@ -174,6 +229,39 @@ function HustleDetailContent() {
         toast({ title: "Goal Updated", description: `Earnings target set to $${targetEarnings}` });
     };
 
+    const addEarningsEntry = () => {
+        if (!hustle || !newEarningsEntry) return;
+        const amount = parseFloat(newEarningsEntry);
+        if (isNaN(amount)) return;
+        const existing = hustle.trackerData?.earningsLog || [];
+        const newEntry = { amount, date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) };
+        const newLog = [...existing, newEntry];
+        const totalEarned = newLog.reduce((sum, e) => sum + e.amount, 0);
+        const updatedHustle = {
+            ...hustle,
+            trackerData: { ...hustle.trackerData!, earningsLog: newLog, totalEarned }
+        };
+        setHustle(updatedHustle);
+        saveHustle(updatedHustle);
+        setNewEarningsEntry('');
+        setShowEarningsInput(false);
+        toast({ title: `+$${amount} logged!`, description: `Total: $${totalEarned}` });
+    };
+    
+    const addWinEntry = () => {
+        if (!hustle || !newWinEntry.trim()) return;
+        const existing = hustle.trackerData?.winLog || [];
+        const newWin = { text: newWinEntry, date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) };
+        const updatedHustle = {
+            ...hustle,
+            trackerData: { ...hustle.trackerData!, winLog: [...existing, newWin] }
+        };
+        setHustle(updatedHustle);
+        saveHustle(updatedHustle);
+        setNewWinEntry('');
+        toast({ title: "Win logged! 🏆" });
+    };
+
     const handlePrintFlyer = () => {
         if (!hustle?.flyerUrl) return;
         const win = window.open('', '_blank');
@@ -190,13 +278,28 @@ function HustleDetailContent() {
         }
     };
 
+
     const handleSaveToggle = () => {
         if (!hustle) return;
-        if(isSaved) {
+        if (isSaved) {
             unsaveHustle(hustle.name);
             toast({ title: "Removed", description: "Hustle removed from your dashboard." });
         } else {
-            saveHustle(hustle);
+            const hustleWithStartDate = {
+                ...hustle,
+                trackerData: {
+                    ...hustle.trackerData,
+                    startedAt: hustle.trackerData?.startedAt || new Date().toISOString(),
+                    checkedTasks: hustle.trackerData?.checkedTasks || [],
+                    progress: hustle.trackerData?.progress || 0,
+                    earningsGoal: hustle.trackerData?.earningsGoal || 1000,
+                    earningsLog: hustle.trackerData?.earningsLog || [],
+                    totalEarned: hustle.trackerData?.totalEarned || 0,
+                    winLog: hustle.trackerData?.winLog || [],
+                }
+            };
+            saveHustle(hustleWithStartDate);
+            setHustle(hustleWithStartDate);
             toast({ title: "Hustle Saved", description: "This idea is now in your dashboard." });
         }
     }
@@ -243,7 +346,7 @@ function HustleDetailContent() {
     const handleGenerateSchedule = () => {
         if (!hustle) return;
         startScheduleGeneration(async () => {
-            const result = await generateHustleScheduleAction({ hustleName: hustle.name, hustleDescription: hustle.description });
+            const result = await generateHustleScheduleAction({ hustleName: hustle.name, hustleDescription: hustle.description, weeksToGenerate: weeksAllowed });
             if (result.message === 'success' && result.data) {
                 const updatedHustle = { ...hustle, schedule: result.data };
                 setHustle(updatedHustle);
@@ -254,20 +357,31 @@ function HustleDetailContent() {
     }
 
     const handleGenerateLogo = () => {
-        if (!hustle) return;
+        if (!hustle || !firebaseUser) return;
         startLogoGeneration(async () => {
             const result = await generateLogoAction({ hustleName: hustle.name, hustleDescription: hustle.description });
             if (result.message === 'success' && result.data) {
-                const updatedHustle = { ...hustle, logoUrl: result.data.logoUrl };
+                let logoUrl = result.data.logoUrl;
+                if (logoUrl.startsWith('data:')) {
+                    try {
+                        logoUrl = await uploadBase64Image(
+                            logoUrl,
+                            `hustles/${firebaseUser.uid}/logo_${Date.now()}.png`
+                        );
+                    } catch (e) {
+                        console.error('Logo upload failed:', e);
+                    }
+                }
+                const updatedHustle = { ...hustle, logoUrl };
                 setHustle(updatedHustle);
-                if (isSaved) saveHustle(updatedHustle);
+                saveHustle(updatedHustle);
                 toast({ title: "Logo Ready" });
             }
         });
     }
 
     const handleGenerateFlyer = () => {
-        if (!hustle) return;
+        if (!hustle || !firebaseUser) return;
         startFlyerGeneration(async () => {
              const result = await generateFlyerAction({ 
                  hustleName: hustle.name, 
@@ -276,9 +390,20 @@ function HustleDetailContent() {
                  phone: flyerPhone
              });
              if (result.message === 'success' && result.data) {
-                 const updatedHustle = { ...hustle, flyerUrl: result.data.flyerUrl };
+                 let flyerUrl = result.data.flyerUrl;
+                 if (flyerUrl.startsWith('data:')) {
+                     try {
+                         flyerUrl = await uploadBase64Image(
+                             flyerUrl,
+                             `hustles/${firebaseUser.uid}/flyer_${Date.now()}.png`
+                         );
+                     } catch (e) {
+                         console.error('Flyer upload failed:', e);
+                     }
+                 }
+                 const updatedHustle = { ...hustle, flyerUrl };
                  setHustle(updatedHustle);
-                 if (isSaved) saveHustle(updatedHustle);
+                 saveHustle(updatedHustle);
                  setShowFlyerContactModal(false);
                  toast({ title: "Flyer Ready" });
              }
@@ -288,6 +413,11 @@ function HustleDetailContent() {
     const handleSellHustle = () => {
         if (!hustle || !firebaseUser || !firestore) {
             toast({ variant: 'destructive', title: 'Action Denied', description: 'You must be logged in to publish a venture.' });
+            return;
+        }
+        
+        if (!sellPaypal || !sellPaypal.includes('@')) {
+            toast({ variant: 'destructive', title: 'Payout Email Required', description: 'Please enter a valid PayPal email address to receive your 90% payout.' });
             return;
         }
 
@@ -356,7 +486,14 @@ function HustleDetailContent() {
         });
     }
 
-    if (isUserLoading || !firebaseUser || !hustle) return null;
+    if (isUserLoading || !firebaseUser || !hustle) {
+        return (
+            <div className="container py-32 text-center space-y-4">
+                <Loader2 className="animate-spin h-10 w-10 mx-auto text-primary" />
+                <p className="font-black text-muted-foreground uppercase tracking-widest text-xs">Opening Command Center...</p>
+            </div>
+        );
+    }
 
   return (
     <TooltipProvider delayDuration={0}>
@@ -379,22 +516,42 @@ function HustleDetailContent() {
                             {isSaved ? 'Hustle Saved' : 'Save Venture'}
                         </Button>
                         <Button 
-                            variant="outline" 
-                            className="h-12 px-6 rounded-2xl font-bold border-2"
-                            onClick={() => {
-                                if (missingAssets) {
-                                    toast({ variant: 'destructive', title: "Assets Missing", description: "Generate Logo and Flyer first." });
-                                } else {
-                                    if (!hustle.aboutUs) {
-                                        handleGenerateBlueprint();
-                                    }
-                                    setShowSellModal(true);
-                                }
-                            }} 
-                        >
-                            <ShoppingBag className="mr-2 h-5 w-5" />
-                            Exit to Marketplace
-                        </Button>
+    variant="outline" 
+    className="h-12 px-6 rounded-2xl font-bold border-2"
+    onClick={async () => {
+        if (!isPremium) {
+            toast({ variant: 'destructive', title: "Premium Required", description: "Upgrade to Premium to list your venture on the marketplace." });
+            setPaymentModalOpen(true);
+            return;
+        }
+
+        if (missingAssets) {
+            toast({ variant: 'destructive', title: "Assets Missing", description: "Generate Logo and Flyer first." });
+            return;
+        }
+        
+        if (!isPhoneVerified && firestore && firebaseUser) {
+            const { doc, getDoc } = await import('firebase/firestore');
+            const userRef = doc(firestore, 'users', firebaseUser.uid);
+            const snap = await getDoc(userRef);
+            const data = snap.data();
+            if (data?.phoneVerified || isPremium) {
+                setIsPhoneVerified(true);
+                if (!hustle.aboutUs) handleGenerateBlueprint();
+                setShowSellModal(true);
+            } else {
+                setShowPhoneVerification(true);
+            }
+            return;
+        }
+    
+        if (!hustle.aboutUs) handleGenerateBlueprint();
+        setShowSellModal(true);
+    }} 
+>
+    <ShoppingBag className="mr-2 h-5 w-5" />
+    Exit to Marketplace
+</Button>
                     </div>
                 </div>
 
@@ -419,95 +576,237 @@ function HustleDetailContent() {
                                 </Button>
                             </CardHeader>
                             <CardContent className="space-y-8">
-                                <div className="grid sm:grid-cols-3 gap-6">
-                                    <div className="bg-background/60 backdrop-blur-md p-6 rounded-3xl border shadow-sm space-y-2">
-                                        <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">Launch Progress</p>
-                                        <div className="flex items-end gap-2">
-                                            <span className="text-4xl font-black">{hustle.trackerData?.progress || 0}%</span>
-                                            <span className="text-xs text-muted-foreground pb-1">Ready</span>
-                                        </div>
-                                        <Progress value={hustle.trackerData?.progress || 0} className="h-2" />
-                                    </div>
-                                    <div className="bg-background/60 backdrop-blur-md p-6 rounded-3xl border shadow-sm space-y-2">
-                                        <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">Earnings Goal</p>
-                                        <div className="flex items-end gap-2">
-                                            <span className="text-4xl font-black">${hustle.trackerData?.earningsGoal || 1000}</span>
-                                            <span className="text-xs text-muted-foreground pb-1">Target</span>
-                                        </div>
-                                        <Progress value={0} className="h-2 opacity-30" />
-                                    </div>
-                                    <div className="bg-primary text-primary-foreground p-6 rounded-3xl shadow-xl space-y-2 relative overflow-hidden">
-                                        <div className="absolute -right-4 -bottom-4 opacity-20">
-                                            <CircleDollarSign className="h-20 w-20" />
-                                        </div>
-                                        <p className="text-xs font-black uppercase tracking-widest opacity-80">Earnings to Date</p>
-                                        <div className="flex items-end gap-2">
-                                            <span className="text-4xl font-black">$0</span>
-                                            <span className="text-xs opacity-80 pb-1">USD</span>
+    {/* STAT BOXES */}
+    <div className="grid sm:grid-cols-4 gap-4">
+        {/* Launch Progress */}
+        <div className="bg-background/60 backdrop-blur-md p-5 rounded-3xl border shadow-sm space-y-2">
+            <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">Launch Progress</p>
+            <div className="flex items-end gap-2">
+                <span className="text-3xl font-black">{hustle.trackerData?.progress || 0}%</span>
+                <span className="text-xs text-muted-foreground pb-1">Ready</span>
+            </div>
+            <Progress value={hustle.trackerData?.progress || 0} className="h-2" />
+        </div>
+
+        {/* Days Active */}
+        <div className="bg-background/60 backdrop-blur-md p-5 rounded-3xl border shadow-sm space-y-2">
+            <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">Days Active</p>
+            <div className="flex items-end gap-2">
+                <span className="text-3xl font-black">
+                    {hustle.trackerData?.startedAt 
+                        ? Math.floor((Date.now() - new Date(hustle.trackerData.startedAt).getTime()) / (1000 * 60 * 60 * 24))
+                        : 0}
+                </span>
+                <span className="text-xs text-muted-foreground pb-1">Days</span>
+            </div>
+            <Progress value={Math.min(((hustle.trackerData?.startedAt ? Math.floor((Date.now() - new Date(hustle.trackerData.startedAt).getTime()) / (1000 * 60 * 60 * 24)) : 0) / 28) * 100, 100)} className="h-2" />
+        </div>
+
+        {/* Recommended Goals */}
+        <div className="bg-background/60 backdrop-blur-md p-5 rounded-3xl border shadow-sm space-y-2">
+            <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">Recommended Goals</p>
+            <div className="flex flex-col gap-1 mt-1">
+                {[
+                    { label: '🥉 Starter', amount: 500 },
+                    { label: '🥈 Growth', amount: 2000 },
+                    { label: '🥇 Scale', amount: 10000 },
+                ].map((tier) => (
+                    <button
+                        key={tier.amount}
+                        onClick={() => {
+                            const updatedHustle = {
+                                ...hustle,
+                                trackerData: { ...hustle.trackerData!, earningsGoal: tier.amount }
+                            };
+                            setHustle(updatedHustle);
+                            saveHustle(updatedHustle);
+                            setTargetEarnings(tier.amount.toString());
+                            toast({ title: `Goal set to $${tier.amount}` });
+                        }}
+                        className={`text-[10px] font-black text-left px-2 py-1 rounded-lg transition-all ${hustle.trackerData?.earningsGoal === tier.amount ? 'bg-primary text-primary-foreground' : 'hover:bg-primary/10 text-muted-foreground'}`}
+                    >
+                        {tier.label}: ${tier.amount.toLocaleString()}
+                    </button>
+                ))}
+            </div>
+        </div>
+
+        {/* Earnings to Date */}
+        <div className="bg-primary text-primary-foreground p-5 rounded-3xl shadow-xl space-y-2 relative overflow-hidden">
+            <div className="absolute -right-4 -bottom-4 opacity-20">
+                <CircleDollarSign className="h-20 w-20" />
+            </div>
+            <p className="text-xs font-black uppercase tracking-widest opacity-80">Earnings to Date</p>
+            <div className="flex items-end gap-2">
+                <span className="text-3xl font-black">${(hustle.trackerData?.totalEarned || 0).toLocaleString()}</span>
+                <span className="text-xs opacity-80 pb-1">USD</span>
+            </div>
+            <Progress 
+                value={hustle.trackerData?.earningsGoal ? Math.min(((hustle.trackerData?.totalEarned || 0) / hustle.trackerData.earningsGoal) * 100, 100) : 0} 
+                className="h-2 bg-white/20" 
+            />
+            <button onClick={() => setShowEarningsInput(!showEarningsInput)} className="text-[10px] font-black uppercase tracking-widest opacity-80 hover:opacity-100 transition-opacity">
+                + Log Earnings
+            </button>
+        </div>
+    </div>
+
+    {/* EARNINGS INPUT */}
+    {showEarningsInput && (
+        <div className="bg-background/60 p-4 rounded-2xl border flex gap-3 items-center animate-in fade-in slide-in-from-top-2">
+            <CircleDollarSign className="h-5 w-5 text-primary shrink-0" />
+            <Input
+                type="number"
+                placeholder="Amount earned (e.g. 150)"
+                className="h-10 rounded-xl"
+                value={newEarningsEntry}
+                onChange={(e) => setNewEarningsEntry(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && addEarningsEntry()}
+            />
+            <Button size="sm" className="rounded-xl font-black shrink-0" onClick={addEarningsEntry}>Log It</Button>
+        </div>
+    )}
+
+    {/* EARNINGS CHART */}
+    {hustle.trackerData?.earningsLog && hustle.trackerData.earningsLog.length > 0 && (
+        <div className="bg-background/60 p-6 rounded-3xl border space-y-4">
+            <h4 className="font-black text-sm uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                <LineChart className="h-4 w-4 text-primary" /> Earnings History
+            </h4>
+            <div className="flex items-end gap-2 h-24">
+                {hustle.trackerData.earningsLog.map((entry: any, i: number) => {
+                    const max = Math.max(...hustle.trackerData!.earningsLog.map((e: any) => e.amount));
+                    const height = max > 0 ? (entry.amount / max) * 100 : 0;
+                    return (
+                        <div key={i} className="flex flex-col items-center gap-1 flex-1">
+                            <span className="text-[8px] font-bold text-primary">${entry.amount}</span>
+                            <div 
+                                className="w-full bg-primary rounded-t-lg transition-all duration-500" 
+                                style={{ height: `${height}%`, minHeight: '4px' }}
+                            />
+                            <span className="text-[8px] text-muted-foreground">{entry.date}</span>
+                        </div>
+                    );
+                })}
+            </div>
+        </div>
+    )}
+
+    {/* WIN LOG */}
+    <div className="bg-background/60 p-6 rounded-3xl border space-y-4">
+        <h4 className="font-black text-sm uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+            🏆 Win Log
+        </h4>
+        <div className="flex gap-3">
+            <Input
+                placeholder="Log a win... (e.g. Got my first client!)"
+                className="h-10 rounded-xl"
+                value={newWinEntry}
+                onChange={(e) => setNewWinEntry(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && addWinEntry()}
+            />
+            <Button size="sm" className="rounded-xl font-black shrink-0" onClick={addWinEntry}>Add</Button>
+        </div>
+        {hustle.trackerData?.winLog && hustle.trackerData.winLog.length > 0 ? (
+            <div className="space-y-2 max-h-40 overflow-y-auto">
+                {[...hustle.trackerData.winLog].reverse().map((win: any, i: number) => (
+                    <div key={i} className="flex items-start gap-3 p-3 bg-primary/5 rounded-2xl">
+                        <span className="text-lg">🏆</span>
+                        <div>
+                            <p className="text-sm font-medium">{win.text}</p>
+                            <p className="text-[10px] text-muted-foreground">{win.date}</p>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        ) : (
+            <p className="text-xs text-muted-foreground italic">No wins logged yet. You got this!</p>
+        )}
+    </div>
+
+    {/* LAUNCH ROADMAP */}
+    <div className="space-y-4">
+        <h3 className="font-bold flex items-center gap-2 px-2"><CheckSquare className="h-5 w-5 text-primary" /> Launch Roadmap</h3>
+        {!hustle.schedule ? (
+            <div className="text-center py-12 bg-background/40 rounded-[2rem] border-2 border-dashed border-primary/20">
+                <Button onClick={handleGenerateSchedule} disabled={isGeneratingSchedule} className="rounded-2xl h-12 px-8 font-bold">
+                    {isGeneratingSchedule ? <Loader2 className="animate-spin mr-2" /> : <CalendarIcon className="mr-2 h-5 w-5" />}
+                    Generate {isPremium ? `${Math.min(Math.ceil((new Date(localUser?.premiumExpiresAt || '').getTime() - Date.now()) / (1000 * 60 * 60 * 24 * 7)), 16)}` : '2'}-Week Action Plan
+                </Button>
+            </div>
+        ) : (
+            <Accordion type="single" collapsible className="w-full space-y-3">
+                {(() => {
+                    let totalWeeks = 2; // free
+                    if (isPremium && localUser?.premiumExpiresAt) {
+                        const daysLeft = Math.ceil((new Date(localUser.premiumExpiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+                        if (daysLeft >= 120) totalWeeks = 16;
+                        else if (daysLeft >= 90) totalWeeks = 12;
+                        else if (daysLeft >= 60) totalWeeks = 8;
+                        else totalWeeks = 4;
+                    }
+                    const weeksToShow = Math.min(totalWeeks, Object.keys(hustle.schedule || {}).length);
+                    return Array.from({ length: weeksToShow }, (_, i) => i + 1);
+                })().map((num) => {
+                    const key = `week${num}` as keyof GenerateHustleScheduleOutput;
+                    const weekTasks = hustle.schedule![key];
+                    const weekChecked = (hustle.trackerData?.checkedTasks || []).filter(id => id.startsWith(key));
+                    const weekProgress = Math.round((weekChecked.length / 7) * 100);
+                    return (
+                        <AccordionItem key={key} value={key} className="bg-background rounded-3xl border shadow-sm overflow-hidden px-1">
+                            <AccordionTrigger className="hover:no-underline px-6">
+                                <div className="flex items-center gap-4 w-full">
+                                    <div className="h-10 w-10 rounded-xl bg-muted flex items-center justify-center font-black">W{num}</div>
+                                    <div className="flex-1 text-left">
+                                    <p className="font-bold text-lg">
+                                            {num === 1 && "Setup & Foundations"}
+                                            {num === 2 && "Product Development"}
+                                            {num === 3 && "Marketing Blitz"}
+                                            {num === 4 && "Launch & Scale"}
+                                            {num === 5 && "Growth & Optimization"}
+                                            {num === 6 && "Revenue Acceleration"}
+                                            {num === 7 && "Community Building"}
+                                            {num === 8 && "Systems & Automation"}
+                                            {num === 9 && "Brand Expansion"}
+                                            {num === 10 && "Partnerships"}
+                                            {num === 11 && "Customer Retention"}
+                                            {num === 12 && "Analytics & Review"}
+                                            {num === 13 && "New Revenue Streams"}
+                                            {num === 14 && "Advanced Marketing"}
+                                            {num === 15 && "Team & Delegation"}
+                                            {num === 16 && "Long-Term Vision"}
+                                        </p>
+                                        <div className="flex items-center gap-2 mt-1">
+                                            <Progress value={weekProgress} className="h-1.5 w-24" />
+                                            <span className="text-[10px] uppercase font-bold text-muted-foreground">{weekProgress}% Complete</span>
                                         </div>
                                     </div>
                                 </div>
-
-                                <div className="space-y-4">
-                                    <h3 className="font-bold flex items-center gap-2 px-2"><CheckSquare className="h-5 w-5 text-primary" /> Launch Roadmap</h3>
-                                    {!hustle.schedule ? (
-                                        <div className="text-center py-12 bg-background/40 rounded-[2rem] border-2 border-dashed border-primary/20">
-                                            <Button onClick={handleGenerateSchedule} disabled={isGeneratingSchedule} className="rounded-2xl h-12 px-8 font-bold">
-                                                {isGeneratingSchedule ? <Loader2 className="animate-spin mr-2" /> : <CalendarIcon className="mr-2 h-5 w-5" />}
-                                                Generate 4-Week Action Plan
-                                            </Button>
+                            </AccordionTrigger>
+                            <AccordionContent className="px-6 pb-6 pt-2">
+                                <div className="grid gap-2">
+                                    {weekTasks.map((task, i) => (
+                                        <div key={i} className={`flex items-start gap-3 p-4 rounded-2xl transition-all ${hustle.trackerData?.checkedTasks?.includes(`${key}-${i}`) ? 'bg-primary/5 opacity-60' : 'bg-muted/30 hover:bg-muted/50'}`}>
+                                            <Checkbox 
+                                                id={`${key}-${i}`} 
+                                                checked={hustle.trackerData?.checkedTasks?.includes(`${key}-${i}`)}
+                                                onCheckedChange={() => toggleTask(key, i)}
+                                                className="mt-0.5"
+                                            />
+                                            <label htmlFor={`${key}-${i}`} className="text-sm font-medium leading-tight cursor-pointer select-none">
+                                                {task}
+                                            </label>
                                         </div>
-                                    ) : (
-                                        <Accordion type="single" collapsible className="w-full space-y-3">
-                                            {[1, 2, 3, 4].map((num) => {
-                                                const key = `week${num}` as keyof GenerateHustleScheduleOutput;
-                                                const weekTasks = hustle.schedule![key];
-                                                const weekChecked = (hustle.trackerData?.checkedTasks || []).filter(id => id.startsWith(key));
-                                                const weekProgress = Math.round((weekChecked.length / 7) * 100);
-
-                                                return (
-                                                    <AccordionItem key={key} value={key} className="bg-background rounded-3xl border shadow-sm overflow-hidden px-1">
-                                                        <AccordionTrigger className="hover:no-underline px-6">
-                                                            <div className="flex items-center gap-4 w-full">
-                                                                <div className="h-10 w-10 rounded-xl bg-muted flex items-center justify-center font-black">W{num}</div>
-                                                                <div className="flex-1 text-left">
-                                                                    <p className="font-bold text-lg">
-                                                                        {num === 1 && "Setup & Foundations"}
-                                                                        {num === 2 && "Product Development"}
-                                                                        {num === 3 && "Marketing Blitz"}
-                                                                        {num === 4 && "Launch & Scale"}
-                                                                    </p>
-                                                                    <div className="flex items-center gap-2 mt-1">
-                                                                        <Progress value={weekProgress} className="h-1.5 w-24" />
-                                                                        <span className="text-[10px] uppercase font-bold text-muted-foreground">{weekProgress}% Complete</span>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </AccordionTrigger>
-                                                        <AccordionContent className="px-6 pb-6 pt-2">
-                                                            <div className="grid gap-2">
-                                                                {weekTasks.map((task, i) => (
-                                                                    <div key={i} className={`flex items-start gap-3 p-4 rounded-2xl transition-all ${hustle.trackerData?.checkedTasks?.includes(`${key}-${i}`) ? 'bg-primary/5 opacity-60' : 'bg-muted/30 hover:bg-muted/50'}`}>
-                                                                        <Checkbox 
-                                                                            id={`${key}-${i}`} 
-                                                                            checked={hustle.trackerData?.checkedTasks?.includes(`${key}-${i}`)}
-                                                                            onCheckedChange={() => toggleTask(key, i)}
-                                                                            className="mt-0.5"
-                                                                        />
-                                                                        <label htmlFor={`${key}-${i}`} className="text-sm font-medium leading-tight cursor-pointer select-none">
-                                                                            {task}
-                                                                        </label>
-                                                                    </div>
-                                                                ))}
-                                                            </div>
-                                                        </AccordionContent>
-                                                    </AccordionItem>
-                                                );
-                                            })}
-                                        </Accordion>
-                                    )}
+                                    ))}
                                 </div>
-                            </CardContent>
+                            </AccordionContent>
+                        </AccordionItem>
+                    );
+                })}
+            </Accordion>
+        )}
+    </div>
+</CardContent>
                         </Card>
 
                         {/* GROWTH STRATEGY */}
@@ -528,7 +827,11 @@ function HustleDetailContent() {
                                         <p className="text-muted-foreground leading-relaxed italic">"{hustle.pricingTip}"</p>
                                     ) : (
                                         <div className="w-full text-center">
-                                            <Button variant="secondary" className="rounded-2xl" onClick={handleGenerateBlueprint} disabled={isGeneratingBlueprint}>Generate Pricing Strategy</Button>
+                                            {isPremium ? (
+                                                <Button variant="secondary" className="rounded-2xl" onClick={handleGenerateBlueprint} disabled={isGeneratingBlueprint}>Generate Pricing Strategy</Button>
+                                            ) : (
+                                                <Button variant="secondary" className="rounded-2xl text-xs" onClick={() => setPaymentModalOpen(true)}><Lock className="mr-2 h-4 w-4" />Unlock with Premium</Button>
+                                            )}
                                         </div>
                                     )}
                                 </CardContent>
@@ -545,7 +848,11 @@ function HustleDetailContent() {
                                         <p className="text-muted-foreground leading-relaxed italic">"{hustle.marketingIdea}"</p>
                                     ) : (
                                         <div className="w-full text-center">
-                                            <Button variant="secondary" className="rounded-2xl" onClick={handleGenerateBlueprint} disabled={isGeneratingBlueprint}>Generate Marketing Blitz</Button>
+                                            {isPremium ? (
+                                                <Button variant="secondary" className="rounded-2xl" onClick={handleGenerateBlueprint} disabled={isGeneratingBlueprint}>Generate Marketing Blitz</Button>
+                                            ) : (
+                                                <Button variant="secondary" className="rounded-2xl text-xs" onClick={() => setPaymentModalOpen(true)}><Lock className="mr-2 h-4 w-4" />Unlock with Premium</Button>
+                                            )}
                                         </div>
                                     )}
                                 </CardContent>
@@ -638,18 +945,25 @@ function HustleDetailContent() {
                                 </ScrollArea>
                             </CardContent>
                             <CardFooter className="p-6 bg-muted/30 border-t">
-                                <div className="flex gap-2 w-full">
-                                    <Input 
-                                        placeholder="Ask for advice..." 
-                                        className="h-12 rounded-2xl bg-background shadow-inner border-2 focus:ring-primary"
-                                        value={coachInput} 
-                                        onChange={(e) => setCoachInput(e.target.value)} 
-                                        onKeyDown={(e) => e.key === 'Enter' && handleCoachSubmit()} 
-                                    />
-                                    <Button onClick={handleCoachSubmit} disabled={isCoachReplying || !coachInput.trim()} size="icon" className="h-12 w-12 rounded-2xl shadow-lg transition-all hover:scale-105">
-                                        <Send className="h-5 w-5" />
+                                {!isPremium ? (
+                                    <Button variant="secondary" className="w-full rounded-2xl font-bold" onClick={() => setPaymentModalOpen(true)}>
+                                        <Lock className="mr-2 h-4 w-4" />
+                                        Unlock Sparky with Premium
                                     </Button>
-                                </div>
+                                ) : (
+                                    <div className="flex gap-2 w-full">
+                                        <Input 
+                                            placeholder="Ask for advice..." 
+                                            className="h-12 rounded-2xl bg-background shadow-inner border-2 focus:ring-primary"
+                                            value={coachInput} 
+                                            onChange={(e) => setCoachInput(e.target.value)} 
+                                            onKeyDown={(e) => e.key === 'Enter' && handleCoachSubmit()} 
+                                        />
+                                        <Button onClick={handleCoachSubmit} disabled={isCoachReplying || !coachInput.trim()} size="icon" className="h-12 w-12 rounded-2xl shadow-lg transition-all hover:scale-105">
+                                            <Send className="h-5 w-5" />
+                                        </Button>
+                                    </div>
+                                )}
                             </CardFooter>
                         </Card>
                     </div>
@@ -744,24 +1058,21 @@ function HustleDetailContent() {
                             <Textarea className="rounded-xl min-h-[100px]" placeholder="What is the mission of this venture?" value={sellOurGoal} onChange={(e) => setSellOurGoal(e.target.value)} />
                         </div>
                         
-
-
-
                         <div className="space-y-2 bg-primary/5 p-4 rounded-2xl border border-primary/20">
-            <Label className="font-bold flex items-center gap-2">
-                <CircleDollarSign className="h-4 w-4 text-primary" /> 
-                Payout Email (PayPal) *
-            </Label>
-            <Input 
-                className="h-12 rounded-xl" 
-                placeholder="your-paypal@email.com" 
-                value={sellPaypal} 
-                onChange={(e) => setSellPaypal(e.target.value)} 
-            />
-            <p className="text-[10px] text-muted-foreground font-medium">
-                ⚠️ This must be your real PayPal email. When your venture sells, 90% of the sale price will be sent here manually within 3 business days after buyer confirms receipt.
-            </p>
-        </div>
+                            <Label className="font-bold flex items-center gap-2">
+                                <CircleDollarSign className="h-4 w-4 text-primary" /> 
+                                Payout Email (PayPal) *
+                            </Label>
+                            <Input 
+                                className="h-12 rounded-xl" 
+                                placeholder="your-paypal@email.com" 
+                                value={sellPaypal} 
+                                onChange={(e) => setSellPaypal(e.target.value)} 
+                            />
+                            <p className="text-[10px] text-muted-foreground font-medium">
+                                ⚠️ This must be your real PayPal email. When your venture sells, 90% of the sale price will be sent here manually within 3 business days after buyer confirms receipt.
+                            </p>
+                        </div>
                         <div className="pt-4 border-t space-y-4">
                              <Label className="font-bold flex items-center gap-2"><Eye className="h-4 w-4 text-muted-foreground" /> Asset Preview</Label>
                              <div className="grid grid-cols-2 gap-4">
@@ -781,8 +1092,19 @@ function HustleDetailContent() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+            <PhoneVerificationModal
+    open={showPhoneVerification}
+    onOpenChange={setShowPhoneVerification}
+    onVerified={() => {
+        setIsPhoneVerified(true);
+        setShowPhoneVerification(false);
+        if (!hustle.aboutUs) handleGenerateBlueprint();
+        setShowSellModal(true);
+    }}
+/>
+
         </div>
-    </TooltipProvider>
+        </TooltipProvider>
   );
 }
 

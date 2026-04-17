@@ -15,7 +15,7 @@ import React from 'react';
 import { Input } from './ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { useFirestore, useUser, useDoc, useMemoFirebase } from '@/firebase';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, setDoc } from 'firebase/firestore';
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -43,7 +43,7 @@ export function HustleGenerator() {
     return doc(firestore, 'users', fbUser.uid);
   }, [firestore, fbUser]);
 
-  const { data: userDoc } = useDoc(userDocRef);
+  const { data: userDoc, isLoading: isUserDocLoading } = useDoc(userDocRef);
 
   const initialState = { message: null, data: null, errors: {} };
   const [state, dispatch] = useActionState(generateHustleIdeasAction, initialState);
@@ -59,23 +59,35 @@ export function HustleGenerator() {
     }
   }, [userDoc, generatedHustles.length, setGeneratedHustles]);
 
-  // Persist new generation results to Firestore
+  // Persist new generation results to Firestore with hard limit enforcement
   useEffect(() => {
-    if (state?.message === 'success' && state?.data) {
+    if (state?.message === 'success' && state?.data && fbUser && firestore) {
       setGeneratedHustles(state.data);
       
-      if (!isPremium && fbUser && firestore) {
-        const docRef = doc(firestore, 'users', fbUser.uid);
-        updateDoc(docRef, {
-          hasGenerated: true,
-          lastGeneratedHustles: state.data
-        });
-      }
+      const docRef = doc(firestore, 'users', fbUser.uid);
+      setDoc(docRef, {
+        hasGenerated: true,
+        lastGeneratedHustles: state.data
+      }, { merge: true });
     }
-  }, [state, setGeneratedHustles, isPremium, fbUser, firestore]);
+  }, [state, setGeneratedHustles, fbUser, firestore]);
 
-  const hasUsedFreeGen = !isPremium && userDoc?.hasGenerated;
-  const currentResults = generatedHustles.length > 0 ? generatedHustles : (userDoc?.lastGeneratedHustles || []);
+  const hasUsedFreeGen = !isPremium && userDoc?.hasGenerated === true;
+const allResults = generatedHustles.length > 0 ? generatedHustles : (userDoc?.lastGeneratedHustles || []);
+const { savedHustles } = useAuth();
+const savedNames = savedHustles.map((h: any) => h.name);
+const hasSavedOne = !isPremium && savedNames.some((name: string) => allResults.map((h: any) => h.name).includes(name));
+const currentResults = hasSavedOne
+  ? allResults.filter((h: any) => savedNames.includes(h.name))
+  : allResults;
+  
+  if (isUserDocLoading) {
+    return (
+        <div className="py-12 text-center">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary opacity-20" />
+        </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto">
