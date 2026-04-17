@@ -112,12 +112,12 @@ function PaymentSuccessContent() {
                 </div>
                 <div className="space-y-4 max-w-lg mx-auto">
                     <h1 className="text-5xl font-black tracking-tighter text-green-500">
-                        {isUpgrade ? "Premium Active! 🚀" : "Acquisition Complete! 🚀"}
+                        {isUpgrade ? "Premium Active! 🚀" : "Purchase Complete! 🚀"}
                     </h1>
                     <p className="text-muted-foreground text-lg leading-relaxed font-medium">
                         {isUpgrade 
                             ? "Your account has been upgraded. All AI tools, marketing kits, and trackers are now fully unlocked."
-                            : "The creator has been notified. You can now access your new venture assets and start a conversation from your dashboard."
+                            : "The creator has been notified. You can now chat with them to get started and start a conversation from your dashboard."
                         }
                     </p>
                 </div>

@@ -49,7 +49,7 @@ const [reportReason, setReportReason] = useState('');
             try {
                 const docRef = doc(firestore, 'marketplace_listings', listingId);
                 await updateDoc(docRef, { status: 'approved' });
-                toast({ title: "Venture Approved", description: "The listing is now live for all users." });
+                toast({ title: "Listing Approved", description: "The listing is now live for all users." });
             } catch (error: any) {
                 toast({ variant: 'destructive', title: "Approval Failed", description: error.message });
             }
@@ -137,14 +137,14 @@ const [reportReason, setReportReason] = useState('');
                                  <AlertDialogTrigger asChild>
                                      <Button disabled={isApproving} className="rounded-2xl h-12 px-8 font-black bg-orange-500 hover:bg-orange-600 shadow-xl text-white">
                                          {isApproving ? <Loader2 className="animate-spin mr-2 h-5 w-5" /> : <ShieldCheck className="mr-2 h-5 w-5" />}
-                                         Approve Venture
+                                         Approve Listing
                                      </Button>
                                  </AlertDialogTrigger>
                                  <AlertDialogContent className="rounded-[2.5rem]">
                                      <AlertDialogHeader>
                                          <AlertDialogTitle>Are you sure you want to approve this?</AlertDialogTitle>
                                          <AlertDialogDescription>
-                                             Once approved, this venture will be visible to all users on the marketplace.
+                                             Once approved, this listing will be visible to all users on the marketplace.
                                          </AlertDialogDescription>
                                      </AlertDialogHeader>
                                      <AlertDialogFooter>
@@ -163,7 +163,7 @@ const [reportReason, setReportReason] = useState('');
                              </AlertDialogTrigger>
                              <AlertDialogContent className="rounded-[2.5rem]">
                                  <AlertDialogHeader>
-                                     <AlertDialogTitle>Permanently delete this venture?</AlertDialogTitle>
+                                     <AlertDialogTitle>Permanently delete this listing?</AlertDialogTitle>
                                      <AlertDialogDescription>
                                          This action cannot be undone. This listing will be removed from all results.
                                      </AlertDialogDescription>
@@ -216,7 +216,7 @@ const [reportReason, setReportReason] = useState('');
                                     <h4 className="font-black text-xs uppercase tracking-widest text-primary flex items-center gap-2">
                                         <Briefcase className="h-4 w-4" /> What we do
                                     </h4>
-                                    <p className="text-sm text-muted-foreground leading-relaxed">{listing.experience || 'Proprietary venture strategy and branding.'}</p>
+                                    <p className="text-sm text-muted-foreground leading-relaxed">{listing.experience || 'Services and expertise provided by the creator.'}</p>
                                 </div>
                                 <div className="space-y-3">
                                     <h4 className="font-black text-xs uppercase tracking-widest text-primary flex items-center gap-2">
@@ -237,12 +237,12 @@ const [reportReason, setReportReason] = useState('');
                         </div>
                         <CardContent className="p-8 space-y-6">
                             <div className="space-y-3 bg-muted/30 p-6 rounded-2xl border">
-                                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-2">Venture Inclusions</p>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-2">What You Get</p>
                                 <ul className="text-sm space-y-3 font-medium">
-                                    <li className="flex items-center gap-3"><Check className="h-5 w-5 text-green-500 bg-green-500/10 p-1 rounded-full" /> IP & Ownership Rights</li>
-                                    <li className="flex items-center gap-3"><Check className="h-5 w-5 text-green-500 bg-green-500/10 p-1 rounded-full" /> Full Branding Kit</li>
-                                    <li className="flex items-center gap-3"><Check className="h-5 w-5 text-green-500 bg-green-500/10 p-1 rounded-full" /> 4-Week Launch Roadmap</li>
-                                    <li className="flex items-center gap-3"><MessageSquare className="h-5 w-5 text-accent bg-accent/10 p-1 rounded-full" /> Post-Sale Chat Support</li>
+                                    <li className="flex items-center gap-3"><Check className="h-5 w-5 text-green-500 bg-green-500/10 p-1 rounded-full" /> Access to Creator's Service</li>
+                                    <li className="flex items-center gap-3"><Check className="h-5 w-5 text-green-500 bg-green-500/10 p-1 rounded-full" /> Direct Communication with Creator</li>
+                                    <li className="flex items-center gap-3"><Check className="h-5 w-5 text-green-500 bg-green-500/10 p-1 rounded-full" /> Secure Escrow Payment</li>
+                                    <li className="flex items-center gap-3"><MessageSquare className="h-5 w-5 text-accent bg-accent/10 p-1 rounded-full" /> Post-Purchase Chat Support</li>
                                 </ul>
                             </div>
                             {isBuyer && listing.status === 'approved' && (
@@ -256,7 +256,7 @@ const [reportReason, setReportReason] = useState('');
                             <Dialog open={isCheckoutOpen} onOpenChange={setIsCheckoutOpen}>
                                 <DialogTrigger asChild>
                                     <Button disabled={listing.status !== 'approved'} className="w-full h-16 text-xl font-black rounded-2xl shadow-xl transition-all hover:scale-[1.02] active:scale-95 group">
-                                        {listing.status === 'approved' ? 'Acquire Venture' : 'Reviewing...'}
+                                        {listing.status === 'approved' ? 'Hire This Hustle' : 'Reviewing...'}
                                         {listing.status === 'approved' && <ArrowRight className="ml-2 h-6 w-6 transition-transform group-hover:translate-x-1" />}
                                     </Button>
                                 </DialogTrigger>

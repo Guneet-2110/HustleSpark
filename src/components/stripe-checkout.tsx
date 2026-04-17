@@ -69,7 +69,7 @@ export function StripeCheckout({ amount, listingId, sellerEmail, hustleName, buy
         <div className="w-full space-y-4">
             <div className="bg-primary/5 p-6 rounded-3xl border border-primary/10 space-y-3">
                 <div className="flex justify-between text-sm font-medium">
-                    <span className="text-muted-foreground uppercase tracking-widest text-[10px]">Venture Listing</span>
+                    <span className="text-muted-foreground uppercase tracking-widest text-[10px]">Service Price</span>
                     <span className="font-bold">${amount.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between text-sm font-medium">
@@ -77,7 +77,7 @@ export function StripeCheckout({ amount, listingId, sellerEmail, hustleName, buy
                     <span className="text-green-500 font-bold">Included</span>
                 </div>
                 <div className="border-t border-primary/10 pt-3 flex justify-between items-center">
-                    <span className="font-black text-lg">Total Acquisition</span>
+                    <span className="font-black text-lg">Total</span>
                     <span className="font-black text-2xl tracking-tighter">${amount.toLocaleString()}</span>
                 </div>
             </div>
@@ -94,7 +94,7 @@ export function StripeCheckout({ amount, listingId, sellerEmail, hustleName, buy
                     </>
                 ) : (
                     <div className="flex items-center">
-                        Proceed to Secure Checkout
+                        Purchase This Hustle
                         <ArrowRight className="ml-2 h-6 w-6 transition-transform group-hover:translate-x-1" />
                     </div>
                 )}

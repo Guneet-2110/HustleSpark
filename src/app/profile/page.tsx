@@ -153,7 +153,7 @@ export default function ProfilePage() {
             status: 'BUYER CONFIRMED DELIVERY ✅ - RELEASE FUNDS TO SELLER NOW',
         });
 
-        toast({ title: "Venture Acquired!", description: "Funds released to creator." });
+        toast({ title: "Purchase Confirmed!", description: "Funds released to creator." });
     } catch (e) {
         console.error("Confirm receipt error:", e);
         toast({ variant: 'destructive', title: "Update Failed" });
@@ -206,7 +206,7 @@ export default function ProfilePage() {
     <div className="container py-12">
         <div className="mb-12 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
             <div>
-                <h1 className="text-4xl font-black tracking-tight">Venture Dashboard</h1>
+                <h1 className="text-4xl font-black tracking-tight">My Hustle Dashboard</h1>
                 <p className="text-muted-foreground mt-1">Manage your intellectual property and acquisitions.</p>
             </div>
             <div className="flex flex-wrap gap-3">
@@ -273,13 +273,13 @@ export default function ProfilePage() {
                                 </div>
                             ))}
                         </div>
-                    ) : <div className="text-center py-10 italic text-muted-foreground">No ventures listed.</div>}
+                    ) : <div className="text-center py-10 italic text-muted-foreground">No services listed.</div>}
                 </CardContent>
             </Card>
 
             <Card className="shadow-xl rounded-[2.5rem] border-primary/10 overflow-hidden bg-card/50">
                 <CardHeader className="bg-primary/5 border-b">
-                    <CardTitle className="flex items-center gap-2 text-xl font-black"><Package className="h-6 w-6 text-primary"/> Venture Sales (Creator)</CardTitle>
+                    <CardTitle className="flex items-center gap-2 text-xl font-black"><Package className="h-6 w-6 text-primary"/> My Sales</CardTitle>
                 </CardHeader>
                 <CardContent className="p-6">
                     {isSalesLoading ? <Skeleton className="h-20 w-full" /> : sales && sales.length > 0 ? (
@@ -323,7 +323,7 @@ export default function ProfilePage() {
 
             <Card className="shadow-xl rounded-[2.5rem] border-accent/10 overflow-hidden bg-card/50">
                 <CardHeader className="bg-accent/5 border-b">
-                    <CardTitle className="flex items-center gap-2 text-xl font-black text-accent"><ShieldCheck className="h-6 w-6"/> Acquired Ventures (Buyer)</CardTitle>
+                    <CardTitle className="flex items-center gap-2 text-xl font-black text-accent"><ShieldCheck className="h-6 w-6"/> Purchased Hustles</CardTitle>
                 </CardHeader>
                 <CardContent className="p-6">
                     {isPurchasesLoading ? <Skeleton className="h-20 w-full" /> : purchases && purchases.length > 0 ? (
@@ -418,7 +418,7 @@ export default function ProfilePage() {
                                             <p className="font-bold text-sm truncate">{c.hustleName}</p>
                                         </div>
                                         <p className="text-[9px] font-black uppercase tracking-widest text-primary/60 mb-1">
-                                            Chat with: {otherParty || 'Venture Partner'}
+                                            Chat with: {otherParty || 'Hustle Partner'}
                                         </p>
                                         <p className="text-[10px] text-muted-foreground line-clamp-1 italic">{c.lastMessage}</p>
                                     </Link>
