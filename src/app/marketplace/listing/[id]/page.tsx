@@ -1,5 +1,6 @@
 "use client";
 
+import { createNotification } from '@/lib/notifications';
 import { useDoc, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { useParams, useRouter } from 'next/navigation';
@@ -49,6 +50,11 @@ const [reportReason, setReportReason] = useState('');
             try {
                 const docRef = doc(firestore, 'marketplace_listings', listingId);
                 await updateDoc(docRef, { status: 'approved' });
+                await createNotification(firestore, listing.userId, 'approved',
+                    '🚀 Listing Approved!',
+                    `Your listing "${listing.hustleName}" is now live on the marketplace!`,
+                    `/marketplace/listing/${listingId}`
+                );
                 toast({ title: "Listing Approved", description: "The listing is now live for all users." });
             } catch (error: any) {
                 toast({ variant: 'destructive', title: "Approval Failed", description: error.message });
@@ -131,7 +137,17 @@ const [reportReason, setReportReason] = useState('');
                 </Button>
                 
                 {(isAdmin || isOwner) && (
-                    <div className="flex gap-2">
+                    <div className="flex flex-col gap-3">
+                        {isAdmin && (
+                            <div className="bg-orange-500/10 border border-orange-500/20 rounded-2xl p-4 flex items-center gap-3">
+                                <ShieldCheck className="h-5 w-5 text-orange-500 shrink-0" />
+                                <div>
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-orange-500">Admin Only — PayPal Payout Email</p>
+                                    <p className="font-bold text-sm mt-0.5">{listing.paypalEmail || 'Not provided'}</p>
+                                </div>
+                            </div>
+                        )}
+                        <div className="flex gap-2">
                          {isAdmin && listing.status === 'pending_approval' && (
                              <AlertDialog>
                                  <AlertDialogTrigger asChild>
@@ -174,6 +190,7 @@ const [reportReason, setReportReason] = useState('');
                                  </AlertDialogFooter>
                              </AlertDialogContent>
                          </AlertDialog>
+                         </div>
                     </div>
                 )}
             </div>

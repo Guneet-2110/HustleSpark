@@ -1,5 +1,6 @@
 "use client";
 
+import { NotificationsBell } from './notifications-bell';
 import Link from 'next/link';
 import { Button } from './ui/button';
 import { useAuth } from '@/hooks/use-auth';
@@ -84,6 +85,7 @@ export function Header() {
           )}
         </nav>
         <div className="flex items-center justify-end space-x-2">
+          {isLoggedIn && <NotificationsBell />}
           <Button 
             variant="ghost" 
             size="sm"

@@ -1,6 +1,8 @@
 
 "use client";
 
+import { createNotification } from '@/lib/notifications';
+import { ReviewModal } from "@/components/review-modal";
 import { useAuth } from "@/hooks/use-auth";
 import { useFirestore, useCollection, useMemoFirebase, useUser } from "@/firebase";
 import { Button } from "@/components/ui/button";
@@ -24,6 +26,7 @@ export default function ProfilePage() {
   const { toast } = useToast();
   const [mounted, setMounted] = useState(false);
   const [isResetting, startReset] = useTransition();
+  const [reviewTransaction, setReviewTransaction] = useState<any>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -127,14 +130,19 @@ export default function ProfilePage() {
   };
 
   const handleMarkAsDelivered = async (transaction: any) => {
-      if (!firestore) return;
-      try {
-          await updateDoc(doc(firestore, 'transactions', transaction.id), { status: 'pending_confirmation' });
-          toast({ title: "Marked as Delivered", description: "The buyer has been notified." });
-      } catch (e) {
-          toast({ variant: 'destructive', title: "Update Failed" });
-      }
-  };
+    if (!firestore) return;
+    try {
+        await updateDoc(doc(firestore, 'transactions', transaction.id), { status: 'pending_confirmation' });
+        await createNotification(firestore, transaction.buyerId, 'delivery', 
+            '📦 Service Delivered!', 
+            `${transaction.hustleName} has been marked as delivered. Please confirm receipt.`,
+            '/profile'
+        );
+        toast({ title: "Marked as Delivered", description: "The buyer has been notified." });
+    } catch (e) {
+        toast({ variant: 'destructive', title: "Update Failed" });
+    }
+};
 
   const handleConfirmReceipt = async (transaction: any) => {
     if (!firestore) return;
@@ -153,7 +161,13 @@ export default function ProfilePage() {
             status: 'BUYER CONFIRMED DELIVERY ✅ - RELEASE FUNDS TO SELLER NOW',
         });
 
+        await createNotification(firestore, transaction.sellerId, 'confirmation',
+            '✅ Payment Released!',
+            `Buyer confirmed receipt of ${transaction.hustleName}. Your 90% payout is being processed.`,
+            '/profile'
+        );
         toast({ title: "Purchase Confirmed!", description: "Funds released to creator." });
+        setReviewTransaction(transaction);
     } catch (e) {
         console.error("Confirm receipt error:", e);
         toast({ variant: 'destructive', title: "Update Failed" });
@@ -177,6 +191,11 @@ export default function ProfilePage() {
             status: 'BUYER DISPUTED DELIVERY ❌ - DO NOT RELEASE FUNDS YET',
         });
 
+        await createNotification(firestore, transaction.sellerId, 'dispute',
+            '⚠️ Dispute Opened',
+            `A buyer has opened a dispute for ${transaction.hustleName}. Admin has been notified.`,
+            '/profile'
+        );
         toast({ variant: 'destructive', title: "Dispute Opened", description: "Admin notified." });
     } catch (e) {
         toast({ variant: 'destructive', title: "Update Failed" });
@@ -430,6 +449,11 @@ export default function ProfilePage() {
             </Card>
         </div>
       </div>
+      <ReviewModal
+        open={!!reviewTransaction}
+        onOpenChange={(open) => { if (!open) setReviewTransaction(null); }}
+        transaction={reviewTransaction}
+      />
     </div>
   );
 }

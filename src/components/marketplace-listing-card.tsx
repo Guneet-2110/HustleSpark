@@ -4,7 +4,10 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, ShoppingCart, Percent, User, Calendar, ArrowRight } from 'lucide-react';
+import { MapPin, ShoppingCart, Percent, User, Calendar, ArrowRight, Star } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useFirestore } from '@/firebase';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 import Image from 'next/image';
 import Link from 'next/link';
 import placeholders from '@/app/lib/placeholder-images.json';
@@ -27,9 +30,27 @@ interface MarketplaceListingCardProps {
 
 export function MarketplaceListingCard({ listing }: MarketplaceListingCardProps) {
     const flyerUrl = listing.flyerUrl || placeholders.listings.default.url;
+    const firestore = useFirestore();
+    const [avgRating, setAvgRating] = useState<number | null>(null);
+    const [reviewCount, setReviewCount] = useState(0);
     const dateStr = listing.createdAt?.seconds 
         ? new Date(listing.createdAt.seconds * 1000).toLocaleDateString()
         : 'Recently listed';
+
+    useEffect(() => {
+        if (!firestore || !listing.userId) return;
+        const fetchRating = async () => {
+            const snap = await getDocs(
+                query(collection(firestore, 'reviews'), where('sellerId', '==', listing.userId))
+            );
+            if (snap.size > 0) {
+                const total = snap.docs.reduce((sum, doc) => sum + (doc.data().rating || 0), 0);
+                setAvgRating(Math.round((total / snap.size) * 10) / 10);
+                setReviewCount(snap.size);
+            }
+        };
+        fetchRating();
+    }, [firestore, listing.userId]);
 
     return (
         <Card className="flex flex-col h-full overflow-hidden hover:shadow-2xl transition-all duration-500 group border-primary/10 bg-card/50 backdrop-blur-sm">
@@ -69,11 +90,18 @@ export function MarketplaceListingCard({ listing }: MarketplaceListingCardProps)
                 <div className="w-full flex flex-col gap-4 pt-4">
                     <div className="flex items-center justify-between text-[10px] text-muted-foreground uppercase tracking-widest font-bold">
                         <span className="flex items-center gap-1"><Calendar className="h-3 w-3" /> {dateStr}</span>
-                        <span className="flex items-center gap-1"><User className="h-3 w-3" /> Expert Creator</span>
+                        {avgRating !== null ? (
+                            <span className="flex items-center gap-1 text-yellow-500">
+                                <Star className="h-3 w-3 fill-yellow-500" /> 
+                                {avgRating} ({reviewCount})
+                            </span>
+                        ) : (
+                            <span className="flex items-center gap-1"><User className="h-3 w-3" /> New Creator</span>
+                        )}
                     </div>
                     <Button asChild className="w-full h-12 shadow-xl group-hover:shadow-primary/20 transition-all active:scale-95 touch-manipulation font-bold">
                         <Link href={`/marketplace/listing/${listing.id}`}>
-                            View Full Venture
+                        View Listing
                             <ArrowRight className="ml-2 h-4 w-4" />
                         </Link>
                     </Button>

@@ -94,14 +94,16 @@ const [showEarningsInput, setShowEarningsInput] = useState(false);
     // Sell Form
     const [sellPrice, setSellPrice] = useState('100');
     const [sellCategory, setSellCategory] = useState('Creative Services');
-    const [sellCountry, setSellCountry] = useState('United States');
-    const [sellState, setSellState] = useState('TX');
+    const [sellCountry, setSellCountry] = useState('');
+    const [sellState, setSellState] = useState('');
     const [sellCity, setSellCity] = useState('');
     const [sellPaypal, setSellPaypal] = useState('');
     const [sellAboutUs, setSellAboutUs] = useState('');
     const [sellWhatWeDo, setSellWhatWeDo] = useState('');
     const [sellOurGoal, setSellOurGoal] = useState('');
-    const [sellWorkFrom, setSellWorkFrom] = useState('Remote');
+    const [sellWorkFrom, setSellWorkFrom] = useState('');
+    const [isGeneratingCopy, setIsGeneratingCopy] = useState(false);
+    const [confirmedPaypal, setConfirmedPaypal] = useState(false);
     
     const isSaved = hustle ? isHustleSaved(hustle.name) : false;
     const weeksAllowed = (() => {
@@ -163,8 +165,8 @@ const [showEarningsInput, setShowEarningsInput] = useState(false);
         if (showSellModal && hustle) {
             if (!sellPaypal && firebaseUser?.email) setSellPaypal(firebaseUser.email);
             
-            // Auto-generate AI marketplace copy if not already filled
             if (!sellAboutUs && !sellWhatWeDo && !sellOurGoal) {
+                setIsGeneratingCopy(true);
                 generateMarketplaceCopyAction({
                     hustleName: hustle.name,
                     hustleDescription: hustle.description,
@@ -176,7 +178,7 @@ const [showEarningsInput, setShowEarningsInput] = useState(false);
                         setSellWhatWeDo(result.data.whatWeDo);
                         setSellOurGoal(result.data.ourGoal);
                     }
-                });
+                }).finally(() => setIsGeneratingCopy(false));
             }
         }
     }, [showSellModal, hustle, firebaseUser, sellAboutUs, sellWhatWeDo, sellOurGoal, sellPaypal]);
@@ -420,9 +422,25 @@ const [showEarningsInput, setShowEarningsInput] = useState(false);
             toast({ variant: 'destructive', title: 'Payout Email Required', description: 'Please enter a valid PayPal email address to receive your 90% payout.' });
             return;
         }
+        if (!confirmedPaypal) {
+            toast({ variant: 'destructive', title: 'PayPal Confirmation Required', description: 'Please confirm you have an active PayPal account with this email.' });
+            return;
+        }
 
-        if (!sellCity) {
-            toast({ variant: 'destructive', title: 'Location Required', description: 'Please provide a city for your listing.' });
+        if (!sellCity || !sellState || !sellCountry) {
+            toast({ variant: 'destructive', title: 'Location Required', description: 'Please fill in Country, State and City.' });
+            return;
+        }
+        if (!sellAboutUs || !sellWhatWeDo || !sellOurGoal) {
+            toast({ variant: 'destructive', title: 'Description Required', description: 'Please fill in About Us, What We Do and Our Goal.' });
+            return;
+        }
+        if (!sellWorkFrom) {
+            toast({ variant: 'destructive', title: 'Service Type Required', description: 'Please select how you deliver your service.' });
+            return;
+        }
+        if (!sellPrice || parseFloat(sellPrice) <= 0) {
+            toast({ variant: 'destructive', title: 'Price Required', description: 'Please set a price for your service.' });
             return;
         }
 
@@ -1022,45 +1040,66 @@ const [showEarningsInput, setShowEarningsInput] = useState(false);
                 </DialogContent>
             </Dialog>
 
-            <Dialog open={showSellModal} onOpenChange={setShowSellModal}>
+            <Dialog open={showSellModal} onOpenChange={(open) => { setShowSellModal(open); if (!open) setConfirmedPaypal(false); }}>
                 <DialogContent className="sm:max-w-2xl rounded-[2.5rem]">
                     <DialogHeader>
                         <DialogTitle className="text-2xl font-black">Marketplace Launchpad</DialogTitle>
                         <DialogDescription>AI has pre-filled your strategy. Review and submit for admin approval.</DialogDescription>
                     </DialogHeader>
                     <div className="space-y-6 py-4 max-h-[60vh] overflow-y-auto px-1">
+                        {isGeneratingCopy && (
+                            <div className="flex items-center justify-center gap-3 p-4 bg-primary/5 rounded-2xl border border-primary/20">
+                                <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                                <p className="text-sm font-bold text-primary">AI is writing your listing description...</p>
+                            </div>
+                        )}
                         <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2"><Label className="font-bold">Sale Price ($)</Label><Input type="number" className="h-12 rounded-xl font-bold" value={sellPrice} onChange={(e) => setSellPrice(e.target.value)} /></div>
-                            <div className="space-y-2"><Label className="font-bold">Operation</Label>
+                            <div className="space-y-2">
+                                <Label className="font-bold">Sale Price ($) *</Label>
+                                <Input type="number" className="h-12 rounded-xl font-bold" placeholder="e.g. 50" value={sellPrice} onChange={(e) => setSellPrice(e.target.value)} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="font-bold">How do you deliver? *</Label>
                                 <Select value={sellWorkFrom} onValueChange={setSellWorkFrom}>
-                                    <SelectTrigger className="h-12 rounded-xl"><SelectValue /></SelectTrigger>
-                                    <SelectContent><SelectItem value="Remote">Remote Operation</SelectItem><SelectItem value="Local">Local Delivery</SelectItem></SelectContent>
+                                    <SelectTrigger className="h-12 rounded-xl"><SelectValue placeholder="Select..." /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="Online">Online (via chat/email)</SelectItem>
+                                        <SelectItem value="In-Person">In-Person (local only)</SelectItem>
+                                        <SelectItem value="Both">Both Online & In-Person</SelectItem>
+                                    </SelectContent>
                                 </Select>
                             </div>
                         </div>
-
                         <div className="grid grid-cols-3 gap-4">
-                             <div className="space-y-2"><Label className="font-bold">Country</Label><Input className="h-12 rounded-xl" value={sellCountry} onChange={(e) => setSellCountry(e.target.value)} /></div>
-                             <div className="space-y-2"><Label className="font-bold">State/Prov</Label><Input className="h-12 rounded-xl" value={sellState} onChange={(e) => setSellState(e.target.value)} /></div>
-                             <div className="space-y-2"><Label className="font-bold text-primary">City*</Label><Input className="h-12 rounded-xl border-primary/50" placeholder="e.g., Austin" value={sellCity} onChange={(e) => setSellCity(e.target.value)} /></div>
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label className="font-bold flex items-center gap-2"><Globe className="h-4 w-4 text-primary" /> About us</Label>
-                            <Textarea className="rounded-xl min-h-[100px]" placeholder="Tell the world who you are..." value={sellAboutUs} onChange={(e) => setSellAboutUs(e.target.value)} />
+                             <div className="space-y-2"><Label className="font-bold">Country *</Label><Input className="h-12 rounded-xl" placeholder="e.g. United States" value={sellCountry} onChange={(e) => setSellCountry(e.target.value)} /></div>
+                             <div className="space-y-2"><Label className="font-bold">State *</Label><Input className="h-12 rounded-xl" placeholder="e.g. TX" value={sellState} onChange={(e) => setSellState(e.target.value)} /></div>
+                             <div className="space-y-2"><Label className="font-bold text-primary">City *</Label><Input className="h-12 rounded-xl border-primary/50" placeholder="e.g., Austin" value={sellCity} onChange={(e) => setSellCity(e.target.value)} /></div>
                         </div>
                         <div className="space-y-2">
-                            <Label className="font-bold flex items-center gap-2"><Briefcase className="h-4 w-4 text-primary" /> What we do</Label>
-                            <Textarea className="rounded-xl min-h-[100px]" placeholder="Explain your services and expertise..." value={sellWhatWeDo} onChange={(e) => setSellWhatWeDo(e.target.value)} />
+                            <Label className="font-bold flex items-center gap-2"><Globe className="h-4 w-4 text-primary" /> About us *</Label>
+                            <div className="relative">
+                                <Textarea className="rounded-xl min-h-[100px]" placeholder="Tell the world who you are..." value={sellAboutUs} onChange={(e) => setSellAboutUs(e.target.value)} disabled={isGeneratingCopy} />
+                                {isGeneratingCopy && <div className="absolute inset-0 bg-background/50 rounded-xl flex items-center justify-center"><Loader2 className="h-5 w-5 animate-spin text-primary" /></div>}
+                            </div>
                         </div>
                         <div className="space-y-2">
-                            <Label className="font-bold flex items-center gap-2"><Heart className="h-4 w-4 text-primary" /> Our goal</Label>
-                            <Textarea className="rounded-xl min-h-[100px]" placeholder="What is the mission of this venture?" value={sellOurGoal} onChange={(e) => setSellOurGoal(e.target.value)} />
+                            <Label className="font-bold flex items-center gap-2"><Briefcase className="h-4 w-4 text-primary" /> What we do *</Label>
+                            <div className="relative">
+                                <Textarea className="rounded-xl min-h-[100px]" placeholder="Explain your services and expertise..." value={sellWhatWeDo} onChange={(e) => setSellWhatWeDo(e.target.value)} disabled={isGeneratingCopy} />
+                                {isGeneratingCopy && <div className="absolute inset-0 bg-background/50 rounded-xl flex items-center justify-center"><Loader2 className="h-5 w-5 animate-spin text-primary" /></div>}
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                            <Label className="font-bold flex items-center gap-2"><Heart className="h-4 w-4 text-primary" /> Our goal *</Label>
+                            <div className="relative">
+                                <Textarea className="rounded-xl min-h-[100px]" placeholder="What is the mission of this hustle?" value={sellOurGoal} onChange={(e) => setSellOurGoal(e.target.value)} disabled={isGeneratingCopy} />
+                                {isGeneratingCopy && <div className="absolute inset-0 bg-background/50 rounded-xl flex items-center justify-center"><Loader2 className="h-5 w-5 animate-spin text-primary" /></div>}
+                            </div>
                         </div>
                         
-                        <div className="space-y-2 bg-primary/5 p-4 rounded-2xl border border-primary/20">
+                        <div className="space-y-3 bg-orange-500/5 p-4 rounded-2xl border border-orange-500/20">
                             <Label className="font-bold flex items-center gap-2">
-                                <CircleDollarSign className="h-4 w-4 text-primary" /> 
+                                <CircleDollarSign className="h-4 w-4 text-orange-500" /> 
                                 Payout Email (PayPal) *
                             </Label>
                             <Input 
@@ -1069,9 +1108,24 @@ const [showEarningsInput, setShowEarningsInput] = useState(false);
                                 value={sellPaypal} 
                                 onChange={(e) => setSellPaypal(e.target.value)} 
                             />
-                            <p className="text-[10px] text-muted-foreground font-medium">
-                                ⚠️ This must be your real PayPal email. When your venture sells, 90% of the sale price will be sent here manually within 3 business days after buyer confirms receipt.
-                            </p>
+                            <div className="bg-orange-500/10 rounded-xl p-3 space-y-1">
+                                <p className="text-xs font-bold text-orange-600">⚠️ Important — Read Before Submitting</p>
+                                <p className="text-[11px] text-muted-foreground leading-relaxed">
+                                    Your 90% payout will be sent to this PayPal email within 3 business days after the buyer confirms receipt. 
+                                    If you don't have PayPal yet, <a href="https://paypal.com/signup" target="_blank" rel="noopener noreferrer" className="text-orange-500 font-bold underline">create a free account here</a> before submitting.
+                                </p>
+                            </div>
+                            <div className="flex items-start gap-3 p-3 bg-background rounded-xl border">
+                                <Checkbox 
+                                    id="confirm-paypal"
+                                    checked={confirmedPaypal}
+                                    onCheckedChange={(checked) => setConfirmedPaypal(checked === true)}
+                                    className="mt-0.5"
+                                />
+                                <label htmlFor="confirm-paypal" className="text-xs font-bold cursor-pointer leading-relaxed">
+                                    I confirm I have an active PayPal account with this email address and can receive payments.
+                                </label>
+                            </div>
                         </div>
                         <div className="pt-4 border-t space-y-4">
                              <Label className="font-bold flex items-center gap-2"><Eye className="h-4 w-4 text-muted-foreground" /> Asset Preview</Label>
