@@ -223,6 +223,17 @@ export default function ProfilePage() {
 
   return (
     <div className="container py-12">
+        {/* MOBILE APP COMING SOON BANNER */}
+        <div className="mb-6 flex items-center justify-between gap-4 bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20 rounded-2xl px-6 py-4">
+            <div className="flex items-center gap-3">
+                <span className="h-2 w-2 bg-orange-500 rounded-full animate-pulse shrink-0" />
+                <div>
+                    <p className="font-black text-sm">📱 HustleSpark Mobile App — Coming Soon</p>
+                    <p className="text-xs text-muted-foreground font-medium">Available on iOS & Android. Add to your home screen now for a preview experience.</p>
+                </div>
+            </div>
+            <span className="text-[10px] font-black uppercase tracking-widest bg-orange-500 text-white px-3 py-1 rounded-full shrink-0">Coming Soon</span>
+        </div>
         <div className="mb-12 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
             <div>
                 <h1 className="text-4xl font-black tracking-tight">My Hustle Dashboard</h1>

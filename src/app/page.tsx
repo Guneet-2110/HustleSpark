@@ -136,64 +136,30 @@ export default function Home() {
         </section>
 
         <section className="w-full py-20 bg-muted/30">
-            <div className="container grid items-center justify-center gap-4 px-4 text-center md:px-6 animate-fade-in-down">
-                <div className="space-y-3">
-                <h2 className="text-3xl font-black tracking-tighter md:text-5xl">
-                    Built by Real Hustlers
-                </h2>
-                <p className="mx-auto max-w-[600px] text-muted-foreground text-lg font-medium">
-                    Thousands of creators have launched and exited their ventures using our tools.
-                </p>
+            <div className="container px-4 md:px-6 animate-fade-in-down">
+                <div className="text-center space-y-3 mb-16">
+                    <h2 className="text-3xl font-black tracking-tighter md:text-5xl">Built for Teen Entrepreneurs</h2>
+                    <p className="mx-auto max-w-[600px] text-muted-foreground text-lg font-medium">
+                        Everything you need to go from idea to income — all in one place.
+                    </p>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mt-12">
-                    <Card className="rounded-[2.5rem] shadow-lg border-none bg-background text-left p-2">
-                        <CardHeader>
-                             <div className="flex items-center mb-4">
-                                <Avatar1 />
-                                <div className="ml-4">
-                                    <p className="font-black">Jane D.</p>
-                                    <div className="flex text-yellow-400">
-                                       {[...Array(5)].map((_, i) => <Star key={i} className="w-4 h-4 fill-current"/>)}
-                                    </div>
-                                </div>
-                            </div>
-                        </CardHeader>
-                        <CardContent>
-                            <p className="text-muted-foreground text-sm leading-relaxed italic">"I had a passion for design but no marketing skills. HustleSpark gave me the exact prompts and a killer logo that got me noticed. I landed my first paying client within 48 hours!"</p>
-                        </CardContent>
-                    </Card>
-                    <Card className="rounded-[2.5rem] shadow-lg border-none bg-background text-left p-2">
-                         <CardHeader>
-                            <div className="flex items-center mb-4">
-                                <Avatar2 />
-                                <div className="ml-4">
-                                    <p className="font-black">Mike R.</p>
-                                     <div className="flex text-yellow-400">
-                                       {[...Array(5)].map((_, i) => <Star key={i} className="w-4 h-4 fill-current"/>)}
-                                    </div>
-                                </div>
-                            </div>
-                        </CardHeader>
-                        <CardContent>
-                           <p className="text-muted-foreground text-sm leading-relaxed italic">"The 4-week launch tracker was a game-changer. It broke down everything into simple daily tasks. I sold my first venture on the marketplace for $450 in just 3 weeks."</p>
-                        </CardContent>
-                    </Card>
-                     <Card className="rounded-[2.5rem] shadow-lg border-none bg-background text-left p-2">
-                        <CardHeader>
-                           <div className="flex items-center mb-4">
-                                <Avatar3 />
-                                <div className="ml-4">
-                                    <p className="font-black">Alex P.</p>
-                                    <div className="flex text-yellow-400">
-                                       {[...Array(5)].map((_, i) => <Star key={i} className="w-4 h-4 fill-current"/>)}
-                                    </div>
-                                </div>
-                            </div>
-                        </CardHeader>
-                        <CardContent>
-                           <p className="text-muted-foreground text-sm leading-relaxed italic">"I went premium for the Live Hustle Coach and it's worth every penny. Sparky kept me motivated and helped me refine my pricing for maximum profit."</p>
-                        </CardContent>
-                    </Card>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                    <div className="bg-background rounded-[2rem] p-8 text-center shadow-lg border border-primary/10">
+                        <p className="text-4xl font-black text-primary mb-2">AI</p>
+                        <p className="text-sm font-bold text-muted-foreground">Powered Hustle Ideas</p>
+                    </div>
+                    <div className="bg-background rounded-[2rem] p-8 text-center shadow-lg border border-primary/10">
+                        <p className="text-4xl font-black text-primary mb-2">16</p>
+                        <p className="text-sm font-bold text-muted-foreground">Week Launch Roadmap</p>
+                    </div>
+                    <div className="bg-background rounded-[2rem] p-8 text-center shadow-lg border border-primary/10">
+                        <p className="text-4xl font-black text-primary mb-2">90%</p>
+                        <p className="text-sm font-bold text-muted-foreground">Payout to Sellers</p>
+                    </div>
+                    <div className="bg-background rounded-[2rem] p-8 text-center shadow-lg border border-primary/10">
+                        <p className="text-4xl font-black text-primary mb-2">🔒</p>
+                        <p className="text-sm font-bold text-muted-foreground">Escrow Protected</p>
+                    </div>
                 </div>
             </div>
         </section>
@@ -287,12 +253,46 @@ export default function Home() {
             </div>
         </section>
         
+        {/* MOBILE APP COMING SOON */}
+        <section className="w-full py-20 border-t bg-gradient-to-br from-primary/5 to-accent/5">
+          <div className="container px-4 md:px-6">
+            <div className="flex flex-col items-center text-center space-y-6">
+              <div className="inline-flex items-center gap-2 bg-primary/10 border border-primary/20 rounded-full px-4 py-1.5">
+                <span className="h-2 w-2 bg-orange-500 rounded-full animate-pulse" />
+                <span className="text-xs font-black uppercase tracking-widest text-primary">Coming Soon</span>
+              </div>
+              <h2 className="text-4xl font-black tracking-tighter md:text-5xl">HustleSpark Mobile App</h2>
+              <p className="max-w-[600px] text-muted-foreground text-lg font-medium">
+                Take your hustle anywhere. The HustleSpark app is coming to iOS and Android — manage your ventures, chat with buyers, and track earnings from your pocket.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 mt-4">
+                <div className="flex items-center gap-3 bg-background border-2 border-border rounded-2xl px-6 py-4 opacity-60 cursor-not-allowed">
+                  <svg className="h-8 w-8" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+                  </svg>
+                  <div className="text-left">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Coming Soon</p>
+                    <p className="font-black text-sm">App Store</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 bg-background border-2 border-border rounded-2xl px-6 py-4 opacity-60 cursor-not-allowed">
+                  <svg className="h-8 w-8" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M3.18 23.76c.3.17.63.24.97.21l13.2-7.62-2.82-2.82-11.35 10.23zM.54 1.18C.2 1.57 0 2.17 0 2.96v18.08c0 .79.2 1.39.54 1.78l.09.09 10.13-10.13v-.24L.63 1.09l-.09.09zM20.65 10.23l-2.85-1.65-3.18 3.18 3.18 3.18 2.88-1.66c.82-.47.82-1.24-.03-1.71v.66zM4.15.24L17.35 7.86l-2.82 2.82L3.18.45C3.48.27 3.84.23 4.15.24z"/>
+                  </svg>
+                  <div className="text-left">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Coming Soon</p>
+                    <p className="font-black text-sm">Google Play</p>
+                  </div>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground font-medium">In the meantime, add HustleSpark to your home screen from your browser for a native app experience.</p>
+            </div>
+          </div>
+        </section>
+
         <section className="w-full py-20 border-t">
           <div className="container grid items-center justify-center gap-4 px-4 text-center md:px-6 animate-fade-in-down">
             <div className="space-y-4">
-              <h2 className="text-4xl font-black tracking-tighter md:text-6xl">
-                Ready to Spark Your Future?
-              </h2>
               <p className="mx-auto max-w-[600px] text-muted-foreground text-lg font-medium">
                 Stop dreaming and start doing. Access the AI engine that turns interests into high-margin ventures.
               </p>
@@ -366,7 +366,7 @@ export default function Home() {
             <div className="pt-8 border-t border-primary/10 flex flex-col md:flex-row justify-between items-center gap-6">
                 <p className="text-xs text-muted-foreground font-bold">&copy; 2026 HustleSpark. Built with ❤️ by real hustlers.</p>
                 <p className="text-[10px] text-muted-foreground/40 max-w-lg text-center md:text-right font-medium leading-relaxed italic">
-                    Testimonials represent potential results. Success requires dedicated effort. Every purchase on our marketplace is escrow-protected for buyer security.
+                    Every purchase on our marketplace is escrow-protected for buyer security. Results may vary based on effort and market conditions.
                 </p>
             </div>
         </div>
