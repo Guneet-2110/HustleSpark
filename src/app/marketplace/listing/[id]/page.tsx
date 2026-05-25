@@ -2,15 +2,17 @@
 
 import { createNotification } from '@/lib/notifications';
 import { useDoc, useFirestore, useMemoFirebase, useUser } from '@/firebase';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { useState, useTransition, useEffect } from 'react';
 import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { useParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, ArrowLeft, Rocket, Check, MessageSquare, ArrowRight, Briefcase, Target, Globe, Heart, ShieldCheck, Loader2, Trash2, Flag } from 'lucide-react';
+import { MapPin, ArrowLeft, Rocket, Check, MessageSquare, ArrowRight, Briefcase, Target, Globe, Heart, ShieldCheck, Loader2, Trash2, Flag, Star } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';import Image from 'next/image';
-import { useState, useTransition } from 'react';
+import { Label } from '@/components/ui/label';
+import Image from 'next/image';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { StripeCheckout } from '@/components/stripe-checkout';
@@ -43,6 +45,25 @@ const [reportReason, setReportReason] = useState('');
 
     // Site Administrator privileges check
     const isAdmin = user?.email === 'guneet.ar2010@gmail.com' || user?.email === 'tester@gmail.com';
+
+    const [reviews, setReviews] = useState<any[]>([]);
+    const [avgRating, setAvgRating] = useState<number | null>(null);
+
+    useEffect(() => {
+        if (!firestore || !listingId) return;
+        const fetchReviews = async () => {
+            const snap = await getDocs(
+                query(collection(firestore, 'reviews'), where('listingId', '==', listingId))
+            );
+            if (snap.size > 0) {
+                const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                setReviews(data);
+                const total = data.reduce((sum, r) => sum + (r.rating || 0), 0);
+                setAvgRating(Math.round((total / data.length) * 10) / 10);
+            }
+        };
+        fetchReviews();
+    }, [firestore, listingId]);
 
     const handleApprove = () => {
         if (!firestore || !listingId || !isAdmin) return;
@@ -128,6 +149,7 @@ const [reportReason, setReportReason] = useState('');
     const flyerUrl = listing.flyerUrl || placeholders.listings.default.url;
     const isOwner = listing.userId === user?.uid;
     const isBuyer = !isOwner && !isAdmin;
+    
 
     return (
         <div className="container py-12 max-w-6xl">
@@ -242,6 +264,50 @@ const [reportReason, setReportReason] = useState('');
                                     <p className="text-sm text-muted-foreground leading-relaxed">{listing.whoIHelp || 'To empower new entrepreneurs with elite starting assets.'}</p>
                                 </div>
                             </div>
+                            </CardContent>
+                    </Card>
+
+                    {/* REVIEWS SECTION */}
+                    <Card className="rounded-[2.5rem] shadow-lg border-primary/10 overflow-hidden">
+                        <CardHeader className="bg-muted/30 border-b">
+                            <CardTitle className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <Star className="h-5 w-5 text-yellow-500 fill-yellow-500" />
+                                    <span>Reviews</span>
+                                    {avgRating && <span className="text-lg font-black text-yellow-500">{avgRating}</span>}
+                                </div>
+                                <span className="text-xs font-bold text-muted-foreground">{reviews.length} review{reviews.length !== 1 ? 's' : ''}</span>
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-6">
+                            {reviews.length === 0 ? (
+                                <div className="text-center py-8">
+                                    <Star className="h-8 w-8 mx-auto text-muted-foreground/20 mb-2" />
+                                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">No reviews yet</p>
+                                    <p className="text-xs text-muted-foreground mt-1">Be the first to purchase and review!</p>
+                                </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    {reviews.map((review) => (
+                                        <div key={review.id} className="p-4 bg-muted/30 rounded-2xl border space-y-2">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-1">
+                                                    {[1,2,3,4,5].map((star) => (
+                                                        <Star key={star} className={`h-4 w-4 ${star <= review.rating ? 'text-yellow-500 fill-yellow-500' : 'text-muted-foreground/30'}`} />
+                                                    ))}
+                                                </div>
+                                                <span className="text-[10px] text-muted-foreground font-bold">
+                                                    {review.createdAt?.toDate ? new Date(review.createdAt.toDate()).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : ''}
+                                                </span>
+                                            </div>
+                                            {review.review && (
+                                                <p className="text-sm text-muted-foreground leading-relaxed italic">"{review.review}"</p>
+                                            )}
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">{review.buyerEmail?.split('@')[0]}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </CardContent>
                     </Card>
                 </div>
