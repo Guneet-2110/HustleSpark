@@ -1,5 +1,12 @@
 "use client";
 
+import { useState } from 'react';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { useUser } from '@/firebase';
+import { useToast } from '@/hooks/use-toast';
+import { Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -11,6 +18,41 @@ interface EscrowTrustDialogProps {
 }
 
 export function EscrowTrustDialog({ open, onOpenChange }: EscrowTrustDialogProps) {
+    const { user } = useUser();
+    const { toast } = useToast();
+    const [showContact, setShowContact] = useState(false);
+    const [issue, setIssue] = useState('');
+    const [contactEmail, setContactEmail] = useState('');
+    const [isSending, setIsSending] = useState(false);
+
+    const handleSendIssue = async () => {
+        if (!issue.trim() || !contactEmail.trim()) {
+            toast({ variant: 'destructive', title: 'All fields required' });
+            return;
+        }
+        setIsSending(true);
+        try {
+            const { getFunctions, httpsCallable } = await import('firebase/functions');
+            const functions = getFunctions();
+            const notify = httpsCallable(functions, 'sendSaleNotification');
+            await notify({
+                hustleName: 'SUPPORT REQUEST',
+                totalAmount: 0,
+                sellerEmail: 'guneet.ar2010@gmail.com',
+                buyerEmail: contactEmail,
+                listingId: 'support',
+                status: `🆘 SUPPORT ISSUE FROM ${contactEmail}: ${issue}`,
+            });
+            toast({ title: 'Message Sent!', description: "We'll get back to you within 24 hours." });
+            setShowContact(false);
+            setIssue('');
+            onOpenChange(false);
+        } catch (e) {
+            toast({ variant: 'destructive', title: 'Failed to send', description: 'Please email us directly at guneet.ar2010@gmail.com' });
+        } finally {
+            setIsSending(false);
+        }
+    };
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-xl rounded-[2.5rem] p-0 overflow-hidden border-none shadow-2xl">
@@ -71,9 +113,34 @@ export function EscrowTrustDialog({ open, onOpenChange }: EscrowTrustDialogProps
                                     🛡️ Every purchase is manually reviewed by the HustleSpark team before funds are released. If there's ever a dispute, we step in to make it right.
                                 </p>
                             </div>
-                            <p className="text-xs text-center text-muted-foreground italic">
-                                Not satisfied? Contact us at <span className="text-primary font-bold">hustlespark.net/support</span> within 7 days and we'll make it right.
-                            </p>
+                            {!showContact ? (
+                                <p className="text-xs text-center text-muted-foreground italic">
+                                    Not satisfied?{' '}
+                                    <button onClick={() => { setContactEmail(user?.email || ''); setShowContact(true); }} className="text-primary font-bold hover:underline">
+                                        Contact us
+                                    </button>
+                                    {' '}within 7 days and we'll make it right.
+                                </p>
+                            ) : (
+                                <div className="space-y-3 bg-primary/5 p-4 rounded-2xl border border-primary/10">
+                                    <p className="text-sm font-black">Contact Support</p>
+                                    <div className="space-y-1">
+                                        <Label className="text-xs font-bold">Your Email</Label>
+                                        <Input className="h-10 rounded-xl text-sm" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} placeholder="your@email.com" />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <Label className="text-xs font-bold">Describe Your Issue</Label>
+                                        <Textarea className="rounded-xl text-sm min-h-[80px]" value={issue} onChange={(e) => setIssue(e.target.value)} placeholder="What went wrong? Include your transaction details..." />
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <Button variant="ghost" size="sm" className="rounded-xl" onClick={() => setShowContact(false)}>Cancel</Button>
+                                        <Button size="sm" className="rounded-xl font-bold flex-1" onClick={handleSendIssue} disabled={isSending}>
+                                            {isSending ? <Loader2 className="animate-spin h-4 w-4 mr-2" /> : null}
+                                            Send to Support
+                                        </Button>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </ScrollArea>
 
@@ -81,7 +148,7 @@ export function EscrowTrustDialog({ open, onOpenChange }: EscrowTrustDialogProps
                         <Button className="w-full h-14 rounded-2xl font-black text-lg shadow-xl" onClick={() => onOpenChange(false)}>
                             Got it, thanks!
                         </Button>
-                    </DialogFooter>
+                    </DialogFooter>  
                 </div>
             </DialogContent>
         </Dialog>
