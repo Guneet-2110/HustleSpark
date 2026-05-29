@@ -24,9 +24,17 @@ const signupSchema = z.object({
     email: z.string().email({ message: 'Please enter a valid email address.' }),
     password: z.string().min(8, { message: 'Password must be at least 8 characters.' }),
     confirmPassword: z.string(),
+    dateOfBirth: z.string().min(1, { message: 'Date of birth is required.' }),
 }).refine((data) => data.password === data.confirmPassword, {
     message: "Passwords don't match",
     path: ["confirmPassword"],
+}).refine((data) => {
+    if (!data.dateOfBirth) return false;
+    const age = Math.floor((Date.now() - new Date(data.dateOfBirth).getTime()) / (1000 * 60 * 60 * 24 * 365.25));
+    return age >= 13;
+}, {
+    message: "You must be at least 13 years old to use HustleSpark.",
+    path: ["dateOfBirth"],
 });
 
 
@@ -52,7 +60,7 @@ function LoginPageContent() {
   
   const signupForm = useForm<z.infer<typeof signupSchema>>({
     resolver: zodResolver(signupSchema),
-    defaultValues: { email: '', password: '', confirmPassword: '' },
+    defaultValues: { email: '', password: '', confirmPassword: '', dateOfBirth: '' },
   });
 
   // Global observer to redirect on successful auth
@@ -93,9 +101,14 @@ async function onForgotPassword() {
 }
 
 
-  async function onSignup(values: z.infer<typeof signupSchema>) {
+async function onSignup(values: z.infer<typeof signupSchema>) {
     setAuthError(null);
-    const result = await signup(values.email, values.password);
+    const age = Math.floor((Date.now() - new Date(values.dateOfBirth).getTime()) / (1000 * 60 * 60 * 24 * 365.25));
+    if (age < 13) {
+        setAuthError("You must be at least 13 years old to use HustleSpark.");
+        return;
+    }
+    const result = await signup(values.email, values.password, { dateOfBirth: values.dateOfBirth, isMinor: age < 18 });
     if (result === "VERIFY_EMAIL") {
         setActiveForm('login');
         loginForm.setValue('email', values.email);
@@ -275,6 +288,20 @@ async function onForgotPassword() {
                                         </div>
                                     </FormControl>
                                     <FormMessage />
+                                    </FormItem>
+                                )}
+                                />
+                                <FormField
+                                control={signupForm.control}
+                                name="dateOfBirth"
+                                render={({ field }) => (
+                                    <FormItem>
+                                    <FormLabel className="font-bold">Date of Birth</FormLabel>
+                                    <FormControl>
+                                        <Input type="date" {...field} className="h-12 rounded-xl bg-background/50" max={new Date().toISOString().split('T')[0]} />
+                                    </FormControl>
+                                    <FormMessage />
+                                    <p className="text-[10px] text-muted-foreground font-medium">You must be at least 13 years old to use HustleSpark.</p>
                                     </FormItem>
                                 )}
                                 />

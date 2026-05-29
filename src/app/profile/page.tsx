@@ -1,6 +1,8 @@
 
 "use client";
 
+import { OnboardingTour } from '@/components/onboarding-tour';
+import { HustleScoreCard } from '@/components/hustle-score-card';
 import { createNotification } from '@/lib/notifications';
 import { ReviewModal } from "@/components/review-modal";
 import { useAuth } from "@/hooks/use-auth";
@@ -411,6 +413,7 @@ export default function ProfilePage() {
         </div>
 
         <div className="lg:col-span-4 space-y-12">
+            <HustleScoreCard />
             <Card className="shadow-xl rounded-[2.5rem] border-primary/10 overflow-hidden">
                 <CardHeader className="bg-muted/30"><CardTitle className="text-lg font-black flex items-center gap-2"><Briefcase className="h-5 w-5 text-primary"/>Saved Ideas</CardTitle></CardHeader>
                 <CardContent className="p-4 pt-4">
@@ -465,6 +468,7 @@ export default function ProfilePage() {
         onOpenChange={(open) => { if (!open) setReviewTransaction(null); }}
         transaction={reviewTransaction}
       />
+      <OnboardingTour />
     </div>
   );
 }

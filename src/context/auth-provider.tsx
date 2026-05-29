@@ -25,7 +25,7 @@ interface AuthContextType {
   hasUnsavedChanges: boolean;
   login: (email: string, password?: string) => Promise<string | null>;
   logout: () => void;
-  signup: (email: string, password?: string) => Promise<string | null>;
+  signup: (email: string, password?: string, extraData?: { dateOfBirth?: string, isMinor?: boolean }) => Promise<string | null>;
   upgradeToPremium: (days?: number) => void;
   setGeneratedHustles: (hustles: HustleIdea[]) => void;
   saveHustle: (hustle: any) => void;
@@ -111,20 +111,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [firebaseAuth]);
 
-  const signup = useCallback(async (email: string, password?: string): Promise<string | null> => {
+  const signup = useCallback(async (email: string, password?: string, extraData?: { dateOfBirth?: string, isMinor?: boolean }): Promise<string | null> => {
     try {
         const { sendEmailVerification } = await import('firebase/auth');
         const userCredential = await createUserWithEmailAndPassword(firebaseAuth, email, password || 'default_pass');
         
-        // Create user document before signing out
         const userRef = doc(firestore, 'users', userCredential.user.uid);
         await setDoc(userRef, {
             email: email,
             isPremium: false,
             savedHustles: [],
-            createdAt: serverTimestamp()
+            createdAt: serverTimestamp(),
+            ...(extraData?.dateOfBirth && { dateOfBirth: extraData.dateOfBirth }),
+            ...(extraData?.isMinor !== undefined && { isMinor: extraData.isMinor }),
         }, { merge: true });
-
         await sendEmailVerification(userCredential.user);
         await signOut(firebaseAuth);
         return "VERIFY_EMAIL";

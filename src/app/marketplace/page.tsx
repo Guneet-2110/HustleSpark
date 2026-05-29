@@ -241,8 +241,16 @@ export default function MarketplacePage() {
                     ) : (
                         <div className="text-center py-32 border-2 border-dashed rounded-3xl bg-muted/20 border-primary/10">
                             <Sparkles className="h-16 w-16 text-primary/30 mx-auto mb-6" />
-                            <h3 className="text-2xl font-bold">No ventures found</h3>
-                            <p className="text-muted-foreground mt-2">Try adjusting filters or generate your own hustle!</p>
+                            <h3 className="text-2xl font-black">No Hustles Found</h3>
+                            <p className="text-muted-foreground mt-2 max-w-sm mx-auto">Be the first to list your hustle! Generate an idea, build your brand, and sell your service.</p>
+                            <div className="flex flex-col sm:flex-row gap-3 justify-center mt-6">
+                                <Button asChild className="rounded-2xl font-black">
+                                    <Link href="/profile">Generate a Hustle</Link>
+                                </Button>
+                                <Button variant="outline" asChild className="rounded-2xl font-bold">
+                                    <Link href="/pricing">View Premium Plans</Link>
+                                </Button>
+                            </div>
                         </div>
                     )}
                 </div>

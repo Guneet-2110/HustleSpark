@@ -1,5 +1,6 @@
 "use client";
 
+import { useHustleScore, getTier } from '@/hooks/use-hustle-score';
 import { createNotification } from '@/lib/notifications';
 import { useDoc, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
@@ -45,6 +46,8 @@ const [reportReason, setReportReason] = useState('');
 
     // Site Administrator privileges check
     const isAdmin = user?.email === 'guneet.ar2010@gmail.com' || user?.email === 'tester@gmail.com';
+
+    const { score: sellerScore, tier: sellerTier, isLoading: isScoreLoading } = useHustleScore(listing?.userId, []);
 
     const [reviews, setReviews] = useState<any[]>([]);
     const [avgRating, setAvgRating] = useState<number | null>(null);
@@ -150,7 +153,6 @@ const [reportReason, setReportReason] = useState('');
     const isOwner = listing.userId === user?.uid;
     const isBuyer = !isOwner && !isAdmin;
     
-
     return (
         <div className="container py-12 max-w-6xl">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
@@ -235,6 +237,11 @@ const [reportReason, setReportReason] = useState('');
                                     <span className="text-white/60 text-sm font-bold flex items-center gap-1">
                                         <MapPin className="h-3 w-3" /> {listing.location || 'Remote'}
                                     </span>
+                                    {!isScoreLoading && (
+                                        <span className="bg-white/10 backdrop-blur-md text-white text-xs font-black px-3 py-1 rounded-full flex items-center gap-1 border border-white/20">
+                                            {sellerTier.badge} {sellerTier.label} · {sellerScore} pts
+                                        </span>
+                                    )}
                                 </div>
                             </div>
                         </div>
