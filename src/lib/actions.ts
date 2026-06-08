@@ -186,3 +186,33 @@ export async function generateMarketplaceCopyAction(input: {hustleName: string, 
         return { message: "Failed to generate marketplace copy.", data: null };
     }
 }
+
+export async function generatePricingWizardAction(input: {hustleName: string, hustleDescription: string, timePerDelivery: string, targetCustomer: string, costs: string, experience: string}) {
+    try {
+        const { generatePricingWizard } = await import('@/ai/flows/generate-pricing-wizard');
+        const output = await generatePricingWizard(input);
+        return { message: 'success', data: output };
+    } catch (error: any) {
+        return { message: error.message || 'Failed to generate pricing.', data: null };
+    }
+}
+
+export async function generateSocialCalendarAction(input: {hustleName: string, hustleDescription: string, targetAudience: string, platforms: string[]}) {
+    try {
+        const { generateSocialCalendar } = await import('@/ai/flows/generate-social-calendar');
+        const output = await generateSocialCalendar(input);
+        return { message: 'success', data: output };
+    } catch (error: any) {
+        return { message: error.message || 'Failed to generate calendar.', data: null };
+    }
+}
+
+export async function generatePitchDeckAction(input: {hustleName: string, hustleDescription: string, targetMarket: string, revenueModel: string, uniqueAdvantage: string}) {
+    try {
+        const { generatePitchDeck } = await import('@/ai/flows/generate-pitch-deck');
+        const output = await generatePitchDeck(input);
+        return { message: 'success', data: output };
+    } catch (error: any) {
+        return { message: error.message || 'Failed to generate pitch deck.', data: null };
+    }
+}

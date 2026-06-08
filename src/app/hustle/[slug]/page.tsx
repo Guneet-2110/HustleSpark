@@ -1,6 +1,9 @@
 
 "use client";
 
+import { PricingWizardModal } from '@/components/pricing-wizard-modal';
+import { SocialCalendarModal } from '@/components/social-calendar-modal';
+import { PitchDeckModal } from '@/components/pitch-deck-modal';
 import { PhoneVerificationModal } from '@/components/phone-verification-modal';
 import { useAuth } from '@/hooks/use-auth';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -81,6 +84,9 @@ function HustleDetailContent() {
     const [showPhoneVerification, setShowPhoneVerification] = useState(false);
 const [isPhoneVerified, setIsPhoneVerified] = useState(false);
     const [showTrackerSettings, setShowTrackerSettings] = useState(false);
+    const [showPricingWizard, setShowPricingWizard] = useState(false);
+    const [showSocialCalendar, setShowSocialCalendar] = useState(false);
+    const [showPitchDeck, setShowPitchDeck] = useState(false);
     
     // Inputs
     const [flyerEmail, setFlyerEmail] = useState('');
@@ -104,6 +110,10 @@ const [showEarningsInput, setShowEarningsInput] = useState(false);
     const [sellWorkFrom, setSellWorkFrom] = useState('');
     const [isGeneratingCopy, setIsGeneratingCopy] = useState(false);
     const [confirmedPaypal, setConfirmedPaypal] = useState(false);
+
+    const [pricingResult, setPricingResult] = useState<any>(hustle?.pricingWizard || null);
+    const [socialCalendarResult, setSocialCalendarResult] = useState<any>(hustle?.socialCalendar || null);
+    const [pitchDeckResult, setPitchDeckResult] = useState<any>(hustle?.pitchDeck || null);
     
     const isSaved = hustle ? isHustleSaved(hustle.name) : false;
     const weeksAllowed = (() => {
@@ -875,10 +885,35 @@ const [showEarningsInput, setShowEarningsInput] = useState(false);
                                     )}
                                 </CardContent>
                             </Card>
-                        </div>
-                    </div>
+                            </div>
 
-                    {/* RIGHT COLUMN: BRANDING & COACH */}
+{/* PREMIUM TOOLS */}
+<div className="grid sm:grid-cols-3 gap-4">
+    {[
+        { title: '💰 Pricing Wizard', description: 'Get AI-recommended pricing tiers for your hustle', onClick: () => setShowPricingWizard(true) },
+        { title: '📅 Social Calendar', description: '30 days of social media content tailored to your hustle', onClick: () => setShowSocialCalendar(true) },
+        { title: '🎯 Pitch Deck', description: 'Generate a 5-slide investor-ready pitch', onClick: () => setShowPitchDeck(true) },
+    ].map((tool) => (
+        <Card key={tool.title} className="rounded-[2rem] shadow-lg border-primary/10 overflow-hidden">
+            <CardContent className="p-6 space-y-3">
+                <p className="font-black text-sm">{tool.title}</p>
+                <p className="text-xs text-muted-foreground leading-relaxed">{tool.description}</p>
+                {isPremium ? (
+                    <Button className="w-full rounded-xl h-10 font-bold text-xs" onClick={tool.onClick}>
+                        Launch Tool
+                    </Button>
+                ) : (
+                    <Button variant="secondary" className="w-full rounded-xl h-10 font-bold text-xs" onClick={() => setPaymentModalOpen(true)}>
+                        <Lock className="mr-1 h-3 w-3" /> Premium Only
+                    </Button>
+                )}
+            </CardContent>
+        </Card>
+    ))}
+</div>
+</div>
+
+{/* RIGHT COLUMN: BRANDING & COACH */}
                     <div className="lg:col-span-4 space-y-8">
                         {/* BRANDING KIT */}
                         <Card className="rounded-[2.5rem] shadow-xl border-primary/20 overflow-hidden">
@@ -1156,13 +1191,54 @@ const [showEarningsInput, setShowEarningsInput] = useState(false);
         setShowSellModal(true);
     }}
 />
-
-        </div>
-        </TooltipProvider>
-  );
-}
-
-export default function HustleDetailPage() {
+<PricingWizardModal
+                open={showPricingWizard}
+                onOpenChange={setShowPricingWizard}
+                hustleName={hustle.name}
+                hustleDescription={hustle.description}
+                onResult={(result) => {
+                    setPricingResult(result);
+                    const updatedHustle = { ...hustle, pricingWizard: result };
+                    setHustle(updatedHustle);
+                    if (isSaved) saveHustle(updatedHustle);
+                    toast({ title: '💰 Pricing Strategy Saved!' });
+                }}
+                savedResult={pricingResult}
+            />
+            <SocialCalendarModal
+                open={showSocialCalendar}
+                onOpenChange={setShowSocialCalendar}
+                hustleName={hustle.name}
+                hustleDescription={hustle.description}
+                onResult={(result) => {
+                    setSocialCalendarResult(result);
+                    const updatedHustle = { ...hustle, socialCalendar: result };
+                    setHustle(updatedHustle);
+                    if (isSaved) saveHustle(updatedHustle);
+                    toast({ title: '📅 Social Calendar Saved!' });
+                }}
+                savedResult={socialCalendarResult}
+            />
+            <PitchDeckModal
+                open={showPitchDeck}
+                onOpenChange={setShowPitchDeck}
+                hustleName={hustle.name}
+                hustleDescription={hustle.description}
+                onResult={(result) => {
+                    setPitchDeckResult(result);
+                    const updatedHustle = { ...hustle, pitchDeck: result };
+                    setHustle(updatedHustle);
+                    if (isSaved) saveHustle(updatedHustle);
+                    toast({ title: '🎯 Pitch Deck Saved!' });
+                }}
+                savedResult={pitchDeckResult}
+                />
+            </div>
+            </TooltipProvider>
+      );
+    }
+    
+    export default function HustleDetailPage() {
     return (
         <Suspense fallback={<div className="container py-20 text-center"><Loader2 className="animate-spin h-10 w-10 mx-auto text-primary" /></div>}>
             <HustleDetailContent />
