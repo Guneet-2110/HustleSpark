@@ -118,8 +118,10 @@ export const confirmAndPayoutSeller = functions.https.onCall(
         return { success: true, message: "Already processed." };
       }
 
-      const sellerPayout = (totalAmount * 0.9).toFixed(2);
-      const platformFee = (totalAmount * 0.1).toFixed(2);
+      const stripeFee = ((totalAmount * 0.029) + 0.30).toFixed(2);
+      const amountAfterStripe = (totalAmount - parseFloat(stripeFee));
+      const sellerPayout = (amountAfterStripe * 0.9).toFixed(2);
+      const platformFee = (amountAfterStripe * 0.1).toFixed(2);
       const buyerEmail = request.auth.token.email || "";
 
       // 1. Create Escrow Transaction
@@ -223,8 +225,10 @@ export const sendSaleNotification = functions.https.onCall(
     const isReport = status?.includes('REPORTED');
     const isDispute = status?.includes('DISPUTED');
 
-    const sellerPayout = (totalAmount * 0.9).toFixed(2);
-    const platformFee = (totalAmount * 0.1).toFixed(2);
+    const stripeFee = ((totalAmount * 0.029) + 0.30).toFixed(2);
+    const amountAfterStripe = (totalAmount - parseFloat(stripeFee));
+    const sellerPayout = (amountAfterStripe * 0.9).toFixed(2);
+    const platformFee = (amountAfterStripe * 0.1).toFixed(2);
 
     const subject = isReport 
         ? `🚨 Listing Reported: ${hustleName}`
@@ -252,8 +256,11 @@ export const sendSaleNotification = functions.https.onCall(
                 <p><strong>Venture:</strong> ${hustleName}</p>
                 <p><strong>Buyer:</strong> ${buyerEmail}</p>
                 <p><strong>Seller PayPal:</strong> ${sellerEmail}</p>
-                <p><strong>Total Paid:</strong> $${totalAmount}</p>
-                <p><strong>Your Platform Fee (10%):</strong> $${platformFee}</p>
+                <p><strong>Total Paid by Buyer:</strong> $${totalAmount}</p>
+                <p><strong>Stripe Processing Fee (2.9% + $0.30):</strong> -$${stripeFee}</p>
+                <p><strong>Amount After Stripe:</strong> $${amountAfterStripe.toFixed(2)}</p>
+                <p><strong>Platform Fee (10%):</strong> -$${platformFee}</p>
+                <p><strong>✅ Send to Seller via PayPal:</strong> $${sellerPayout}</p>
             </div>
             <div style="background: #fef2f2; padding: 15px; border-radius: 10px; border: 2px solid #dc2626; margin: 20px 0;">
                 <p style="color: #dc2626; font-size: 18px; margin: 0;"><strong>${status}</strong></p>

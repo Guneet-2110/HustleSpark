@@ -198,7 +198,15 @@ export default function ProfilePage() {
             `A buyer has opened a dispute for ${transaction.hustleName}. Admin has been notified.`,
             '/profile'
         );
-        toast({ variant: 'destructive', title: "Dispute Opened", description: "Admin notified." });
+        toast({ variant: 'destructive', title: "Dispute Opened", description: "Our team will reach out to both you and the seller to work out this issue." });    } catch (e) {
+        toast({ variant: 'destructive', title: "Update Failed" });
+    }
+};
+const handleUndoDispute = async (transaction: any) => {
+    if (!firestore) return;
+    try {
+        await updateDoc(doc(firestore, 'transactions', transaction.id), { status: 'pending_confirmation' });
+        toast({ title: "Dispute Withdrawn", description: "You can now confirm receipt or dispute again." });
     } catch (e) {
         toast({ variant: 'destructive', title: "Update Failed" });
     }
@@ -391,8 +399,23 @@ export default function ProfilePage() {
                                                     <AlertDialog>
                                                         <AlertDialogTrigger asChild><Button variant="outline" size="sm" className="text-destructive rounded-xl font-bold">Report Issue</Button></AlertDialogTrigger>
                                                         <AlertDialogContent className="rounded-[2rem]">
-                                                            <AlertDialogHeader><AlertDialogTitle>Dispute Delivery?</AlertDialogTitle><AlertDialogDescription>Open a support ticket for this acquisition.</AlertDialogDescription></AlertDialogHeader>
+                                                            <AlertDialogHeader><AlertDialogTitle>Dispute Delivery?</AlertDialogTitle><AlertDialogDescription>Our team will reach out to both you and the seller to work out this issue. You can undo this dispute later if needed.</AlertDialogDescription></AlertDialogHeader>
                                                             <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => handleDispute(t)} className="bg-destructive">Dispute</AlertDialogAction></AlertDialogFooter>
+                                                        </AlertDialogContent>
+                                                    </AlertDialog>
+                                                </div>
+                                            )}
+                                            {t.status === 'disputed' && (
+                                                <div className="flex flex-col gap-2">
+                                                    <div className="bg-destructive/10 border border-destructive/20 rounded-xl px-3 py-2">
+                                                        <p className="text-[10px] font-black text-destructive uppercase tracking-widest">⚠️ Dispute Pending</p>
+                                                        <p className="text-[10px] text-muted-foreground mt-0.5">Our team will reach out to both parties to resolve this.</p>
+                                                    </div>
+                                                    <AlertDialog>
+                                                        <AlertDialogTrigger asChild><Button variant="outline" size="sm" className="rounded-xl font-bold">Undo Dispute</Button></AlertDialogTrigger>
+                                                        <AlertDialogContent className="rounded-[2rem]">
+                                                            <AlertDialogHeader><AlertDialogTitle>Withdraw Dispute?</AlertDialogTitle><AlertDialogDescription>This will allow you to confirm receipt or dispute again.</AlertDialogDescription></AlertDialogHeader>
+                                                            <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => handleUndoDispute(t)}>Yes, Undo</AlertDialogAction></AlertDialogFooter>
                                                         </AlertDialogContent>
                                                     </AlertDialog>
                                                 </div>

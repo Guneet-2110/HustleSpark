@@ -110,6 +110,7 @@ const [showEarningsInput, setShowEarningsInput] = useState(false);
     const [sellWorkFrom, setSellWorkFrom] = useState('');
     const [isGeneratingCopy, setIsGeneratingCopy] = useState(false);
     const [confirmedPaypal, setConfirmedPaypal] = useState(false);
+    const [confirmedAgreement, setConfirmedAgreement] = useState(false);
 
     const [pricingResult, setPricingResult] = useState<any>(hustle?.pricingWizard || null);
     const [socialCalendarResult, setSocialCalendarResult] = useState<any>(hustle?.socialCalendar || null);
@@ -179,15 +180,20 @@ const [showEarningsInput, setShowEarningsInput] = useState(false);
                 setIsGeneratingCopy(true);
                 generateMarketplaceCopyAction({
                     hustleName: hustle.name,
-                    hustleDescription: hustle.description,
+                    hustleDescription: hustle.description || hustle.name,
                     pricingTip: hustle.pricingTip,
                     marketingIdea: hustle.marketingIdea,
                 }).then((result) => {
                     if (result.message === 'success' && result.data) {
-                        setSellAboutUs(result.data.aboutUs);
-                        setSellWhatWeDo(result.data.whatWeDo);
-                        setSellOurGoal(result.data.ourGoal);
+                        setSellAboutUs(result.data.aboutUs || '');
+                        setSellWhatWeDo(result.data.whatWeDo || '');
+                        setSellOurGoal(result.data.ourGoal || '');
+                    } else {
+                        toast({ variant: 'destructive', title: 'AI Copy Failed', description: result.message });
                     }
+                }).catch((e) => {
+                    console.error('Marketplace copy error:', e);
+                    toast({ variant: 'destructive', title: 'AI Copy Failed', description: 'Please fill in the fields manually.' });
                 }).finally(() => setIsGeneratingCopy(false));
             }
         }
@@ -434,6 +440,10 @@ const [showEarningsInput, setShowEarningsInput] = useState(false);
         }
         if (!confirmedPaypal) {
             toast({ variant: 'destructive', title: 'PayPal Confirmation Required', description: 'Please confirm you have an active PayPal account with this email.' });
+            return;
+        }
+        if (!confirmedAgreement) {
+            toast({ variant: 'destructive', title: 'Seller Agreement Required', description: 'Please read and agree to the seller terms before submitting.' });
             return;
         }
 
@@ -1075,13 +1085,14 @@ const [showEarningsInput, setShowEarningsInput] = useState(false);
                 </DialogContent>
             </Dialog>
 
-            <Dialog open={showSellModal} onOpenChange={(open) => { setShowSellModal(open); if (!open) setConfirmedPaypal(false); }}>
-                <DialogContent className="sm:max-w-2xl rounded-[2.5rem]">
-                    <DialogHeader>
+            <Dialog open={showSellModal} onOpenChange={(open) => { setShowSellModal(open); if (!open) { setConfirmedPaypal(false); setConfirmedAgreement(false); setSellAboutUs(''); setSellWhatWeDo(''); setSellOurGoal(''); } }}>
+            <DialogContent className="sm:max-w-2xl rounded-[2.5rem] max-h-[90vh] flex flex-col">
+            <DialogHeader className="shrink-0">
                         <DialogTitle className="text-2xl font-black">Marketplace Launchpad</DialogTitle>
                         <DialogDescription>AI has pre-filled your strategy. Review and submit for admin approval.</DialogDescription>
                     </DialogHeader>
-                    <div className="space-y-6 py-4 max-h-[60vh] overflow-y-auto px-1">
+                    <ScrollArea className="flex-1 overflow-auto">
+                    <div className="space-y-6 py-4 px-1">
                         {isGeneratingCopy && (
                             <div className="flex items-center justify-center gap-3 p-4 bg-primary/5 rounded-2xl border border-primary/20">
                                 <Loader2 className="h-5 w-5 animate-spin text-primary" />
@@ -1174,6 +1185,32 @@ const [showEarningsInput, setShowEarningsInput] = useState(false);
                                        <div className="absolute bottom-2 left-2 bg-black/60 text-[8px] text-white px-2 py-0.5 rounded-full">FLYER</div>
                                   </div>
                              </div>
+                        </div>
+                        </div>
+                    </ScrollArea>
+                    <div className="space-y-4 px-1 pb-2">
+                        <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-2xl p-4 space-y-3">
+                            <p className="text-xs font-black uppercase tracking-widest text-yellow-600">⚠️ Seller Agreement — Read Before Submitting</p>
+                            <ul className="space-y-2 text-[11px] text-muted-foreground leading-relaxed">
+                                <li className="flex items-start gap-2"><span className="text-yellow-500 font-black shrink-0 w-4">1.</span><span>You must deliver the agreed service to the buyer within <span className="font-black text-foreground">72 hours</span> of purchase.</span></li>
+                                <li className="flex items-start gap-2"><span className="text-yellow-500 font-black shrink-0 w-4">2.</span><span>Stripe deducts a fee of <span className="font-black text-foreground">2.9% + $0.30</span> per transaction. Your 90% payout is based on the amount after Stripe fees.</span></li>
+                                <li className="flex items-start gap-2"><span className="text-yellow-500 font-black shrink-0 w-4">3.</span><span>HustleSpark retains <span className="font-black text-foreground">10%</span> of the amount received after Stripe fees as a platform fee.</span></li>
+                                <li className="flex items-start gap-2"><span className="text-yellow-500 font-black shrink-0 w-4">4.</span><span>Payouts are sent via PayPal within <span className="font-black text-foreground">3 business days</span> after the buyer confirms receipt.</span></li>
+                                <li className="flex items-start gap-2"><span className="text-yellow-500 font-black shrink-0 w-4">5.</span><span>Disputes may result in delayed or withheld payouts until resolved by the HustleSpark team.</span></li>
+                                <li className="flex items-start gap-2"><span className="text-yellow-500 font-black shrink-0 w-4">6.</span><span>Do not list services that are illegal, misleading, or violate HustleSpark's <span className="font-black text-foreground">Acceptable Use Policy</span>.</span></li>
+                                <li className="flex items-start gap-2"><span className="text-yellow-500 font-black shrink-0 w-4">7.</span><span>Failure to deliver within 72 hours may result in a refund to the buyer and suspension of your listing.</span></li>
+                            </ul>
+                            <div className="flex items-start gap-3 p-3 bg-background rounded-xl border mt-2">
+                                <Checkbox
+                                    id="confirm-agreement"
+                                    checked={confirmedAgreement}
+                                    onCheckedChange={(checked) => setConfirmedAgreement(checked === true)}
+                                    className="mt-0.5"
+                                />
+                                <label htmlFor="confirm-agreement" className="text-xs font-bold cursor-pointer leading-relaxed">
+                                    I have read and agree to all seller terms above. I understand that failure to comply may result in account suspension.
+                                </label>
+                            </div>
                         </div>
                     </div>
                     <DialogFooter className="pt-4">

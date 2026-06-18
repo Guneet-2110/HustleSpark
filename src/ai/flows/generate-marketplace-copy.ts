@@ -1,5 +1,4 @@
 'use server';
-
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 
@@ -10,49 +9,25 @@ const MarketplaceCopyInputSchema = z.object({
     marketingIdea: z.string().optional(),
 });
 
-const MarketplaceCopyOutputSchema = z.object({
-    aboutUs: z.string(),
-    whatWeDo: z.string(),
-    ourGoal: z.string(),
-});
+export const generateMarketplaceCopy = async (input: z.infer<typeof MarketplaceCopyInputSchema>) => {
+    const { text } = await ai.generate({
+        model: 'googleai/gemini-2.5-flash',
+        prompt: `You are an expert marketplace copywriter for HustleSpark, a platform where teen entrepreneurs sell their side hustle services.
 
-export const generateMarketplaceCopy = ai.defineFlow(
-    {
-        name: 'generateMarketplaceCopy',
-        inputSchema: MarketplaceCopyInputSchema,
-        outputSchema: MarketplaceCopyOutputSchema,
-    },
-    async (input) => {
-        const { output } = await ai.generate({
-            model: 'googleai/gemini-2.0-flash',
-            prompt: `You are an expert marketplace copywriter for HustleSpark, a platform where entrepreneurs sell their side hustle strategies.
+Write compelling marketplace copy for "${input.hustleName}" (${input.hustleDescription}).
+${input.pricingTip ? `Pricing: ${input.pricingTip}` : ''}
+${input.marketingIdea ? `Marketing: ${input.marketingIdea}` : ''}
 
-Write compelling, professional marketplace copy for a venture listing. The copy should be:
-- Engaging and persuasive to potential buyers
-- Specific to this hustle (not generic)
-- Professional but approachable
-- Written in first person plural ("We", "Our")
-- Concise but impactful (2-4 sentences each)
+Write in first person plural (We/Our). Be specific, professional, and persuasive. 2-3 sentences each.
 
-Hustle Name: ${input.hustleName}
-Description: ${input.hustleDescription}
-${input.pricingTip ? `Pricing Strategy: ${input.pricingTip}` : ''}
-${input.marketingIdea ? `Marketing Approach: ${input.marketingIdea}` : ''}
+Return ONLY valid JSON, no markdown:
+{"aboutUs":"...","whatWeDo":"...","ourGoal":"..."}`,
+    });
 
-Generate three sections:
-
-1. "About Us" - Who we are and what makes this venture unique. Focus on the creator's passion and expertise.
-
-2. "What We Do" - The specific services, products, or value this venture delivers. Be concrete and specific.
-
-3. "Our Goal" - The mission and vision. What problem are we solving and who are we helping?
-
-Return ONLY a JSON object with keys: aboutUs, whatWeDo, ourGoal`,
-            output: {
-                schema: MarketplaceCopyOutputSchema,
-            },
-        });
-
-        return output!;
+    try {
+        const clean = text?.replace(/```json|```/g, '').trim() || '{}';
+        return JSON.parse(clean);
+    } catch {
+        throw new Error('Could not parse marketplace copy response.');
     }
-);
+};
