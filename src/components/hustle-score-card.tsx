@@ -3,16 +3,14 @@
 import { useHustleScore, getTier, HUSTLE_TIERS } from '@/hooks/use-hustle-score';
 import { useAuth } from '@/hooks/use-auth';
 import { useUser } from '@/firebase';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Loader2, TrendingUp, Star, CheckSquare, Calendar, ShieldCheck, Zap } from 'lucide-react';
 
 export function HustleScoreCard() {
-    const { savedHustles, isPremium } = useAuth();
+    const { savedHustles, isPremium, setPaymentModalOpen } = useAuth();
     const { user } = useUser();
     const { score, breakdown, tier, isLoading } = useHustleScore(user?.uid, savedHustles);
-
-    if (!isPremium) return null;
 
     if (isLoading) {
         return (
@@ -32,7 +30,6 @@ export function HustleScoreCard() {
 
     return (
         <Card className="rounded-[2.5rem] border-primary/20 overflow-hidden shadow-2xl">
-            {/* Header */}
             <div className="bg-gradient-to-br from-primary to-accent p-8 text-primary-foreground relative overflow-hidden">
                 <div className="absolute -right-8 -top-8 opacity-10">
                     <Zap className="h-40 w-40" />
@@ -61,7 +58,6 @@ export function HustleScoreCard() {
                 )}
             </div>
 
-            {/* Breakdown */}
             <CardContent className="p-6 space-y-4">
                 <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">Score Breakdown</p>
                 <div className="space-y-3">
@@ -89,7 +85,6 @@ export function HustleScoreCard() {
                     ))}
                 </div>
 
-                {/* Tiers */}
                 <div className="pt-4 border-t space-y-2">
                     <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">All Tiers</p>
                     <div className="grid grid-cols-2 gap-2">
@@ -102,6 +97,16 @@ export function HustleScoreCard() {
                         ))}
                     </div>
                 </div>
+
+                {!isPremium && (
+                    <div className="pt-4 border-t">
+                        <div className="bg-primary/5 border border-primary/20 rounded-2xl p-4 text-center space-y-2">
+                            <p className="text-xs font-black text-primary">�� Unlock Your Full Hustle Score</p>
+                            <p className="text-[11px] text-muted-foreground">Go Premium to earn points from sales, reviews, and roadmap completion — and climb the tiers!</p>
+                            <button onClick={() => setPaymentModalOpen(true)} className="text-[11px] font-black text-primary underline">Upgrade to Premium →</button>
+                        </div>
+                    </div>
+                )}
             </CardContent>
         </Card>
     );

@@ -327,9 +327,12 @@ const handleUndoDispute = async (transaction: any) => {
                             {sales.map((t) => {
                                 const chat = allChats.find(c => c.listingId === t.listingId && c.buyerId === t.buyerId);
                                 return (
-                                    <div key={t.id} className="p-4 border rounded-2xl bg-background/50 flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+                                    <div key={t.id} className={`p-4 border rounded-2xl flex flex-col sm:flex-row justify-between sm:items-center gap-4 transition-all ${chat?.isNew ? 'bg-primary/5 border-primary/30 shadow-lg shadow-primary/10' : 'bg-background/50'}`}>
                                         <div className="space-y-1">
-                                            <p className="font-black text-lg">{t.hustleName}</p>
+                                            <div className="flex items-center gap-2">
+                                                <p className="font-black text-lg">{t.hustleName}</p>
+                                                {chat?.isNew && <span className="text-[9px] font-black uppercase tracking-widest bg-primary text-primary-foreground px-2 py-0.5 rounded-full animate-pulse">New Buyer!</span>}
+                                            </div>
                                             <div className="flex items-center gap-2">
                                                 <Badge variant="outline" className="text-[10px] font-bold uppercase">{t.status.replace('_', ' ')}</Badge>
                                                 <span className="text-[10px] font-medium text-muted-foreground flex items-center gap-1">
@@ -339,7 +342,11 @@ const handleUndoDispute = async (transaction: any) => {
                                         </div>
                                         <div className="flex gap-2">
                                             {chat && (
-                                                <Button variant="secondary" size="sm" className="rounded-xl font-bold" asChild>
+                                                <Button variant="secondary" size="sm" className={`rounded-xl font-bold ${chat?.isNew ? 'bg-primary text-primary-foreground hover:bg-primary/90' : ''}`} asChild onClick={async () => {
+                                                    if (chat?.isNew && firestore) {
+                                                        await updateDoc(doc(firestore, 'chats', chat.id), { isNew: false });
+                                                    }
+                                                }}>
                                                     <Link href={`/chats/${chat.id}`}><MessageSquare className="h-4 w-4 mr-2" /> Chat Buyer</Link>
                                                 </Button>
                                             )}

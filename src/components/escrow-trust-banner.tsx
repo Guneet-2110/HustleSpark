@@ -59,9 +59,7 @@ export function EscrowTrustBanner() {
                             Every purchase is manually reviewed by the HustleSpark team before funds are released. If there's ever a dispute, we step in to make it right.
                         </p>
                     </div>
-                    <p className="text-[10px] text-center mt-3 text-muted-foreground italic">
-                        Not satisfied? Contact us at <span className="text-primary font-bold">hustlespark.net/support</span> within 7 days and we'll make it right.
-                    </p>
+                    
                 </div>
             </CardContent>
         </Card>

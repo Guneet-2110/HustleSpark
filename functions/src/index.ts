@@ -143,6 +143,7 @@ export const confirmAndPayoutSeller = functions.https.onCall(
       // 2. Initialize Chat with email identifiers for dashboard differentiation
       const chatRef = db.collection("chats").doc();
       await chatRef.set({
+        isNew: true,
         listingId,
         hustleName,
         buyerId: request.auth.uid,
@@ -190,17 +191,32 @@ export const confirmAndPayoutSeller = functions.https.onCall(
         </div>`
       );
 
-      // 5. Email Seller
+      // 5. Email Seller - fetch actual account email
+      let sellerAccountEmail = sellerEmail;
+      try {
+        const sellerDoc = await db.collection('users').doc(sellerId).get();
+        console.log('Seller ID:', sellerId);
+        console.log('Seller doc exists:', sellerDoc.exists);
+        console.log('Seller doc data:', JSON.stringify(sellerDoc.data()));
+        if (sellerDoc.exists && sellerDoc.data()?.email) {
+          sellerAccountEmail = sellerDoc.data()!.email;
+        }
+      } catch (e) {
+        console.warn('Could not fetch seller account email, using PayPal email', e);
+      }
+      console.log('Sending seller email to:', sellerAccountEmail);
       await sendEmail(
-        sellerEmail,
+        sellerAccountEmail,
         `💰 You made a sale! ${hustleName}`,
         `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <h1 style="color: #9D4EDD;">🚀 Your Venture Was Acquired!</h1>
+          <h1 style="color: #9D4EDD;">💰 You Have a New Buyer!</h1>
           <p>Congratulations! <strong>${hustleName}</strong> has been purchased for $${totalAmount}.</p>
-          <p>Your payout: <strong>$${sellerPayout}</strong> (90%)</p>
-          <p>Please deliver all assets to the buyer within <strong>3 days</strong>, then mark as delivered in your dashboard.</p>
+          <p><strong>Buyer:</strong> ${buyerEmail}</p>
+          <p><strong>Your payout:</strong> $${sellerPayout} (90% after Stripe & platform fees)</p>
+          <p>You have a <strong>new chat waiting</strong> from your buyer. Log in to HustleSpark to view it — it will be highlighted in your dashboard.</p>
+          <p>Please deliver all assets to the buyer within <strong>72 hours</strong>, then mark as delivered in your dashboard.</p>
           <p>Payment will be released once the buyer confirms receipt.</p>
-          <a href="https://hustlespark.net/profile" style="display: inline-block; background: #9D4EDD; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold; margin-top: 15px;">Go to Dashboard →</a>
+          <a href="https://hustlespark.net/chats" style="display: inline-block; background: #9D4EDD; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold; margin-top: 15px;">View New Chat →</a>
         </div>`
       );
 

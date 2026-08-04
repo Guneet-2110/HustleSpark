@@ -81,7 +81,7 @@ function LoginPageContent() {
     setAuthError(null);
     const error = await login(values.email, values.password);
     if (error === "EMAIL_NOT_VERIFIED") {
-        setAuthError("VERIFICATION REQUIRED: Your email has not been verified. Please check your inbox and spam folder for the verification link.");
+        setAuthError("Your email is not verified yet. Please check your inbox and spam folder for the verification link.");
     } else if (error) {
         setAuthError("AUTHENTICATION FAILED: ACCESS DENIED. PLEASE VERIFY CREDENTIALS AND RETRY.");
     }
@@ -89,14 +89,14 @@ function LoginPageContent() {
 
 async function onForgotPassword() {
     if (!forgotEmail) {
-        setForgotStatus('ERROR: Please enter your email address.');
+        setForgotStatus('Please enter your email address.');
         return;
     }
     try {
         await sendPasswordResetEmail(firebaseAuth, forgotEmail);
-        setForgotStatus('SUCCESS: Password reset link sent! Check your inbox and spam folder.');
+        setForgotStatus('Password reset link sent! Check your inbox and spam folder. If you do not see it, check your spam folder.');
     } catch (e: any) {
-        setForgotStatus('ERROR: Could not send reset email. Please verify your email address.');
+        setForgotStatus('Could not send reset email. Please double check your email address.');
     }
 }
 
@@ -112,9 +112,9 @@ async function onSignup(values: z.infer<typeof signupSchema>) {
     if (result === "VERIFY_EMAIL") {
         setActiveForm('login');
         loginForm.setValue('email', values.email);
-        setAuthError("VERIFICATION REQUIRED: A confirmation link has been sent to your email. Please verify before logging in. Check your spam folder if you don't see it.");
+        setAuthError("Almost there! We sent a verification link to your email. Click it to activate your account. If you don't see it, check your spam folder.");
     } else if (result) {
-        setAuthError("ENROLLMENT FAILED: SYSTEM REJECTED REGISTRATION. PLEASE VERIFY DETAILS.");
+        setAuthError("Something went wrong. Please check your details and try again.");
     }
 }
 
@@ -125,8 +125,8 @@ async function onSignup(values: z.infer<typeof signupSchema>) {
                 <div className={`p-6 md:p-8 transform transition-all duration-500 ease-in-out ${activeForm === 'login' ? 'translate-x-0' : '-translate-x-full hidden'}`}>
                    <div className="animate-slide-in-from-left">
                         <CardHeader className="p-0 mb-6">
-                            <CardTitle className="text-2xl font-black">Hustle Interface</CardTitle>
-                            <CardDescription className="font-medium">Identify yourself to access the launchpad.</CardDescription>
+                            <CardTitle className="text-2xl font-black">Welcome Back!</CardTitle>
+                            <CardDescription className="font-medium">Enter your details to log in to HustleSpark.</CardDescription>
                         </CardHeader>
                         <CardContent className="p-0">
                              {authError && activeForm === 'login' && (
@@ -143,7 +143,7 @@ async function onSignup(values: z.infer<typeof signupSchema>) {
                                 name="email"
                                 render={({ field }) => (
                                     <FormItem>
-                                    <FormLabel className="font-bold">Protocol Email</FormLabel>
+                                    <FormLabel className="font-bold">Email Address</FormLabel>
                                     <FormControl>
                                         <div className="relative">
                                             <Input placeholder="user@hustlespark.net" {...field} className="h-12 rounded-xl bg-background/50" />
@@ -159,7 +159,7 @@ async function onSignup(values: z.infer<typeof signupSchema>) {
                                 name="password"
                                 render={({ field }) => (
                                     <FormItem>
-                                    <FormLabel className="font-bold">Security Key</FormLabel>
+                                    <FormLabel className="font-bold">Password</FormLabel>
                                     <FormControl>
                                         <div className="relative">
                                             <Input type={showPassword ? 'text' : 'password'} placeholder="••••••••" {...field} className="h-12 rounded-xl bg-background/50" />
@@ -173,7 +173,7 @@ async function onSignup(values: z.infer<typeof signupSchema>) {
                                 )}
                                 />
                                 <Button type="submit" className="w-full h-14 rounded-2xl font-black text-lg shadow-xl !mt-8">
-                                    Establish Session
+                                    Log In
                                 </Button>
                             </form>
                             </Form>
@@ -182,19 +182,19 @@ async function onSignup(values: z.infer<typeof signupSchema>) {
         onClick={() => { setShowForgotPassword(true); setForgotStatus(null); setForgotEmail(loginForm.getValues('email')); }}
         className="text-[10px] font-black text-muted-foreground hover:text-primary uppercase tracking-widest transition-colors"
     >
-        Forgot Security Key?
+        Forgot Password?
     </button>
 </div>
 <div className="mt-4 text-center text-sm">
-    No profile detected?{' '}
+    Don't have an account?{' '}
     <button onClick={() => switchForm('signup')} className="font-black text-primary hover:underline uppercase tracking-widest text-[10px]">
-        Initialize Enrollment
+        Sign Up
     </button>
 </div>
 
 {showForgotPassword && (
     <div className="mt-6 p-4 bg-muted/50 rounded-2xl border space-y-3">
-        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Reset Security Key</p>
+        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Reset Password</p>
         <div className="relative">
             <Input 
                 placeholder="Enter your email..." 
@@ -226,8 +226,8 @@ async function onSignup(values: z.infer<typeof signupSchema>) {
                 <div className={`p-6 md:p-8 transform transition-all duration-500 ease-in-out ${activeForm === 'signup' ? 'translate-x-0' : 'translate-x-full hidden'}`}>
                     <div className="animate-slide-in-from-right">
                         <CardHeader className="p-0 mb-6">
-                            <CardTitle className="text-2xl font-black">User Enrollment</CardTitle>
-                            <CardDescription className="font-medium">Register your credentials for the venture network.</CardDescription>
+                            <CardTitle className="text-2xl font-black">Create Your Account</CardTitle>
+                            <CardDescription className="font-medium">Join HustleSpark and start building your hustle today.</CardDescription>
                         </CardHeader>
                         <CardContent className="p-0">
                             {authError && activeForm === 'signup' && (
@@ -244,7 +244,7 @@ async function onSignup(values: z.infer<typeof signupSchema>) {
                                 name="email"
                                 render={({ field }) => (
                                     <FormItem>
-                                    <FormLabel className="font-bold">Protocol Email</FormLabel>
+                                    <FormLabel className="font-bold">Email Address</FormLabel>
                                     <FormControl>
                                         <div className="relative">
                                             <Input placeholder="user@hustlespark.net" {...field} className="h-12 rounded-xl bg-background/50" />
@@ -260,7 +260,7 @@ async function onSignup(values: z.infer<typeof signupSchema>) {
                                 name="password"
                                 render={({ field }) => (
                                     <FormItem>
-                                    <FormLabel className="font-bold">Security Key</FormLabel>
+                                    <FormLabel className="font-bold">Password</FormLabel>
                                     <FormControl>
                                         <div className="relative">
                                             <Input type={showPassword ? 'text' : 'password'} placeholder="Min 8 characters" {...field} className="h-12 rounded-xl bg-background/50" />
@@ -278,10 +278,10 @@ async function onSignup(values: z.infer<typeof signupSchema>) {
                                 name="confirmPassword"
                                 render={({ field }) => (
                                     <FormItem>
-                                    <FormLabel className="font-bold">Confirm Key</FormLabel>
+                                    <FormLabel className="font-bold">Confirm Password</FormLabel>
                                     <FormControl>
                                         <div className="relative">
-                                            <Input type={showConfirmPassword ? 'text' : 'password'} placeholder="Repeat Security Key" {...field} className="h-12 rounded-xl bg-background/50" />
+                                            <Input type={showConfirmPassword ? 'text' : 'password'} placeholder="Repeat Password" {...field} className="h-12 rounded-xl bg-background/50" />
                                             <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground hover:text-primary transition-colors">
                                                 {showConfirmPassword ? <EyeOff /> : <Eye />}
                                             </button>
@@ -306,14 +306,14 @@ async function onSignup(values: z.infer<typeof signupSchema>) {
                                 )}
                                 />
                                 <Button type="submit" className="w-full h-14 rounded-2xl font-black text-lg shadow-xl !mt-8">
-                                    Authorize Account
+                                    Create Account
                                 </Button>
                             </form>
                             </Form>
                             <div className="mt-6 text-center text-sm">
-                                Already enrolled?{' '}
+                                Already have an account?{' '}
                                 <button onClick={() => switchForm('login')} className="font-black text-primary hover:underline uppercase tracking-widest text-[10px]">
-                                    Verify Identity
+                                    Log In
                                 </button>
                             </div>
                         </CardContent>
