@@ -117,6 +117,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const userCredential = await createUserWithEmailAndPassword(firebaseAuth, email, password || 'default_pass');
         
         const userRef = doc(firestore, 'users', userCredential.user.uid);
+        const referralCode = typeof window !== 'undefined' ? localStorage.getItem('referralCode') : null;
         await setDoc(userRef, {
             email: email,
             isPremium: false,
@@ -124,7 +125,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             createdAt: serverTimestamp(),
             ...(extraData?.dateOfBirth && { dateOfBirth: extraData.dateOfBirth }),
             ...(extraData?.isMinor !== undefined && { isMinor: extraData.isMinor }),
+            ...(referralCode && { referredBy: referralCode, firstPurchaseCredited: false }),
         }, { merge: true });
+        if (referralCode) {
+            try {
+                const { collection: col, query: q, where: w, getDocs: gd, updateDoc: ud, doc: d } = await import('firebase/firestore');
+                const snap = await gd(q(col(firestore, 'referral_links'), w('code', '==', referralCode)));
+                if (!snap.empty) {
+                    await ud(d(firestore, 'referral_links', snap.docs[0].id), {
+                        signups: (snap.docs[0].data().signups || 0) + 1
+                    });
+                }
+            } catch (e) {
+                console.error('Referral signup tracking error:', e);
+            }
+        }
         await sendEmailVerification(userCredential.user);
         await signOut(firebaseAuth);
         return "VERIFY_EMAIL";
@@ -163,10 +178,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const expiry = new Date(baseDate.getTime() + (days * 24 * 60 * 60 * 1000));
     
     await setDoc(userRef, { 
-        premiumExpiresAt: expiry.toISOString(),
-        subscriptionStatus: 'active'
-    }, { merge: true });
-  }, [firebaseAuth, firestore]);
+      premiumExpiresAt: expiry.toISOString(),
+      subscriptionStatus: 'active'
+  }, { merge: true });
+
+  // Credit referral on first purchase only
+  if (data?.referredBy && data?.firstPurchaseCredited === false) {
+      try {
+          const { collection: col, query: q, where: w, getDocs: gd, updateDoc: ud, doc: d } = await import('firebase/firestore');
+          const refSnap = await gd(q(col(firestore, 'referral_links'), w('code', '==', data.referredBy)));
+          if (!refSnap.empty) {
+              const linkDoc = refSnap.docs[0];
+              const purchaseAmount = days === 30 ? 15 : days === 60 ? 30 : days === 90 ? 45 : 60;
+              const commission = purchaseAmount * 0.10;
+              await ud(d(firestore, 'referral_links', linkDoc.id), {
+                  totalRevenue: (linkDoc.data().totalRevenue || 0) + purchaseAmount,
+                  payoutDue: (linkDoc.data().payoutDue || 0) + commission,
+                  conversions: (linkDoc.data().conversions || 0) + 1,
+              });
+              await setDoc(userRef, { firstPurchaseCredited: true }, { merge: true });
+          }
+      } catch (e) {
+          console.error('Referral commission error:', e);
+      }
+  }
+}, [firebaseAuth, firestore]);
 
   const setGeneratedHustles = useCallback((hustles: HustleIdea[]) => {
     setGeneratedHustlesState(hustles);

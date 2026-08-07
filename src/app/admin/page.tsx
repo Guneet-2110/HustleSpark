@@ -40,6 +40,9 @@ export default function AdminDashboardPage() {
   const [activeUsers, setActiveUsers] = useState(0);
   const [categories, setCategories] = useState<{ category: string; count: number }[]>([]);
   const [transactions, setTransactions] = useState<any[]>([]);
+  const [referralLinks, setReferralLinks] = useState<any[]>([]);
+  const [showNewLink, setShowNewLink] = useState(false);
+  const [newLinkName, setNewLinkName] = useState('');
 
   const isAdmin = ADMIN_EMAILS.includes(user?.email ?? "");
 
@@ -51,7 +54,7 @@ export default function AdminDashboardPage() {
   async function fetchAll() {
     setLoading(true);
     try {
-      await Promise.all([fetchMetrics(), fetchCategories(), fetchTransactions()]);
+      await Promise.all([fetchMetrics(), fetchCategories(), fetchTransactions(), fetchReferralLinks()]);
     } finally {
       setLoading(false);
     }
@@ -96,6 +99,29 @@ export default function AdminDashboardPage() {
         .sort((a, b) => b.count - a.count)
         .slice(0, 6)
     );
+  }
+
+  async function fetchReferralLinks() {
+    const snap = await getDocs(collection(firestore!, 'referral_links'));
+    setReferralLinks(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+  }
+
+  async function handleCreateLink() {
+    if (!newLinkName.trim()) return;
+    const { addDoc } = await import('firebase/firestore');
+    await addDoc(collection(firestore!, 'referral_links'), {
+      name: newLinkName,
+      code: newLinkName,
+      clicks: 0,
+      signups: 0,
+      conversions: 0,
+      totalRevenue: 0,
+      payoutDue: 0,
+      createdAt: new Date(),
+    });
+    setNewLinkName('');
+    setShowNewLink(false);
+    fetchReferralLinks();
   }
 
   async function fetchTransactions() {
@@ -262,6 +288,81 @@ export default function AdminDashboardPage() {
           </div>
         )}
       </div>
+
+{/* REFERRAL LINKS */}
+<div className="bg-background border rounded-2xl p-5 mt-4">
+  <div className="flex items-center justify-between mb-4">
+    <h2 className="text-xs font-black uppercase tracking-widest text-muted-foreground">Influencer Referral Links</h2>
+    <button
+      onClick={() => setShowNewLink(!showNewLink)}
+      className="text-xs px-3 py-1.5 bg-primary text-primary-foreground rounded-lg font-bold"
+    >
+      + Generate Link
+    </button>
+  </div>
+
+  {showNewLink && (
+    <div className="mb-4 p-4 bg-muted/30 rounded-xl border space-y-3">
+      <input
+        className="w-full border rounded-lg px-3 py-2 text-sm bg-background"
+        placeholder="Influencer name (e.g. sarah_tiktok)"
+        value={newLinkName}
+        onChange={(e) => setNewLinkName(e.target.value.toLowerCase().replace(/\s+/g, '_'))}
+      />
+      <button
+        onClick={handleCreateLink}
+        className="w-full text-sm px-3 py-2 bg-primary text-primary-foreground rounded-lg font-bold"
+      >
+        Create Link
+      </button>
     </div>
-  );
+  )}
+
+  {referralLinks.length === 0 ? (
+    <p className="text-sm text-muted-foreground text-center py-8">No referral links yet. Generate one above.</p>
+  ) : (
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="text-xs text-muted-foreground border-b">
+            <th className="text-left pb-3 font-medium">Name</th>
+            <th className="text-left pb-3 font-medium">Link</th>
+            <th className="text-right pb-3 font-medium">Clicks</th>
+            <th className="text-right pb-3 font-medium">Signups</th>
+            <th className="text-right pb-3 font-medium">Conversions</th>
+            <th className="text-right pb-3 font-medium">Revenue</th>
+            <th className="text-right pb-3 font-medium">Payout Due</th>
+            <th className="text-right pb-3 font-medium">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {referralLinks.map((link) => (
+            <tr key={link.id} className="border-b last:border-0">
+              <td className="py-3 font-bold">{link.name}</td>
+              <td className="py-3 text-muted-foreground text-xs">{`hustlespark.net?ref=${link.code}`}</td>
+              <td className="py-3 text-right">{link.clicks || 0}</td>
+              <td className="py-3 text-right">{link.signups || 0}</td>
+              <td className="py-3 text-right">{link.conversions || 0}</td>
+              <td className="py-3 text-right">{fmt(link.totalRevenue || 0)}</td>
+              <td className="py-3 text-right text-orange-600 font-bold">{fmt(link.payoutDue || 0)}</td>
+              <td className="py-3 text-right">
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(`https://hustlespark.net?ref=${link.code}`);
+                    alert('Link copied!');
+                  }}
+                  className="text-xs px-2 py-1 border rounded-lg hover:bg-muted"
+                >
+                  Copy
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )}
+</div>
+</div>
+);
 }

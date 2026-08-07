@@ -1,6 +1,7 @@
 
 'use client';
 
+import { ReferralTracker } from '@/components/referral-tracker';
 import { ReactNode, Suspense, useState, useEffect } from 'react';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
 import { PayPalClientProvider } from '@/components/providers/paypal-client-provider';
@@ -40,11 +41,12 @@ export function ClientProviders({ children }: ClientProvidersProps) {
           <div className="relative flex min-h-screen flex-col">
             <Header />
             <main className="flex-1">
-              <Suspense fallback={
+            <Suspense fallback={
                 <div className="container py-20 text-center">
                   <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
                 </div>
               }>
+                <ReferralTracker />
                 {children}
               </Suspense>
             </main>
