@@ -135,6 +135,21 @@ export default function TermsPage() {
                             <section className="space-y-4">
                                 <h2 className="text-2xl font-black tracking-tight text-foreground flex items-center gap-3">
                                     <span className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center text-xs">13</span>
+                                    Dispute Resolution & Arbitration
+                                </h2>
+                                <p className="text-muted-foreground leading-relaxed text-base">Any dispute, controversy, or claim arising out of or relating to these Terms or the breach, termination, or invalidity thereof shall be finally settled under the Rules of Arbitration of the International Chamber of Commerce by one or more arbitrators appointed in accordance with said Rules. The place of arbitration shall be Texas, United States. The language of arbitration shall be English.</p>
+                                <p className="text-muted-foreground leading-relaxed text-base">Notwithstanding the foregoing, either party may seek emergency injunctive or other equitable relief from a court of competent jurisdiction to prevent irreparable harm pending arbitration.</p>
+                            </section>
+                            <section className="space-y-4">
+                                <h2 className="text-2xl font-black tracking-tight text-foreground flex items-center gap-3">
+                                    <span className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center text-xs">14</span>
+                                    AI Disclosure
+                                </h2>
+                                <p className="text-muted-foreground leading-relaxed text-base">HustleSpark uses artificial intelligence (Google Gemini) to generate hustle ideas, marketing copy, logos, and business strategies. All AI-generated content is clearly labeled and should be reviewed by users before use. HustleSpark does not guarantee the accuracy, completeness, or fitness of AI-generated content for any particular purpose. Users are responsible for verifying AI-generated content before relying on it for business decisions.</p>
+                            </section>
+                            <section className="space-y-4">
+                                <h2 className="text-2xl font-black tracking-tight text-foreground flex items-center gap-3">
+                                    <span className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center text-xs">15</span>
                                     Contact
                                 </h2>
                                 <p className="text-muted-foreground leading-relaxed text-base">Email: guneet.ar2010@gmail.com | Website: https://hustlespark.net</p>

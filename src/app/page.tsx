@@ -359,12 +359,15 @@ export default function Home() {
                         <Link href="/legal/earnings" className="text-sm text-muted-foreground hover:text-foreground transition-colors font-medium">Earnings Disclaimer</Link>
                         <Link href="/legal/intellectual-property" className="text-sm text-muted-foreground hover:text-foreground transition-colors font-medium">IP Policy</Link>
                         <Link href="/legal/dmca" className="text-sm text-muted-foreground hover:text-foreground transition-colors font-medium">DMCA Notice</Link>
+                        <Link href="/legal/privacy-nutrition-label" className="text-sm text-muted-foreground hover:text-foreground transition-colors font-medium">Privacy Nutrition Label</Link>
+                        <Link href="/legal/accessibility" className="text-sm text-muted-foreground hover:text-foreground transition-colors font-medium">Accessibility Statement</Link>
                     </nav>
                 </div>
             </div>
 
             <div className="pt-8 border-t border-primary/10 flex flex-col md:flex-row justify-between items-center gap-6">
-                <p className="text-xs text-muted-foreground font-bold">&copy; 2026 HustleSpark. Built with ❤️ by real hustlers.</p>
+            <p className="text-xs text-muted-foreground font-bold">&copy; 2026 HustleSpark. Built with ❤️ by real hustlers.</p>
+            <p className="text-[10px] text-muted-foreground/60 font-medium">⚡ AI Disclosure: HustleSpark uses artificial intelligence (Google Gemini) to generate hustle ideas, marketing copy, and business strategies. All AI-generated content should be reviewed before use. <a href="/legal/privacy-nutrition-label" className="underline hover:text-foreground">Learn more</a></p>
                 <p className="text-[10px] text-muted-foreground/40 max-w-lg text-center md:text-right font-medium leading-relaxed italic">
                     Every purchase on our marketplace is escrow-protected for buyer security. Results may vary based on effort and market conditions.
                 </p>
