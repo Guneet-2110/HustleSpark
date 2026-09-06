@@ -1,0 +1,95 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isTeacher(classroomId) {
+      return isSignedIn() && 
+        get(/databases/$(database)/documents/classrooms/$(classroomId)).data.teacherId == request.auth.uid;
+    }
+    
+    function isStudentInClass(classroomId) {
+      return isSignedIn() && 
+        exists(/databases/$(database)/documents/classrooms/$(classroomId)/students/$(request.auth.uid));
+    }
+    
+    function isPlatformAdmin() {
+      return isSignedIn() && 
+        request.auth.token.email in ['guneet.ar2010@gmail.com', 'tester@gmail.com'];
+    }
+
+    // Classrooms
+    match /classrooms/{classroomId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update, delete: if isTeacher(classroomId) || isPlatformAdmin();
+      
+      // Students subcollection
+      match /students/{studentId} {
+        allow read: if isSignedIn();
+        allow create: if isSignedIn() && request.auth.uid == studentId;
+        allow update: if isTeacher(classroomId) || isPlatformAdmin() || (isSignedIn() && request.auth.uid == studentId);
+        allow delete: if isTeacher(classroomId) || isPlatformAdmin();
+      }
+      
+      // Listings subcollection
+      match /listings/{listingId} {
+        allow read: if isSignedIn();
+        allow create: if isSignedIn();
+        allow update: if isTeacher(classroomId) || isPlatformAdmin() ||
+          (isSignedIn() && resource.data.studentId == request.auth.uid);
+        allow delete: if isTeacher(classroomId) || isPlatformAdmin();
+      }
+      
+      // Transactions subcollection
+      match /transactions/{transactionId} {
+        allow read: if isSignedIn();
+        allow create: if isSignedIn();
+        allow update: if isTeacher(classroomId) || isPlatformAdmin();
+        allow delete: if isPlatformAdmin();
+      }
+
+      // Notifications subcollection
+      match /notifications/{notificationId} {
+        allow read: if isSignedIn();
+        allow create: if isSignedIn();
+        allow update, delete: if isTeacher(classroomId) || isPlatformAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+      }
+
+      // Reviews subcollection
+      match /reviews/{reviewId} {
+        allow read: if isSignedIn();
+        allow create: if isSignedIn();
+        allow update, delete: if isTeacher(classroomId) || isPlatformAdmin() || (isSignedIn() && resource.data.buyerId == request.auth.uid);
+      }
+      
+      // Competitions subcollection
+      match /competitions/{competitionId} {
+        allow read: if isSignedIn();
+        allow write: if isTeacher(classroomId) || isPlatformAdmin();
+      }
+      
+      // Loans subcollection
+      match /loans/{loanId} {
+        allow read: if isTeacher(classroomId) || isStudentInClass(classroomId) || isSignedIn();
+        allow create: if isSignedIn() && request.auth.uid == request.resource.data.studentId;
+        allow update, delete: if isTeacher(classroomId) || isPlatformAdmin();
+      }
+      
+      // Investments subcollection
+      match /investments/{investmentId} {
+        allow read: if isSignedIn();
+        allow create: if isSignedIn();
+        allow update, delete: if isTeacher(classroomId) || isPlatformAdmin();
+      }
+    }
+    
+    // Teacher profiles
+    match /teachers/{teacherId} {
+      allow read, write: if isSignedIn() && request.auth.uid == teacherId || isPlatformAdmin();
+    }
+  }
+}
