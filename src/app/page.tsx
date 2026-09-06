@@ -1,377 +1,281 @@
-
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { CheckCircle, Lightbulb, Rocket, Sparkles, Check, Star, TrendingUp, Bot, ShieldCheck, Zap, Store } from 'lucide-react';
+import { CheckCircle, Rocket, Sparkles, Check, Star, TrendingUp, Bot, ShieldCheck, Zap, Store, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
+import { HustleCity } from '@/components/hustle-city';
+import { HandScrubber } from '@/components/hand-scrubber';
+import { TiltCard } from '@/components/tilt-card';
+import { CinematicScroll } from '@/components/cinematic-scroll';
+import { Meteors } from '@/components/ui/meteors';
+import { TypingAnimation } from '@/components/ui/typing-animation';
+import { HyperText } from '@/components/ui/hyper-text';
+import { WarpBackground } from '@/components/ui/warp-background';
+import { AnimatedGridPattern } from '@/components/ui/animated-grid-pattern';
+import { AnimatedShinyText } from '@/components/ui/animated-shiny-text';
+import { cn } from '@/lib/utils';
 
-function Avatar1() {
-    return (
-        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40" fill="none">
-            <circle cx="20" cy="20" r="20" fill="#635BFF" />
-            <path d="M26.5 28C26.5 24.4101 23.5899 21.5 20 21.5C16.4101 21.5 13.5 24.4101 13.5 28" stroke="#E0E7FF" strokeWidth="2" strokeLinecap="round" />
-            <circle cx="20" cy="16" r="4" fill="#E0E7FF" />
-        </svg>
-    )
-}
-
-function Avatar2() {
-    return (
-        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40" fill="none">
-            <circle cx="20" cy="20" r="20" fill="#F472B6" />
-            <path d="M26.5 28C26.5 24.4101 23.5899 21.5 20 21.5C16.4101 21.5 13.5 24.4101 13.5 28" stroke="#FCE7F3" strokeWidth="2" strokeLinecap="round" />
-            <circle cx="20" cy="16" r="4" fill="#FCE7F3" />
-        </svg>
-    )
-}
-
-function Avatar3() {
-    return (
-        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40" fill="none">
-            <circle cx="20" cy="20" r="20" fill="#38BDF8" />
-            <path d="M26.5 28C26.5 24.4101 23.5899 21.5 20 21.5C16.4101 21.5 13.5 24.4101 13.5 28" stroke="#E0F2FE" strokeWidth="2" strokeLinecap="round" />
-            <circle cx="20" cy="16" r="4" fill="#E0F2FE" />
-        </svg>
-    )
-}
 
 export default function Home() {
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen bg-background">
+      <CinematicScroll />
       <main className="flex-1">
-        <section className="w-full py-20 md:py-32 lg:py-40 bg-gradient-to-br from-background to-primary/10">
-          <div className="container px-4 md:px-6">
-            <div className="grid gap-6 lg:grid-cols-2 lg:gap-12 xl:gap-24 items-center">
-              <div className="flex flex-col justify-center space-y-4 animate-fade-in-down">
-                <div className="space-y-4">
-                  <h1 className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent">
-                    Launch Your Next Side Hustle with AI
-                  </h1>
-                  <p className="max-w-[600px] text-muted-foreground text-base md:text-xl font-medium">
-                    HustleSpark is your personal AI-powered launchpad. Stop wondering and start building your next venture today with expert strategy and safe marketplace tools.
-                  </p>
-                </div>
-                <div className="flex flex-col gap-3 min-[400px]:flex-row">
-                  <Button asChild size="lg" className="h-14 px-8 rounded-2xl font-black text-lg group shadow-xl">
-                    <Link href="/login?tab=signup">
-                      Get Started for Free
-                      <Rocket className="ml-2 h-6 w-6 transition-transform duration-300 group-hover:translate-x-1" />
-                    </Link>
-                  </Button>
-                  <Button asChild variant="outline" size="lg" className="h-14 px-8 rounded-2xl font-black text-lg border-2">
-                    <Link href="/marketplace">
-                      <Store className="mr-2 h-6 w-6" />
-                      Browse Marketplace
-                    </Link>
-                  </Button>
-                </div>
-              </div>
-              <div className="relative h-[450px] flex items-center justify-center animate-fade-in">
-                 <div className="absolute w-80 h-80 bg-accent/30 rounded-full blur-[100px] animate-pulse" />
-                 <div className="absolute bottom-0 right-10 w-64 h-64 bg-primary/20 rounded-full blur-[100px] animate-pulse animation-delay-400" />
-                 <div className="relative z-10 w-full max-w-md">
-                    <Card className="p-8 bg-background/50 backdrop-blur-xl border-primary/20 shadow-2xl rounded-[2.5rem] transform hover:scale-105 transition-transform">
-                      <CardHeader className="p-0 mb-4">
-                        <div className="flex items-center gap-2 mb-2">
-                           <Bot className="h-5 w-5 text-primary" />
-                           <span className="text-[10px] font-black uppercase tracking-widest text-primary">Live Strategy Feed</span>
-                        </div>
-                        <CardTitle className="text-2xl font-black">AI Strategy Ready</CardTitle>
-                      </CardHeader>
-                      <CardContent className="p-0 space-y-4">
-                        <div className="flex items-start gap-3 bg-muted/40 p-4 rounded-2xl">
-                           <CheckCircle className="h-5 w-5 text-green-500 shrink-0 mt-0.5" />
-                           <p className="text-sm font-medium">Logo & Branding Kit Generated</p>
-                        </div>
-                        <div className="flex items-start gap-3 bg-muted/40 p-4 rounded-2xl">
-                           <CheckCircle className="h-5 w-5 text-green-500 shrink-0 mt-0.5" />
-                           <p className="text-sm font-medium">4-Week Launch Roadmap Finalized</p>
-                        </div>
-                        <div className="flex items-start gap-3 bg-primary/10 p-4 rounded-2xl border border-primary/20">
-                           <ShieldCheck className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-                           <p className="text-sm font-black">Escrow Protection Active</p>
-                        </div>
-                      </CardContent>
-                    </Card>
-                 </div>
-              </div>
-            </div>
-          </div>
-        </section>
-        
-        <section id="features" className="w-full py-20 lg:py-32">
-          <div className="container px-4 md:px-6 animate-fade-in-down">
-            <div className="flex flex-col items-center justify-center space-y-4 text-center">
-              <div className="space-y-2">
-                <div className="inline-block rounded-full bg-primary/10 text-primary px-4 py-1.5 text-xs font-black uppercase tracking-widest">The Core Stack</div>
-                <h2 className="text-3xl font-black tracking-tighter sm:text-5xl">Launch Faster. Earn Sooner.</h2>
-                <p className="max-w-[900px] text-muted-foreground md:text-xl font-medium">
-                  HustleSpark provides you with every tool required to transform an interest into a professional, profitable venture.
-                </p>
-              </div>
-            </div>
-            <div className="mx-auto grid max-w-5xl items-start gap-8 sm:grid-cols-2 lg:grid-cols-3 mt-16">
-              <div className="grid gap-4 text-center p-8 rounded-[2rem] bg-card border shadow-sm hover:shadow-xl hover:border-primary/20 transition-all duration-500 transform hover:-translate-y-2 group">
-                <div className="h-16 w-16 mx-auto bg-primary/10 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                   <Lightbulb className="h-8 w-8 text-primary" />
-                </div>
-                <h3 className="text-xl font-black">AI Idea Engine</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">Personalized side hustle ideas generated based on your age, skills, and time availability.</p>
-              </div>
-              <div className="grid gap-4 text-center p-8 rounded-[2rem] bg-card border shadow-sm hover:shadow-xl hover:border-primary/20 transition-all duration-500 transform hover:-translate-y-2 group">
-                 <div className="h-16 w-16 mx-auto bg-accent/10 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                   <Zap className="h-8 w-8 text-accent" />
-                </div>
-                <h3 className="text-xl font-black">Instant Branding</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">Instantly generate professional logos, flyers, and high-conversion social media marketing prompts.</p>
-              </div>
-              <div className="grid gap-4 text-center p-8 rounded-[2rem] bg-card border shadow-sm hover:shadow-xl hover:border-primary/20 transition-all duration-500 transform hover:-translate-y-2 group">
-                 <div className="h-16 w-16 mx-auto bg-green-500/10 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                   <ShieldCheck className="h-8 w-8 text-green-500" />
-                </div>
-                <h3 className="text-xl font-black">Secure Escrow</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">Acquire or sell ventures with our industry-standard escrow protection. Payment is only released on delivery.</p>
-              </div>
-            </div>
-          </div>
-        </section>
 
-        <section className="w-full py-20 bg-muted/30">
-            <div className="container px-4 md:px-6 animate-fade-in-down">
-                <div className="text-center space-y-3 mb-16">
-                    <h2 className="text-3xl font-black tracking-tighter md:text-5xl">Built for Teen Entrepreneurs</h2>
-                    <p className="mx-auto max-w-[600px] text-muted-foreground text-lg font-medium">
-                        Everything you need to go from idea to income — all in one place.
-                    </p>
-                </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                    <div className="bg-background rounded-[2rem] p-8 text-center shadow-lg border border-primary/10">
-                        <p className="text-4xl font-black text-primary mb-2">AI</p>
-                        <p className="text-sm font-bold text-muted-foreground">Powered Hustle Ideas</p>
-                    </div>
-                    <div className="bg-background rounded-[2rem] p-8 text-center shadow-lg border border-primary/10">
-                        <p className="text-4xl font-black text-primary mb-2">16</p>
-                        <p className="text-sm font-bold text-muted-foreground">Week Launch Roadmap</p>
-                    </div>
-                    <div className="bg-background rounded-[2rem] p-8 text-center shadow-lg border border-primary/10">
-                        <p className="text-4xl font-black text-primary mb-2">90%</p>
-                        <p className="text-sm font-bold text-muted-foreground">Payout to Sellers</p>
-                    </div>
-                    <div className="bg-background rounded-[2rem] p-8 text-center shadow-lg border border-primary/10">
-                        <p className="text-4xl font-black text-primary mb-2">🔒</p>
-                        <p className="text-sm font-bold text-muted-foreground">Escrow Protected</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-        
-        <section id="premium" className="w-full py-20 lg:py-32">
-            <div className="container px-4 md:px-6 animate-fade-in-down">
-                <div className="flex flex-col items-center justify-center space-y-4 text-center">
-                    <div className="space-y-2">
-                        <div className="inline-block rounded-full bg-primary text-primary-foreground px-4 py-1.5 text-xs font-black uppercase tracking-widest">Unlock Your Full Potential</div>
-                        <h2 className="text-4xl font-black tracking-tighter sm:text-6xl">Go From Zero to Revenue</h2>
-                        <p className="max-w-[900px] text-muted-foreground md:text-xl font-medium">
-                            Premium access gives you the complete arsenal to go from initial interest to a successful market exit.
-                        </p>
-                    </div>
-                </div>
-                <div className="mx-auto grid max-w-6xl items-center gap-12 py-16 lg:grid-cols-2">
-                    <div className="flex flex-col justify-center space-y-8">
-                        <ul className="grid gap-8">
-                            <li className="flex gap-4">
-                                <div className="h-10 w-10 shrink-0 rounded-full bg-primary/10 flex items-center justify-center">
-                                   <Sparkles className="h-5 w-5 text-primary" />
-                                </div>
-                                <div className="space-y-1">
-                                    <h3 className="text-xl font-black">Strategic Hustle Blueprints</h3>
-                                    <p className="text-muted-foreground text-sm leading-relaxed">
-                                        Go beyond basic ideas with elite pricing strategies, professional branding origins, and high-impact marketing tactics tailored for your first 5 customers.
-                                    </p>
-                                </div>
-                            </li>
-                            <li className="flex gap-4">
-                                <div className="h-10 w-10 shrink-0 rounded-full bg-primary/10 flex items-center justify-center">
-                                   <Bot className="h-5 w-5 text-primary" />
-                                </div>
-                                <div className="space-y-1">
-                                    <h3 className="text-xl font-black">Sparky: Personal AI Coach</h3>
-                                    <p className="text-muted-foreground text-sm leading-relaxed">
-                                        Chat with your dedicated AI mentor 24/7. Get real-time advice, expert copywriting help, and actionable growth feedback on your specific venture.
-                                    </p>
-                                </div>
-                            </li>
-                            <li className="flex gap-4">
-                                <div className="h-10 w-10 shrink-0 rounded-full bg-primary/10 flex items-center justify-center">
-                                   <TrendingUp className="h-5 w-5 text-primary" />
-                                </div>
-                                <div className="space-y-1">
-                                    <h3 className="text-xl font-black">4-Week Launch Roadmap</h3>
-                                    <p className="text-muted-foreground text-sm leading-relaxed">
-                                        Don't guess what's next. Follow an interactive day-by-day roadmap that guides you from setup to launch, with live progress tracking and goals.
-                                    </p>
-                                </div>
-                            </li>
-                             <li className="flex gap-4">
-                                <div className="h-10 w-10 shrink-0 rounded-full bg-primary/10 flex items-center justify-center">
-                                   <ShieldCheck className="h-5 w-5 text-primary" />
-                                </div>
-                                <div className="space-y-1">
-                                    <h3 className="text-xl font-black">Escrow-Protected Exit</h3>
-                                    <p className="text-muted-foreground text-sm leading-relaxed">
-                                        Ready to move on? List your venture for sale. We handle secure escrow payments and asset transfers so you get paid safely and instantly.
-                                    </p>
-                                </div>
-                            </li>
-                        </ul>
-                    </div>
-                     <div className="flex flex-col items-center">
-                        <Card className="w-full max-w-sm border-primary/20 border-2 shadow-2xl shadow-primary/20 transform hover:scale-105 transition-all duration-500 rounded-[3rem] overflow-hidden">
-                            <CardHeader className="text-center bg-primary/5 py-12">
-                                <CardTitle className="text-2xl font-black mb-2">Growth Access</CardTitle>
-                                <div className="flex items-center justify-center gap-1">
-                                   <span className="text-5xl font-black">$15</span>
-                                   <span className="text-lg font-bold text-muted-foreground">/mo</span>
-                                </div>
-                            </CardHeader>
-                            <CardContent className="pt-8 px-8 text-center">
-                                <p className="text-sm font-medium text-muted-foreground leading-relaxed">Join thousands of entrepreneurs building the future. Your small investment today is the seed for your next big paycheck.</p>
-                            </CardContent>
-                            <CardFooter className="p-8">
-                                <Button asChild className="w-full h-14 rounded-2xl font-black text-xl shadow-xl group">
-                                    <Link href="/login?tab=signup">
-                                        Unlock Premium
-                                        <Rocket className="ml-2 h-6 w-6 transition-transform group-hover:translate-x-1" />
-                                    </Link>
-                                </Button>
-                            </CardFooter>
-                        </Card>
-                        <div className="mt-8 flex items-center gap-2 text-muted-foreground font-black text-[10px] uppercase tracking-[0.2em]">
-                           <ShieldCheck className="h-4 w-4" /> SSL SECURE CHECKOUT
-                        </div>
-                     </div>
-                </div>
-            </div>
-        </section>
-        
-        {/* MOBILE APP COMING SOON */}
-        <section className="w-full py-20 border-t bg-gradient-to-br from-primary/5 to-accent/5">
-          <div className="container px-4 md:px-6">
-            <div className="flex flex-col items-center text-center space-y-6">
-              <div className="inline-flex items-center gap-2 bg-primary/10 border border-primary/20 rounded-full px-4 py-1.5">
-                <span className="h-2 w-2 bg-orange-500 rounded-full animate-pulse" />
-                <span className="text-xs font-black uppercase tracking-widest text-primary">Coming Soon</span>
-              </div>
-              <h2 className="text-4xl font-black tracking-tighter md:text-5xl">HustleSpark Mobile App</h2>
-              <p className="max-w-[600px] text-muted-foreground text-lg font-medium">
-                Take your hustle anywhere. The HustleSpark app is coming to iOS and Android — manage your ventures, chat with buyers, and track earnings from your pocket.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 mt-4">
-                <div className="flex items-center gap-3 bg-background border-2 border-border rounded-2xl px-6 py-4 opacity-60 cursor-not-allowed">
-                  <svg className="h-8 w-8" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
-                  </svg>
-                  <div className="text-left">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Coming Soon</p>
-                    <p className="font-black text-sm">App Store</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 bg-background border-2 border-border rounded-2xl px-6 py-4 opacity-60 cursor-not-allowed">
-                  <svg className="h-8 w-8" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M3.18 23.76c.3.17.63.24.97.21l13.2-7.62-2.82-2.82-11.35 10.23zM.54 1.18C.2 1.57 0 2.17 0 2.96v18.08c0 .79.2 1.39.54 1.78l.09.09 10.13-10.13v-.24L.63 1.09l-.09.09zM20.65 10.23l-2.85-1.65-3.18 3.18 3.18 3.18 2.88-1.66c.82-.47.82-1.24-.03-1.71v.66zM4.15.24L17.35 7.86l-2.82 2.82L3.18.45C3.48.27 3.84.23 4.15.24z"/>
-                  </svg>
-                  <div className="text-left">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Coming Soon</p>
-                    <p className="font-black text-sm">Google Play</p>
-                  </div>
-                </div>
-              </div>
-              <p className="text-xs text-muted-foreground font-medium">In the meantime, add HustleSpark to your home screen from your browser for a native app experience.</p>
-            </div>
-          </div>
-        </section>
+        {/* HERO */}
+        <section className="relative min-h-screen flex items-center overflow-hidden bg-[#030308]">
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#030308]/20 to-[#030308] z-[2]" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#030308]/80 via-transparent to-transparent z-[2]" />
+          <Meteors number={40} className="z-[5]" />
 
-        <section className="w-full py-20 border-t">
-          <div className="container grid items-center justify-center gap-4 px-4 text-center md:px-6 animate-fade-in-down">
-            <div className="space-y-4">
-              <p className="mx-auto max-w-[600px] text-muted-foreground text-lg font-medium">
-                Stop dreaming and start doing. Access the AI engine that turns interests into high-margin ventures.
-              </p>
+          <div className="container px-4 md:px-6 relative z-10 py-40 text-center mx-auto">
+            <div className="animate-fade-up mb-8 flex justify-center">
+              <div className={cn("group rounded-full border border-primary/20 bg-primary/8 text-white transition-all ease-in hover:cursor-pointer hover:bg-primary/15")}>
+                <AnimatedShinyText className="inline-flex items-center justify-center px-6 py-2 text-xs font-black uppercase tracking-widest text-primary">
+                  <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse mr-2" />
+                  AI-Powered Entrepreneurship
+                  <ArrowRight className="ml-2 h-3 w-3" />
+                </AnimatedShinyText>
+              </div>
             </div>
-            <div className="mx-auto w-full max-w-md space-y-4 mt-8">
-               <Button asChild size="lg" className="w-full h-16 rounded-2xl font-black text-2xl shadow-2xl group">
+
+            <div className="animate-fade-up animation-delay-100 mb-6">
+              <h1 className="heading-display text-6xl md:text-7xl lg:text-8xl text-white mb-4">
+                Turn Your Obsession Into
+              </h1>
+              <HyperText className="heading-display text-6xl md:text-7xl lg:text-8xl text-gradient-animated" startOnView={false}>
+                Your Empire.
+              </HyperText>
+            </div>
+
+            <div className="animate-fade-up animation-delay-200 mb-6">
+              <TypingAnimation
+                className="text-lg md:text-xl text-white/45 max-w-[520px] mx-auto leading-relaxed"
+                duration={30}
+              >
+                HustleSpark uses AI to generate your business idea, build your brand, and get you selling — in minutes.
+              </TypingAnimation>
+            </div>
+
+            <div className="flex flex-col gap-3 min-[400px]:flex-row justify-center animate-fade-up animation-delay-300 mt-10">
+              <Button asChild size="lg" className="h-14 px-8 rounded-2xl font-black text-lg shadow-xl btn-magnetic">
                 <Link href="/login?tab=signup">
-                  Sign Up Now
-                  <Sparkles className="ml-2 h-6 w-6 transition-all duration-300 group-hover:scale-110" />
+                  Launch Your Hustle
+                  <Rocket className="ml-2 h-5 w-5" />
                 </Link>
               </Button>
-              <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground font-bold uppercase tracking-widest">
-                 <span className="flex items-center gap-1"><Check className="h-4 w-4 text-green-500" /> Free Tier Available</span>
-                 <span className="flex items-center gap-1"><Check className="h-4 w-4 text-green-500" /> No CC Required</span>
-              </div>
+              <Button asChild variant="outline" size="lg" className="h-14 px-8 rounded-2xl font-black text-lg border border-white/15 bg-white/5 text-white hover:bg-white/10 btn-magnetic">
+                <Link href="/marketplace">
+                  <Store className="mr-2 h-5 w-5" />
+                  Browse Marketplace
+                </Link>
+              </Button>
+            </div>
+
+            <div className="flex items-center justify-center gap-6 mt-8 animate-fade-up animation-delay-400">
+              {['Free to start', 'No credit card', 'Escrow protected'].map(t => (
+                <div key={t} className="flex items-center gap-1.5 text-xs font-bold text-white/30">
+                  <CheckCircle className="h-3.5 w-3.5 text-primary" />
+                  {t}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="scroll-cinematic">
+            <div className="scroll-line-cinematic" />
+            <div className="scroll-txt-cinematic">Scroll</div>
+          </div>
+        </section>
+
+        {/* MARQUEE */}
+        <div className="marquee-cinematic">
+          <div className="marquee-track-cinematic">
+            {['Ship It', 'Get Paid', 'Level Up', 'Build Your Empire', 'AI Powered', 'Zero to Revenue', 'Ship It', 'Get Paid', 'Level Up', 'Build Your Empire', 'AI Powered', 'Zero to Revenue'].map((item, i) => (
+              <span key={i} className="marquee-item-cinematic">{item} <span>✦</span></span>
+            ))}
+          </div>
+        </div>
+
+        {/* STATS */}
+        <div className="stats-cinematic">
+          {[
+            { num: '90%', label: 'Payout to sellers', color: 'text-primary' },
+            { num: '16wk', label: 'Launch roadmap', color: 'text-accent' },
+            { num: '3s', label: 'To generate your hustle', color: 'text-primary' },
+            { num: '$0', label: 'To get started', color: 'text-accent' },
+          ].map(s => (
+            <div key={s.label} className="stat-cinematic cin-reveal">
+              <div className={`stat-num-cinematic ${s.color}`}>{s.num}</div>
+              <div className="stat-label-cinematic">{s.label}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* FEATURES — WARP BACKGROUND */}
+        <section className="w-full py-24 relative overflow-hidden">
+          <AnimatedGridPattern
+            numSquares={40}
+            maxOpacity={0.06}
+            duration={4}
+            className={cn("absolute inset-0", "[mask-image:radial-gradient(ellipse_at_center,white,transparent)]")}
+          />
+          <div className="container px-4 md:px-6 relative z-10">
+            <div className="text-center mb-16 cin-reveal">
+              <span className="text-xs font-black uppercase tracking-widest text-primary block mb-4">The Platform</span>
+              <h2 className="heading-display text-5xl md:text-6xl text-white">Everything you need<br/>to launch and get paid.</h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <TiltCard className="md:col-span-2 rounded-[2rem] bg-white/[0.03] border border-white/[0.07] p-8 cin-reveal relative overflow-hidden">
+                <Meteors number={8} />
+                <div className="h-10 w-10 rounded-xl bg-primary/15 flex items-center justify-center mb-5">
+                  <Zap className="h-5 w-5 text-primary" />
+                </div>
+                <h3 className="text-xl font-black text-white mb-2">AI Hustle Generator</h3>
+                <p className="text-white/40 text-sm leading-relaxed mb-6">Enter your interests and skills. Our AI generates 3 personalized business ideas tailored exactly to you in seconds.</p>
+                <div className="text-5xl font-black text-primary tracking-tighter">3s</div>
+                <div className="text-xs text-white/25 mt-1">Average generation time</div>
+              </TiltCard>
+
+              <TiltCard className="rounded-[2rem] bg-white/[0.03] border border-white/[0.07] p-8 cin-reveal cin-reveal-delay-1">
+                <div className="h-10 w-10 rounded-xl bg-accent/15 flex items-center justify-center mb-5">
+                  <Star className="h-5 w-5 text-accent" />
+                </div>
+                <h3 className="text-xl font-black text-white mb-2">Hustle Score</h3>
+                <p className="text-white/40 text-sm leading-relaxed mb-6">Track your 0-1000 reputation score. Climb from Starter to Elite.</p>
+                <div className="space-y-2">
+                  {[['Elite 💎', 95], ['Pro 🥇', 68], ['Rising 🥈', 42], ['Starter 🥉', 20]].map(([label, w]) => (
+                    <div key={label as string}>
+                      <div className="text-xs text-white/30 mb-1">{label}</div>
+                      <div className="h-1.5 bg-white/[0.06] rounded-full overflow-hidden">
+                        <div className="h-full bg-gradient-to-r from-primary to-accent rounded-full" style={{ width: w + '%' }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </TiltCard>
+
+              <TiltCard className="rounded-[2rem] bg-white/[0.03] border border-white/[0.07] p-8 cin-reveal">
+                <div className="h-10 w-10 rounded-xl bg-green-500/15 flex items-center justify-center mb-5">
+                  <ShieldCheck className="h-5 w-5 text-green-400" />
+                </div>
+                <h3 className="text-xl font-black text-white mb-2">Escrow Protected</h3>
+                <p className="text-white/40 text-sm leading-relaxed">Every transaction held safely. Payment releases only after you confirm delivery.</p>
+              </TiltCard>
+
+              <TiltCard className="rounded-[2rem] bg-white/[0.03] border border-white/[0.07] p-8 cin-reveal cin-reveal-delay-1">
+                <div className="h-10 w-10 rounded-xl bg-primary/15 flex items-center justify-center mb-5">
+                  <Bot className="h-5 w-5 text-primary" />
+                </div>
+                <h3 className="text-xl font-black text-white mb-2">Sparky AI Coach</h3>
+                <p className="text-white/40 text-sm leading-relaxed">Your personal AI mentor available 24/7 for real advice and growth feedback.</p>
+              </TiltCard>
+
+              <TiltCard className="rounded-[2rem] bg-white/[0.03] border border-white/[0.07] p-8 cin-reveal cin-reveal-delay-2">
+                <div className="h-10 w-10 rounded-xl bg-accent/15 flex items-center justify-center mb-5">
+                  <TrendingUp className="h-5 w-5 text-accent" />
+                </div>
+                <h3 className="text-xl font-black text-white mb-2">16-Week Roadmap</h3>
+                <p className="text-white/40 text-sm leading-relaxed">Day-by-day launch plan from setup to first sale, with live progress tracking.</p>
+              </TiltCard>
             </div>
           </div>
         </section>
+
+        {/* HAND SCRUBBER */}
+        <HandScrubber />
+
+        {/* HUSTLE CITY */}
+        <section className="relative min-h-[80vh] flex items-end overflow-hidden bg-[#030308]">
+          <div className="absolute inset-0 bg-gradient-to-b from-[#030308]/50 to-[#030308] z-[2]" />
+          <div className="container px-4 md:px-6 relative z-10 pb-16 w-full">
+            <div className="cin-reveal mb-4">
+              <span className="text-xs font-black uppercase tracking-widest text-primary">Hustle City</span>
+            </div>
+            <div className="cin-reveal cin-reveal-delay-1 mb-6">
+              <h2 className="heading-display text-5xl md:text-6xl lg:text-7xl text-white">
+                Seven worlds.<br/>
+                <span className="text-gradient-animated">Pick your building.</span>
+              </h2>
+            </div>
+            <div className="cin-reveal cin-reveal-delay-2 mb-12">
+              <p className="text-white/40 text-lg max-w-md">Every glowing tower is a different way to make money. Click one to step inside.</p>
+            </div>
+            <div className="cin-reveal cin-reveal-delay-3">
+              <HustleCity />
+            </div>
+          </div>
+        </section>
+
+        {/* CTA — WARP */}
+        <WarpBackground className="min-h-[80vh] flex items-center justify-center">
+          <div className="relative z-10 text-center max-w-[560px] mx-auto px-6">
+            <h2 className="heading-display text-5xl md:text-6xl text-white mb-6 cin-reveal">
+              Your first paycheck<br/>
+              starts <span className="text-gradient-animated">here.</span>
+            </h2>
+            <p className="text-white/40 text-lg mb-10 leading-relaxed cin-reveal cin-reveal-delay-1">
+              Join thousands of entrepreneurs building the future. Free to start, no credit card needed.
+            </p>
+            <div className="cin-reveal cin-reveal-delay-2">
+              <Button asChild size="lg" className="h-16 px-12 rounded-2xl font-black text-xl shadow-2xl btn-magnetic">
+                <Link href="/login?tab=signup">
+                  Launch Your Hustle
+                  <Sparkles className="ml-2 h-6 w-6" />
+                </Link>
+              </Button>
+            </div>
+            <div className="flex items-center justify-center gap-4 mt-6 text-xs text-white/25 font-bold uppercase tracking-widest cin-reveal cin-reveal-delay-3">
+              <span className="flex items-center gap-1"><Check className="h-3.5 w-3.5 text-primary" /> Free Tier</span>
+              <span className="flex items-center gap-1"><Check className="h-3.5 w-3.5 text-primary" /> No CC Required</span>
+              <span className="flex items-center gap-1"><Check className="h-3.5 w-3.5 text-primary" /> Instant Access</span>
+            </div>
+          </div>
+        </WarpBackground>
+
       </main>
-      
-      <footer className="border-t bg-card/50 backdrop-blur-xl">
+
+      <footer className="border-t border-white/[0.06] bg-black/20 backdrop-blur-xl">
         <div className="container px-4 py-16">
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-12 mb-16">
-                <div className="col-span-2 space-y-6">
-                    <Link href="/" className="flex items-center gap-2">
-                        <Sparkles className="h-6 w-6 text-primary" />
-                        <span className="text-xl font-black tracking-tighter">HustleSpark</span>
-                    </Link>
-                    <p className="text-sm text-muted-foreground leading-relaxed max-w-xs">
-                        Empowering creators to launch, track, and sell their ventures using state-of-the-art AI coaching and secure marketplace tools.
-                    </p>
-                    <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 w-fit text-[10px] font-black text-primary uppercase tracking-widest">
-                        <ShieldCheck className="h-3 w-3" />
-                        Escrow Protected Platform
-                    </div>
-                </div>
-                
-                <div className="space-y-4">
-                    <h4 className="text-xs font-black uppercase tracking-widest text-primary">Platform</h4>
-                    <nav className="flex flex-col gap-2">
-                        <Link href="/marketplace" className="text-sm text-muted-foreground hover:text-foreground transition-colors font-medium">Marketplace</Link>
-                        <Link href="/login?tab=signup" className="text-sm text-muted-foreground hover:text-foreground transition-colors font-medium">Start Building</Link>
-                        <Link href="/profile" className="text-sm text-muted-foreground hover:text-foreground transition-colors font-medium">Dashboard</Link>
-                        <Link href="/contact" className="text-sm text-muted-foreground hover:text-foreground transition-colors font-medium">Contact & Support</Link>
-                    </nav>
-                </div>
-
-                <div className="space-y-4">
-                    <h4 className="text-xs font-black uppercase tracking-widest text-primary">Legal</h4>
-                    <nav className="flex flex-col gap-2">
-                        <Link href="/legal/privacy" className="text-sm text-muted-foreground hover:text-foreground transition-colors font-medium">Privacy Policy</Link>
-                        <Link href="/legal/terms" className="text-sm text-muted-foreground hover:text-foreground transition-colors font-medium">Terms of Service</Link>
-                        <Link href="/legal/cookies" className="text-sm text-muted-foreground hover:text-foreground transition-colors font-medium">Cookie Policy</Link>
-                        <Link href="/legal/minors" className="text-sm text-muted-foreground hover:text-foreground transition-colors font-medium">Terms for Minors</Link>
-                        <Link href="/legal/refunds" className="text-sm text-muted-foreground hover:text-foreground transition-colors font-medium">Refund Policy</Link>
-                        <Link href="/legal/acceptable-use" className="text-sm text-muted-foreground hover:text-foreground transition-colors font-medium">Acceptable Use</Link>
-                    </nav>
-                </div>
-
-                <div className="space-y-4">
-                    <h4 className="text-xs font-black uppercase tracking-widest text-primary">Governance</h4>
-                    <nav className="flex flex-col gap-2">
-                        <Link href="/legal/marketplace" className="text-sm text-muted-foreground hover:text-foreground transition-colors font-medium">Marketplace Policy</Link>
-                        <Link href="/legal/earnings" className="text-sm text-muted-foreground hover:text-foreground transition-colors font-medium">Earnings Disclaimer</Link>
-                        <Link href="/legal/intellectual-property" className="text-sm text-muted-foreground hover:text-foreground transition-colors font-medium">IP Policy</Link>
-                        <Link href="/legal/dmca" className="text-sm text-muted-foreground hover:text-foreground transition-colors font-medium">DMCA Notice</Link>
-                        <Link href="/legal/privacy-nutrition-label" className="text-sm text-muted-foreground hover:text-foreground transition-colors font-medium">Privacy Nutrition Label</Link>
-                        <Link href="/legal/accessibility" className="text-sm text-muted-foreground hover:text-foreground transition-colors font-medium">Accessibility Statement</Link>
-                    </nav>
-                </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-12 mb-16">
+            <div className="col-span-2 space-y-6">
+              <Link href="/" className="flex items-center gap-2">
+                <Sparkles className="h-6 w-6 text-primary" />
+                <span className="text-xl font-black tracking-tighter text-white">HustleSpark</span>
+              </Link>
+              <p className="text-sm text-white/30 leading-relaxed max-w-xs">Empowering the next generation of entrepreneurs with AI-powered tools and a secure marketplace.</p>
+              <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 w-fit text-[10px] font-black text-primary uppercase tracking-widest">
+                <ShieldCheck className="h-3 w-3" /> Escrow Protected Platform
+              </div>
             </div>
-
-            <div className="pt-8 border-t border-primary/10 flex flex-col md:flex-row justify-between items-center gap-6">
-            <p className="text-xs text-muted-foreground font-bold">&copy; 2026 HustleSpark. Built with ❤️ by real hustlers.</p>
-            <p className="text-[10px] text-muted-foreground/60 font-medium">⚡ AI Disclosure: HustleSpark uses artificial intelligence (Google Gemini) to generate hustle ideas, marketing copy, and business strategies. All AI-generated content should be reviewed before use. <a href="/legal/privacy-nutrition-label" className="underline hover:text-foreground">Learn more</a></p>
-                <p className="text-[10px] text-muted-foreground/40 max-w-lg text-center md:text-right font-medium leading-relaxed italic">
-                    Every purchase on our marketplace is escrow-protected for buyer security. Results may vary based on effort and market conditions.
-                </p>
+            <div className="space-y-4">
+              <h4 className="text-xs font-black uppercase tracking-widest text-primary">Platform</h4>
+              <nav className="flex flex-col gap-2">
+                <Link href="/marketplace" className="text-sm text-white/30 hover:text-white transition-colors">Marketplace</Link>
+                <Link href="/login?tab=signup" className="text-sm text-white/30 hover:text-white transition-colors">Start Building</Link>
+                <Link href="/profile" className="text-sm text-white/30 hover:text-white transition-colors">Dashboard</Link>
+              </nav>
             </div>
+            <div className="space-y-4">
+              <h4 className="text-xs font-black uppercase tracking-widest text-primary">Legal</h4>
+              <nav className="flex flex-col gap-2">
+                <Link href="/legal/privacy" className="text-sm text-white/30 hover:text-white transition-colors">Privacy Policy</Link>
+                <Link href="/legal/terms" className="text-sm text-white/30 hover:text-white transition-colors">Terms of Service</Link>
+                <Link href="/legal/privacy-nutrition-label" className="text-sm text-white/30 hover:text-white transition-colors">Privacy Label</Link>
+                <Link href="/legal/accessibility" className="text-sm text-white/30 hover:text-white transition-colors">Accessibility</Link>
+              </nav>
+            </div>
+            <div className="space-y-4">
+              <h4 className="text-xs font-black uppercase tracking-widest text-primary">Governance</h4>
+              <nav className="flex flex-col gap-2">
+                <Link href="/legal/marketplace" className="text-sm text-white/30 hover:text-white transition-colors">Marketplace Policy</Link>
+                <Link href="/legal/dmca" className="text-sm text-white/30 hover:text-white transition-colors">DMCA Notice</Link>
+                <Link href="/legal/earnings" className="text-sm text-white/30 hover:text-white transition-colors">Earnings Disclaimer</Link>
+              </nav>
+            </div>
+          </div>
+          <div className="pt-8 border-t border-white/[0.05] flex flex-col md:flex-row justify-between items-center gap-4">
+            <p className="text-xs text-white/20 font-bold">&copy; 2026 HustleSpark. All Rights Reserved.</p>
+            <p className="text-[10px] text-white/15 max-w-lg text-center md:text-right">AI Disclosure: HustleSpark uses artificial intelligence to generate hustle ideas and marketing copy. All AI-generated content should be reviewed before use.</p>
+          </div>
         </div>
       </footer>
     </div>

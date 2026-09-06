@@ -73,6 +73,11 @@ export default {
         sm: 'calc(var(--radius) - 4px)',
       },
       keyframes: {
+        'meteor': {
+          '0%': { transform: 'rotate(var(--angle)) translateX(0)', opacity: '1' },
+          '70%': { opacity: '1' },
+          '100%': { transform: 'rotate(var(--angle)) translateX(-500px)', opacity: '0' },
+        },
         'accordion-down': {
           from: {
             height: '0',
@@ -117,6 +122,7 @@ export default {
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
+        'meteor': 'meteor 5s linear infinite',
         'accordion-up': 'accordion-up 0.2s ease-out',
         'fade-in': 'fade-in 0.5s ease-in-out',
         'fade-in-down': 'fade-in-down 0.5s ease-in-out',

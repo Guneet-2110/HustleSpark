@@ -10,6 +10,9 @@ import { Header } from '@/components/header';
 import { Toaster } from '@/components/ui/toaster';
 import { PaymentModal } from '@/components/payment-modal';
 import { Loader2 } from 'lucide-react';
+import { SmoothScroll } from '@/components/smooth-scroll';
+import { CursorGlow } from '@/components/cursor-glow';
+import { ScrollProgress } from '@/components/scroll-progress';
 
 interface ClientProvidersProps {
   children: ReactNode;
@@ -38,6 +41,9 @@ export function ClientProviders({ children }: ClientProvidersProps) {
     <FirebaseClientProvider>
       <PayPalClientProvider>
         <AuthProvider>
+          <SmoothScroll>
+          <ScrollProgress />
+          <CursorGlow />
           <div className="relative flex min-h-screen flex-col">
             <Header />
             <main className="flex-1">
@@ -53,6 +59,7 @@ export function ClientProviders({ children }: ClientProvidersProps) {
           </div>
           <Toaster />
           <PaymentModal />
+          </SmoothScroll>
         </AuthProvider>
       </PayPalClientProvider>
     </FirebaseClientProvider>
