@@ -12,6 +12,7 @@ export function ReferralTracker() {
         const ref = searchParams.get('ref');
         if (ref) {
             localStorage.setItem('referralCode', ref);
+            // Increment click count on the referral link
             if (firestore) {
                 const trackClick = async () => {
                     try {
